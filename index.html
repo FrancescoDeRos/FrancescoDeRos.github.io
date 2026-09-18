@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numerical geophysics data analyst</title>
+    <link rel="stylesheet" href="style1.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/iconoir-icons/iconoir@main/css/iconoir.css">
+    <link rel="icon" href="res/imgs/open.gif" type="image/gif" >
+</head>
+<body>
+    <header>
+        <h1>Francesco De Rose</h1>
+        <nav id="main-menu">
+            <ul>
+                <li><a href="#" onclick="loadContent('who.html')">Who?</a></li>
+                <li><a href="#" onclick="loadContent('projects.html')">Projects</a></li>
+                <li><a href="#" onclick="loadContent('publications.html')">Publications</a></li>
+                <li><a href="#" onclick="loadContent('contact.html')">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div id="main-content">
+
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-social-links">
+            <a href="https://www.linkedin.com/in/francesco-de-rose-6a769133b/" target="_blank">
+               <img src="res/imgs/linkedin.jpg" class="social-logo">
+            </a>
+            <a href="https://github.com/FrancescoDeRos" target="_blank">
+                <img src="res/imgs/git.jpg" class="social-logo">
+            </a>
+
+        </div>
+        <p>&copy; 2026 Francesco De Rose</p>
+    </footer>
+
+    <script>
+        window.onload = function() {
+            loadContent('who.html');
+        };
+
+        function loadContent(page) {
+            fetch(page)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('main-content').innerHTML = html;
+            })
+            .catch(error => console.error('Error fetching content:', error));
+        }
+
+        function loadContent(page) {
+            fetch(page)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('main-content').innerHTML = html;
+            })
+            .catch(error => console.error('Error fetching content:', error));
+        }
+
+        function toggleProjectContent(element) {
+            var parent = element.parentNode;
+            var grandparent = parent.parentNode;
+            var sectionId = grandparent.id;
+            var projectId = parent.id;
+            var projectContent = parent.querySelector(".entry-content");
+
+            if (projectContent.innerHTML.trim() === "") {
+                fetch(sectionId + "/" + projectId + ".html")
+                    .then(response => response.text())
+                    .then(html => {
+                        projectContent.innerHTML = html;
+                        projectContent.classList.add("show");
+                        updateButtonState(element, true);
+                    })
+                    .catch(error => console.error('Error loading project content:', error));
+            } else {
+                projectContent.classList.toggle("show");
+                updateButtonState(element, projectContent.classList.contains('show'));
+            }
+        }
+
+        function updateButtonState(element, isContentVisible) {
+            if (isContentVisible) {
+                element.textContent = 'Read Less';
+            } else {
+                element.textContent = 'Read More';
+            }
+        }
+
+
+    </script>
+</body>
+</html>

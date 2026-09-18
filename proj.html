@@ -1,0 +1,42 @@
+
+<h2>Projects - Last revision 20260918</h2>
+<section id="projects">
+    <div class="entry" id="ellipticity">
+        <h3>eqloc3d (ubierat)</h3>
+        <p>mini program for locating local and regional earthquakes in Southern Italy (C).
+		rejects picks which might bias and hinder the location accuracy
+		provides confidence ellipsoid accuracies
+		To do: implement STA/LTA automatic picker with kurtosis and NNEntropy...
+		To do: get current feed and perform phase association
+		To do: add class for relocation with known radius
+        </p>
+        <button class="toggle-button" onclick="toggleProjectContent(this)">Read More</button>
+        <div class="entry-content"></div>
+    </div>
+        <div class="entry" id="colossus">
+        <h3>colossus</h3>
+        <p>mini program to handle and process time series data efficently (decimation, filtering & such) and minimal I/O in C. Uses fftw3 (Frigo and Johnson 2005) for post-processing in the frequency domain (C).
+        To do: implement coherency and CC estimates between tiltmeters and strain gauge with qq.chparam, from Figura2022
+        </p>
+        <button class="toggle-button" onclick="toggleProjectContent(this)">Read More</button>
+        <div class="entry-content"></div>
+    </div>
+        <div class="entry" id="cerbero">
+        <h3>cerbero</h3>
+        <p>program to implement fast and efficient viewing of 2D and 3D sections of geological models with perturbation and parametrization of arbitrary objects with amorphous boundaries, GUI and modelled extensions still work in progress
+        </p>
+        <button class="toggle-button" onclick="toggleProjectContent(this)">Read More</button>
+        <div class="entry-content"></div>
+    </div>
+        </div>
+        <div class="entry" id="References">
+        <h3>References</h3>
+        <p>
+		Frigo, M., and S. G. Johnson. 2005. “The design and implementation of FFTW3”. Proc. IEEE  <a href="url">93:216–231</a>.
+		Figura et al., 2022, Study of correlations between seismic data and Virgo’s gravitational-wave detector data, <a href="url">https://doi.org/10.1088/1361-6382/ac5fc1</a>
+
+        </p>
+        <button class="toggle-button" onclick="toggleProjectContent(this)">Read More</button>
+        <div class="entry-content"></div>
+    </div>
+</section>
