@@ -16,7 +16,7 @@
                 <li><a href="#" onclick="loadContent('info.html')">Who?</a></li>
                 <li><a href="#" onclick="loadContent('proj.html')">Projects</a></li>
                 <li><a href="#" onclick="loadContent('publs.html')">Publications</a></li>
-                <li><a href="#" onclick="loadContent('Sismocal.INGV.Hypo3D_1985_2026.html')">hypo3d</a></li>
+                <li><a href="#" onclick="loadIframe('Sismocal.INGV.Hypo3D_1985_2026.html')">hypo3d</a></li>
                 <li><a href="#" onclick="loadContent('cont.html')">Contact</a></li>
             </ul>
         </nav>
@@ -56,7 +56,12 @@
             })
             .catch(error => console.error('Error fetching content:', error));
         }
-
+        function loadIframe(page) {
+          document.getElementById('main-content').innerHTML =
+            '<iframe src="' + page + '" ' +
+            'style="width:100%; height:85vh; border:0; display:block;" ' +
+            'allowfullscreen></iframe>';
+        }
         function loadContent(page) {
             fetch(page)
             .then(response => response.text())
