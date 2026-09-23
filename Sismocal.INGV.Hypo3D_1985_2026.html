@@ -55974,6 +55974,45 @@
   }
   init();
   animate();
+
+  addTicks();
+  function label( txt, x, y, z ) {
+  var c = document.createElement( 'canvas' ); c.width = 128; c.height = 64;
+  var g = c.getContext( '2d' );
+  g.fillStyle = '#fff'; g.font = 'bold 35px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText( txt, 64, 32 );
+  var m = new THREE.SpriteMaterial( { map: new THREE.CanvasTexture( c ), transparent: true, depthTest: false } );
+  m.fog = false;
+  var s = new THREE.Sprite( m ); s.scale.set( 24, 12, 1 ); s.position.set( x, y, z ); s.renderOrder = 20;
+  scene.add( s );
+}
+
+function addTicks() {
+  var LON_MIN = 12.4, LON_MAX = 19.5, LAT_MIN = 35.85, LAT_MAX = 42.5, DEP_MAX = 600, T = 5;
+  var p0 = project( LON_MIN, LAT_MIN, 0 ), p1 = project( LON_MAX, LAT_MAX, 0 );
+  var x0 = p0[0], y0 = p0[1], v = [];
+  function seg( ax, ay, az, bx, by, bz ) { v.push( ax, ay, az, bx, by, bz ); }
+  seg( x0, y0, 0, p1[0], y0, 0 );                      // lon axis
+  seg( x0, y0, 0, x0, p1[1], 0 );                      // lat axis
+  seg( x0, y0, 0, x0, y0, -DEP_MAX * Z_EXAG );         // depth axis
+  for ( var lon = LON_MIN; lon <= LON_MAX; lon += 1 ) {
+    var x = project( lon, LAT_MIN, 0 )[0];
+    seg( x, y0, 0, x, y0 - T, 0 );  label( lon + '\u00B0E', x, y0 - 14, 0 );
+  }
+  for ( var lat = LAT_MIN; lat <= LAT_MAX; lat += 1 ) {
+    var y = project( LON_MIN, lat, 0 )[1];
+    seg( x0, y, 0, x0 - T, y, 0 );  label( lat + '\u00B0N', x0 - 18, y, 0 );
+  }
+  for ( var d = 0; d <= DEP_MAX; d += 100 ) {
+    var z = -d * Z_EXAG;
+    seg( x0, y0, z, x0 - T, y0, z );  label( d + ' km', x0 - 20, y0, z );
+  }
+  var g = new THREE.BufferGeometry();
+  g.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array( v ), 3 ) );
+  var m = new THREE.LineBasicMaterial( { color: 0xffffff, fog: false } );
+  var l = new THREE.LineSegments( g, m ); l.frustumCulled = false; scene.add( l );
+}
+    
   //coast sud
   (function drawEmbeddedCoastline() {
     var el = document.getElementById( 'coastline-data' );
