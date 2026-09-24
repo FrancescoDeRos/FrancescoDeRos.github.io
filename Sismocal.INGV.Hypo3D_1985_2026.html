@@ -55982,9 +55982,6 @@
   }
   init();
   animate();
-  var stations = parseStations( STATIONS_RAW );
-  plotStations( stations );
-  addStationLegend( STATION_COLORS );
   addTicks();
   function label( txt, x, y, z ) {
   var c = document.createElement( 'canvas' ); c.width = 128; c.height = 64;
@@ -55996,7 +55993,9 @@
   var s = new THREE.Sprite( m ); s.scale.set( 24, 12, 1 ); s.position.set( x, y, z ); s.renderOrder = 20;
   scene.add( s );
 }
-
+var stations = parseStations( STATIONS_RAW );
+plotStations( stations );
+addStationLegend( STATION_COLORS );
 function addTicks() {
   var LON_MIN = 12.4, LON_MAX = 19.5, LAT_MIN = 35.85, LAT_MAX = 42.5, DEP_MAX = 600, T = 5;
   var p0 = project( LON_MIN, LAT_MIN, 0 ), p1 = project( LON_MAX, LAT_MAX, 0 );
