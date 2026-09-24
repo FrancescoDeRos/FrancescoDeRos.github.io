@@ -55982,7 +55982,9 @@
   }
   init();
   animate();
-
+  var stations = parseStations( STATIONS_RAW );
+  plotStations( stations );
+  addStationLegend( STATION_COLORS );
   addTicks();
   function label( txt, x, y, z ) {
   var c = document.createElement( 'canvas' ); c.width = 128; c.height = 64;
@@ -56082,8 +56084,6 @@ STAI 38.7572 16.5623 382 Unical
 UC01 38.7773 16.2701 327 CondivisaINGV
 VBL2 38.6707 16.1082 530 CondivisaINGV
 `;
-
-  // ---- colori per rete (modifica qui se serve) ----
   var STATION_COLORS = {
     'CondivisaINGV' : 0xff8c00,   // arancione
     'INGV'          : 0x800080,   // viola
@@ -56198,9 +56198,7 @@ VBL2 38.6707 16.1082 530 CondivisaINGV
     } );
     el.innerHTML = html;
   }
-  var stations = parseStations( STATIONS_RAW );
-  plotStations( stations );
-  addStationLegend( STATION_COLORS );
+
 
     
   function init() {
