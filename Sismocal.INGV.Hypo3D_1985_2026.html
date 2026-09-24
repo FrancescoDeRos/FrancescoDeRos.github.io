@@ -21,7 +21,7 @@
 </head>
 <body>
   <div id="info">hypocenters Calabrian Arc 14&deg;E18.5&deg;E36&deg;N41&deg;N. last revision 20260920. depth scale factor 0.35</div>
-  <img src="res/imgs/colorbar.png" id="colorlegend">
+  <img src="res/imgs/colorbar.png" id="colorlegend">    <div id="stationlegend"></div>
   <script id="coastline-data" type="text/plain">
 13.9410151515 41.6879727521   0
 13.9404820855 41.6881652853   0
@@ -56095,8 +56095,8 @@ VBL2 38.6707 16.1082 530 CondivisaINGV
       if ( line === '' || line.charAt( 0 ) === '#' ) return;
       var p = line.split( /\s+/ );
       if ( p.length < 5 ) return;
-      var lon = parseFloat( p[ 1 ] );
-      var lat = parseFloat( p[ 2 ] );
+      var lat = parseFloat( p[ 1 ] );
+      var lon = parseFloat( p[ 2 ] );
       if ( !isFinite( lon ) || !isFinite( lat ) ) return;
       out.push( {
         name    : p[ 0 ],
