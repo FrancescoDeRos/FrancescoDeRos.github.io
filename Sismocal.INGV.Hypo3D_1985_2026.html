@@ -56082,7 +56082,6 @@ VBL2 38.6707 16.1082 530 CondivisaINGV
 `;
   var STATION_COLORS = {
     'CondivisaINGV' : 0xff8c00,   // arancione
-    'INGV'          : 0x800080,   // viola
     'Unical'        : 0x800080    // viola
   };
   var STATION_DEFAULT_COLOR = 0x999999;  // reti non elencate
@@ -56171,7 +56170,7 @@ VBL2 38.6707 16.1082 530 CondivisaINGV
       spr.position.set( p[ 0 ], p[ 1 ], p[ 2 ] + lift );
       spr.scale.set( size, size, 1 );
       spr.renderOrder = 15;
-      spr.userData.station = st;   // utile per picking / debug
+      spr.userData.station = st;  
       spr.name = st.name;
       group.add( spr );
     } );
