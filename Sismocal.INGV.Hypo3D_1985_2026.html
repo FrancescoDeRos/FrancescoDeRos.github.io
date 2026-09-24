@@ -9,6 +9,14 @@
            font-family:Sans-Serif; font-size:16px; text-align:center; font-weight:bold; }
     #info { color:#fff; position:absolute; top:0; width:100%; padding:5px; z-index:100; }
     #colorlegend { position:absolute; bottom:0; right:0; }
+    #stationlegend {
+      position:absolute; bottom:8px; left:8px; z-index:100;
+      color:#fff; font-size:12px; font-weight:bold; text-align:left;
+      background:rgba(0,0,0,0.45); padding:6px 9px; border-radius:5px;
+      line-height:1.5;
+    }
+    #stationlegend div { display:flex; align-items:center; gap:6px; }
+    #stationlegend svg { flex:0 0 auto; }
   </style>
 </head>
 <body>
@@ -56029,6 +56037,172 @@ function addTicks() {
       console.warn( 'errore. segmenti coste non trovati.' );
     }
   })();
+
+var STATIONS_RAW = `
+ACIS 39.3591 16.2269 277 Unical
+AGAN 38.2996 16.2207 170 Unical
+CARP 39.1479 16.3133 685 CondivisaINGV
+CET2 39.5288 15.9546 675 Unical
+CHC2 38.6817 16.4106 583 Unical
+CHCE 38.6840 16.4142 550 CondivisaINGV
+CIRK 39.3884 17.0614 300 CondivisaINGV
+CMPN 39.4076 16.8303 535 CondivisaINGV
+CNDF 38.0033 15.8571 357 CondivisaINGV
+CNESE 39.8941 16.0843 1547 Unical
+CO22 39.4926 16.3051 430 CondivisaINGV
+CUP2 39.3834 16.5482 1241 Unical
+CUTR 39.0218 17.0737 170 CondivisaINGV
+FALC 39.2721 16.0796 560 CondivisaINGV
+GERV 39.2958 16.2309 310 Unical
+GIMI 38.9728 16.5383 590 Unical
+GIOM 38.3861 16.1099 550 CondivisaINGV
+GIOT 38.4126 15.9388 80 Unical
+LADO 39.2840 16.9795 488 Unical
+LARA 39.2757 16.2429 470 Unical
+LATT 39.4418 16.2298 200 Unical
+LC22 39.9364 15.9779 550 Unical
+MANE 39.2018 16.3375 825 Unical
+MCDA 39.0216 16.8403 305 CondivisaINGV
+MMN 39.8908 15.9906 878 Unical
+MOKA 39.8857 16.1507 815 Unical
+MUGA 38.5174 16.3223 970 CondivisaINGV
+OPPI 38.2675 16.0101 770 CondivisaINGV
+RICA 38.6240 15.8601 240 CondivisaINGV
+ROI 39.5718 16.5692 605 CondivisaINGV
+SCAI 38.5343 16.5177 450 CondivisaINGV
+SCAN 39.1376 16.9879 280 Unical
+SERA 39.0882 16.1255 370 Unical
+SIMB 38.6067 16.3216 810 Unical
+SMIN 38.9730 16.2282 540 Unical
+SPNT 39.1569 16.5266 1280 CondivisaINGV
+SPDC 38.5264 16.1322 343 CondivisaINGV
+SPS2 39.2941 16.3379 704 Unical
+STRO 39.2670 17.0601 270 Unical
+STAI 38.7572 16.5623 382 Unical
+UC01 38.7773 16.2701 327 CondivisaINGV
+VBL2 38.6707 16.1082 530 CondivisaINGV
+`;
+
+  // ---- colori per rete (modifica qui se serve) ----
+  var STATION_COLORS = {
+    'CondivisaINGV' : 0xff8c00,   // arancione
+    'INGV'          : 0x800080,   // viola
+    'Unical'        : 0x800080    // viola
+  };
+  var STATION_DEFAULT_COLOR = 0x999999;  // reti non elencate
+  var STATION_SIZE          = 12;        // dimensione triangolo (unità mondo)
+  var STATION_Z_LIFT        = 2.0;       // sollevamento sopra la superficie
+  function parseStations( txt ) {
+    var out = [];
+    txt.split( /\r?\n/ ).forEach( function ( raw ) {
+      var line = raw.trim();
+      if ( line === '' || line.charAt( 0 ) === '#' ) return;
+      var p = line.split( /\s+/ );
+      if ( p.length < 5 ) return;
+      var lon = parseFloat( p[ 1 ] );
+      var lat = parseFloat( p[ 2 ] );
+      if ( !isFinite( lon ) || !isFinite( lat ) ) return;
+      out.push( {
+        name    : p[ 0 ],
+        lon     : lon,
+        lat     : lat,
+        elev    : parseFloat( p[ 3 ] ),
+        network : p[ 4 ]
+      } );
+    } );
+    return out;
+  }
+
+  function stationTriangleTexture( colorHex ) {
+    var S = 64;
+    var canvas = document.createElement( 'canvas' );
+    canvas.width = canvas.height = S;
+    var g = canvas.getContext( '2d' );
+    var col = '#' + ( '000000' + colorHex.toString( 16 ) ).slice( -6 );
+
+    g.beginPath();
+    g.moveTo( S * 0.50, S * 0.06 );   // vertice alto
+    g.lineTo( S * 0.94, S * 0.90 );   // basso destra
+    g.lineTo( S * 0.06, S * 0.90 );   // basso sinistra
+    g.closePath();
+    g.fillStyle = col;
+    g.fill();
+    g.lineWidth   = S * 0.09;
+    g.lineJoin    = 'round';
+    g.strokeStyle = 'rgba(0,0,0,0.85)';
+    g.stroke();
+
+    var tex = new THREE.CanvasTexture( canvas );
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    return tex;
+  }
+
+  var _stationTexCache = {};
+  function getStationTexture( colorHex ) {
+    if ( !_stationTexCache[ colorHex ] ) {
+      _stationTexCache[ colorHex ] = stationTriangleTexture( colorHex );
+    }
+    return _stationTexCache[ colorHex ];
+  }
+ function plotStations( stations, opts ) {
+    opts = opts || {};
+    if ( !scene ) { console.warn( 'plotStations: scene non pronta.' ); return null; }
+
+    var size   = ( opts.size   !== undefined ) ? opts.size   : STATION_SIZE;
+    var lift   = ( opts.lift   !== undefined ) ? opts.lift   : STATION_Z_LIFT;
+    var colors = opts.colors || STATION_COLORS;
+    var parent = opts.parent || scene;
+
+    var group = new THREE.Group();
+    group.name = 'stations';
+
+    stations.forEach( function ( st ) {
+      var col = colors[ st.network ];
+      if ( col === undefined ) col = STATION_DEFAULT_COLOR;
+
+      var p = project( st.lon, st.lat, 0 );
+
+      var mat = new THREE.SpriteMaterial( {
+        map        : getStationTexture( col ),
+        transparent: true,
+        depthTest  : true,
+        depthWrite : false,
+        fog        : false
+      } );
+
+      var spr = new THREE.Sprite( mat );
+      spr.position.set( p[ 0 ], p[ 1 ], p[ 2 ] + lift );
+      spr.scale.set( size, size, 1 );
+      spr.renderOrder = 15;
+      spr.userData.station = st;   // utile per picking / debug
+      spr.name = st.name;
+      group.add( spr );
+    } );
+
+    parent.add( group );
+    return group;
+  }
+  function addStationLegend( colors ) {
+    var el = document.getElementById( 'stationlegend' );
+    if ( !el ) return;
+    var html = '<b>Stazioni</b>';
+    Object.keys( colors ).forEach( function ( net ) {
+      var col = '#' + ( '000000' + colors[ net ].toString( 16 ) ).slice( -6 );
+      html += '<div>' +
+                '<svg width="12" height="12" viewBox="0 0 16 16">' +
+                  '<polygon points="8,1 15,15 1,15" fill="' + col +
+                  '" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/>' +
+                '</svg><span>' + net + '</span>' +
+              '</div>';
+    } );
+    el.innerHTML = html;
+  }
+  var stations = parseStations( STATIONS_RAW );
+  plotStations( stations );
+  addStationLegend( STATION_COLORS );
+
+    
   function init() {
     container = document.createElement( 'div' );
     document.body.appendChild( container );
