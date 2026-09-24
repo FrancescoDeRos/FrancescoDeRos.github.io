@@ -56195,7 +56195,9 @@ VBL2 38.6707 16.1082 530 CondivisaINGV
     el.innerHTML = html;
   }
 
-
+    var stations = parseStations( STATIONS_RAW );
+    plotStations( stations );
+    addStationLegend( STATION_COLORS );
     
   function init() {
     container = document.createElement( 'div' );
@@ -56247,9 +56249,7 @@ VBL2 38.6707 16.1082 530 CondivisaINGV
     controls.dynamicDampingFactor = 0.3;
 
     window.addEventListener( 'resize', onWindowResize, false );
-    var stations = parseStations( STATIONS_RAW );
-    plotStations( stations );
-    addStationLegend( STATION_COLORS );
+
   }
   //no fetch
   function parseCoastline( txt ) {
