@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>INGV real time earthquakes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=0.5">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    .leaflet-popup-content { font-size: 14px; }
+    .ctl { background: #fff; padding: 6px; border-radius: 4px; box-shadow: 0 1px 5px rgba(0,0,0,.4); }
+    .ctl button { display: block; width: 100%; margin: 2px 0; padding: 4px 8px; cursor: pointer; border: 1px solid #999; background: #f4f4f4; }
+    .ctl button.active { background: #BD0026; color: #fff; border-color: #800026; }
+    .ctl .info { font-size: 12px; margin-top: 4px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map', { preferCanvas: true });
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri'
+    }).addTo(map);
+
+    const bounds = L.latLngBounds([35.85, 12.2], [41, 19.5]);
+    L.rectangle(bounds, {color: "#ff7800", weight: 1, fill: false}).addTo(map);
+	map.fitBounds(bounds);
+	map.setMinZoom(map.getBoundsZoom(bounds));   //no zoom fuori rettangolo
+	map.setMaxBounds(bounds);                    //no pan fuori rettangolo
+	map.options.maxBoundsViscosity = 1.0;        //muro
+	window.addEventListener('resize', () => { map.setMinZoom(map.getBoundsZoom(bounds)); map.fitBounds(bounds); });
+    const layerGroup = L.layerGroup().addTo(map);
+    const RANGES = [
+      ['Last day', 1], ['Last week', 7], ['Last month', 30],
+      ['Last 6 months', 182], ['Last year', 365],
+      ['Last 2 years', 730], ['Last 3 years', 1095]
+    ];
+    let days = 7, reqId = 0;
+    function magColor(m) {
+      return m >= 5 ? '#800026' : m >= 4 ? '#BD0026' : m >= 3 ? '#E31A1C' : m >= 2 ? '#FC4E2A' : m >= 1 ? '#FD8D3C' : '#FFEDA0';
+    }
+    const ctl = L.control({position: 'topright'});
+    ctl.onAdd = () => {
+      const div = L.DomUtil.create('div', 'ctl');
+      L.DomEvent.disableClickPropagation(div);
+      RANGES.forEach(([label, d]) => {
+        const b = L.DomUtil.create('button', d === days ? 'active' : '', div);
+        b.textContent = label;
+        b.dataset.days = d;
+        b.onclick = () => {
+          days = d;
+          div.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
+          fetchEarthquakes();
+        };
+      });
+      const info = L.DomUtil.create('div', 'info', div);
+      info.id = 'info';
+      return div;
+    };
+    ctl.addTo(map);
+    async function fetchEarthquakes() {
+      const id = ++reqId;
+      const info = document.getElementById('info');
+      info.textContent = 'Loading...';
+      const fmt = d => d.toISOString().slice(0, 19);
+      const end = new Date(), start = new Date(end - days * 864e5);
+      const url = `https://webservices.ingv.it/fdsnws/event/1/query?format=geojson&starttime=${fmt(start)}&endtime=${fmt(end)}&minlatitude=35.9&maxlatitude=41&minlongitude=12.2&maxlongitude=19.5&limit=10000&orderby=time`;
+      try {
+        const res = await fetch(url);
+        if (id !== reqId) return;                       
+        if (res.status === 204) { layerGroup.clearLayers(); info.textContent = '0 events'; return; }
+        if (!res.ok) { info.textContent = 'Error ' + res.status; return; }
+        const data = await res.json();
+        if (id !== reqId) return;
+        layerGroup.clearLayers();
+        data.features.sort((a, b) => (a.properties.mag || 0) - (b.properties.mag || 0)).forEach(f => {        // prima piccoli poi grandi
+          const [lon, lat, depth] = f.geometry.coordinates;
+          const { mag, place, time, eventId } = f.properties;
+          const m = Number(mag) || 0;
+          L.circleMarker([lat, lon], {
+            radius: Math.max(2, m * 2), fillColor: magColor(m),
+            color: '#000', weight: 0.5, opacity: 1, fillOpacity: 0.8
+          }).bindPopup(`<b>M${m.toFixed(1)}</b><br>${place}<br>Depth: ${depth} km<br>${new Date(time).toLocaleString()}<br><a href="https://terremoti.ingv.it/event/${eventId}" target="_blank">Details</a>`)
+            .addTo(layerGroup);
+        });
+        info.textContent = data.features.length + ' events' + (data.features.length >= 10000 ? ' (limit hit)' : '');
+      } catch (e) {
+        console.error('INGV fetch error:', e);
+        info.textContent = 'Fetch error';
+      }
+    }
+    fetchEarthquakes();
+    setInterval(fetchEarthquakes, 60000);
+  </script>
+</body>
+</html>
