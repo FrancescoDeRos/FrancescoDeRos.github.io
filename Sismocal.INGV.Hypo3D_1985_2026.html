@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>3d hypocenters viewer Calabrian Arc 14°E18.5°E36°N41°N catalog INGV </title>
+  <title>3d hypocenters viewer Calabrian Arc 12°E19.5°E36°N41°N catalog INGV </title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
   <style>
@@ -20,7 +20,7 @@
   </style>
 </head>
 <body>
-  <div id="info">hypocenters Calabrian Arc 14&deg;E18.5&deg;E36&deg;N41&deg;N. last revision 20260920. depth scale factor 0.35</div>
+  <div id="info">hypocenters Calabrian Arc 12&deg;E19.5&deg;E36&deg;N41&deg;N. last revision 20260929. depth scale factor 0.95</div>
   <img src="res/imgs/colorbar.png" id="colorlegend">    <div id="stationlegend"></div>
   <script id="coastline-data" type="text/plain">
 13.9410151515 41.6879727521   0
@@ -25899,7 +25899,7 @@
   var LAT0 = 38.5; // centre lat
   var KM_PER_DEG = 111.32;
   var COS_LAT0   = Math.cos( LAT0 * Math.PI / 180.0 );
-  var Z_EXAG = 0.35; //fattore scala
+  var Z_EXAG = 0.95; //fattore scala
 
   function project( lon, lat, depth ) {
     var x = ( lon - LON0 ) * KM_PER_DEG * COS_LAT0;
@@ -25909,7 +25909,45 @@
   }
   //hypocenters[lon, lat, depth_km]
     var rawHypocenters = [
-          [ 11.6118,  38.5727,   10.0],
+      [ 14.5470,  39.3060,  407.9],
+      [ 14.9200,  39.7000,  400.0],
+      [ 14.1100,  38.8580,  411.9],
+      [ 13.7020,  40.1930,  452.5],
+      [ 12.7860,  40.2280,  481.2],
+      [ 14.1800,  38.8970,  420.2],
+      [ 12.7110,  40.0030,  502.1],
+      [ 13.6570,  40.6420,  469.1],
+      [ 13.8190,  39.6900,  459.8],
+      [ 14.3160,  39.2460,  491.0],
+      [ 13.8500,  39.6880,  616.5],
+      [ 14.1340,  40.4800,  429.5],
+      [ 13.2740,  39.9830,  505.6],
+      [ 13.5343,  40.5563,  440.5],
+      [ 14.5673,  39.3418,  404.4],
+      [ 14.5053,  39.2213,  408.4],
+      [ 14.2283,  38.7768,  417.3],
+      [ 13.5468,  39.2672,  481.4],
+      [ 13.5307,  40.2823,  468.4],
+      [ 13.3662,  39.3490,  525.7],
+      [ 14.4610,  40.1052,  441.9],
+      [ 14.2883,  39.2892,  423.6],
+      [ 13.6737,  39.5498,  499.1],
+      [ 14.0537,  39.3027,  479.0],
+      [ 13.1753,  39.9950,  477.4],
+      [ 14.1387,  38.8923,  421.1],
+      [ 12.8603,  39.6848,  535.4],
+      [ 14.1878,  38.7128,  404.9],
+      [ 14.0828,  38.9772,  416.6],
+      [ 14.1462,  39.3515,  470.5],
+      [ 14.0908,  38.6752,  415.3],
+      [ 13.9218,  39.6768,  437.2],
+      [ 14.1352,  38.7667,  438.0],
+      [ 13.8047,  39.5740,  474.9],
+      [ 14.3520,  39.5292,  455.5],
+      [ 13.8767,  40.5065,  457.8],
+      [ 13.7643,  39.6710,  440.1],
+      [ 14.0032,  40.8182,  449.8],
+      [ 11.6118,  38.5727,   10.0],
       [ 11.6212,  38.4772,   23.5],
       [ 11.6655,  38.5307,   10.1],
       [ 11.6870,  38.4217,   13.3],
