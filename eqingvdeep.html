@@ -2,36 +2,96 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>INGV real time earthquakes</title>
+  <title>INGVRTEQS</title>
   <meta name="viewport" content="width=device-width, initial-scale=0.5">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     html, body, #map { height: 100%; margin: 0; }
     .leaflet-popup-content { font-size: 14px; }
-    .ctl { background: #fff; padding: 6px; border-radius: 4px; box-shadow: 0 1px 5px rgba(0,0,0,.4); }
+    .ctl { background: #fff; padding: 6px; border-radius: 4px; box-shadow: 0 1px 5px rgba(0,0,0,.4); max-height: calc(100vh - 40px); overflow-y: auto; }
     .ctl button { display: block; width: 100%; margin: 2px 0; padding: 4px 8px; cursor: pointer; border: 1px solid #999; background: #f4f4f4; }
     .ctl button.active { background: #BD0026; color: #fff; border-color: #800026; }
     .ctl button.feat.active { background: #08519c; border-color: #08306b; }
+    .ctl button.act.active { background: #e65100; border-color: #bf360c; color: #fff; }
     .ctl hr { margin: 4px 0; border: 0; border-top: 1px solid #ccc; }
     .ctl .info { font-size: 12px; margin-top: 4px; text-align: center; }
     #chart { position: absolute; left: 10px; bottom: 25px; z-index: 1000; background: #fff; padding: 4px; border-radius: 4px; box-shadow: 0 1px 5px rgba(0,0,0,.4); display: none; }
     .abar { text-align: center; font: bold 10px sans-serif; color: #000; }
     .abar div { margin: 0 auto; width: 16px; border: 1px solid #000; background: #08519c; opacity: .85; }
     .mag-legend { text-align: center; font: 11px sans-serif; }
-	.mag-legend svg { display: block; margin: 4px auto 0; }
-	.mag-legend text {
-	  font: bold 8px sans-serif;
-	  fill: #000;
-	  paint-order: stroke;
-	  stroke: #fff;
-	  stroke-width: 2px;
-	  stroke-linejoin: round;
-	}
+    .mag-legend svg { display: block; margin: 4px auto 0; }
+    .mag-legend.gray svg { filter: grayscale(1); }
+    .mag-legend text { font: bold 8px sans-serif; fill: #000; paint-order: stroke; stroke: #fff; stroke-width: 2px; stroke-linejoin: round; }
+    #counter { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #16181d; border: 1px solid #000; border-radius: 8px; padding: 6px 10px 8px; box-shadow: 0 2px 8px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.12); text-align: center; color: #ccc; font: 12px sans-serif; user-select: none; }
+    #counter .cl { margin-bottom: 5px; }
+    #odo { display: flex; gap: 3px; justify-content: center; }
+    .dg { width: 28px; height: 42px; overflow: hidden; position: relative; background: #000; border-radius: 4px; box-shadow: inset 0 0 6px #000; }
+    .dg::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(#000 0, rgba(0,0,0,0) 28%, rgba(0,0,0,0) 72%, #000 100%); }
+    .dg::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgba(255,255,255,.14); z-index: 3; }
+    .dg .st { transition: transform .8s cubic-bezier(.25,.9,.3,1); }
+    .dg i { display: block; height: 42px; font: normal 600 30px/42px "DejaVu Sans Mono", Menlo, Consolas, monospace; color: #f4f4f4; text-align: center; }
+    .dg.z i { color: #4a4d55; }
+    #ctabs { display: flex; gap: 3px; margin-top: 7px; justify-content: center; }
+    #ctabs button { padding: 3px 7px; border: 1px solid #3a3d45; background: #262930; color: #bbb; border-radius: 3px; cursor: pointer; font: 11px sans-serif; }
+    #ctabs button:hover { background: #31343c; }
+    #ctabs button.active { background: #BD0026; border-color: #800026; color: #fff; }
+    /*RT CB */
+    #timebar { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); width: min(520px, 34vw); z-index: 1001; background: rgba(255,255,255,.93); border-radius: 6px; padding: 5px 30px 3px; box-shadow: 0 1px 5px rgba(0,0,0,.5); font: 11px sans-serif; user-select: none; }
+    #timebar .tbh { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 5px; white-space: nowrap; }
+    .tbt { position: relative; height: 16px; cursor: pointer; touch-action: none; }
+    .tbg { position: absolute; inset: 0; border: 1px solid #000; border-radius: 2px; }
+    .tbg.gray { filter: grayscale(1); }
+    .tbm { position: absolute; top: 0; bottom: 0; background: rgba(255,255,255,.75); }
+    .tbk { position: absolute; top: -4px; width: 10px; height: 24px; margin-left: -5px; background: #fff; border: 2px solid #222; border-radius: 3px; box-sizing: border-box; cursor: ew-resize; }
+    .tbx { position: relative; height: 28px; margin-top: 3px; }
+    .tbx .tk { position: absolute; top: 0; height: 5px; border-left: 1px solid #333; }
+    .tbx .tk span { position: absolute; top: 6px; left: 0; transform: translateX(-50%); white-space: nowrap; font-size: 10px; text-align: center; line-height: 11px; }
+    /*POPUP */
+    .win { position: absolute; z-index: 1100; background: #fff; border-radius: 6px; box-shadow: 0 2px 12px rgba(0,0,0,.55); display: none; flex-direction: column; resize: both; overflow: hidden; min-width: 260px; min-height: 190px; font: 12px sans-serif; }
+    .win .wh { background: #2b2f36; color: #fff; padding: 4px 6px; cursor: move; display: flex; justify-content: space-between; align-items: center; gap: 8px; user-select: none; touch-action: none; }
+    .win .wh button { margin-left: 4px; padding: 1px 7px; cursor: pointer; border: 1px solid #666; background: #444; color: #fff; border-radius: 3px; font: 11px sans-serif; }
+    .win .wh button.active { background: #e65100; border-color: #bf360c; }
+    .win .wb { position: relative; flex: 1; min-height: 0; }
+    .win canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+    .win .wf { padding: 3px 8px; border-top: 1px solid #ccc; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    #sectip { position: absolute; display: none; pointer-events: none; background: rgba(20,20,20,.92); color: #fff; padding: 4px 6px; border-radius: 3px; font: 11px/1.35 sans-serif; white-space: nowrap; z-index: 5; }
+    .hd { width: 22px; height: 22px; border-radius: 50%; background: #00e5ff; border: 2px solid #003b44; color: #003b44; font: bold 12px/18px sans-serif; text-align: center; cursor: move; box-sizing: border-box; }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <div id="chart"><canvas id="cv" width="440" height="270"></canvas></div>
+  <div id="counter">
+    <div class="cl" id="clabel">earthquakes</div>
+    <div id="odo"></div>
+    <div id="ctabs"></div>
+  </div>
+  <div id="timebar">
+    <div class="tbh"><span id="tbA"></span><b id="tbN"></b><span id="tbB"></span></div>
+    <div class="tbt" id="tbt">
+      <div class="tbg" id="tbg"></div>
+      <div class="tbm" id="tbm0" style="left:0;width:0"></div>
+      <div class="tbm" id="tbm1" style="right:0;width:0"></div>
+      <div class="tbk" id="k0" style="left:0"></div>
+      <div class="tbk" id="k1" style="left:100%"></div>
+    </div>
+    <div class="tbx" id="tbx"></div>
+  </div>
+  <div class="win" id="secwin" style="width:520px;height:330px">
+    <div class="wh"><span id="sectitle">Section</span><span><button id="b3d">3D</button><button id="secx">&#10005;</button></span></div>
+    <div class="wb"><canvas id="seccv"></canvas><div id="sectip"></div></div>
+    <div class="wf">
+      <label>width <input id="secw" type="number" value="25" min="1" step="5" style="width:52px"> km (&plusmn;width/2)</label>
+      <label><input id="sec11" type="checkbox"> 1:1</label>
+      <span id="secinfo"></span>
+    </div>
+  </div>
+
+  <div class="win" id="win3d" style="width:340px;height:310px">
+    <div class="wh"><span>3D hypocenters</span><span><button id="b3eq">1:1:1</button><button id="x3d">&#10005;</button></span></div>
+    <div class="wb"><canvas id="cv3"></canvas></div>
+    <div class="wf"><span id="info3"></span></div>
+  </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
 const AREAS = [
@@ -116,7 +176,7 @@ const AREAS = [
       return c;
     }
     AREAS.forEach(a => { a.h = a[1].map(p => [p[1], p[0]]); a.ar = polyArea(a.h); a.cy = a[2]; a.cx = a[3]; a.n = 0; });
-    const BYSIZE = AREAS.slice().sort((a, b) => a.ar - b.ar);   //smallest area
+    const BYSIZE = AREAS.slice().sort((a, b) => a.ar - b.ar);//smallest area
     const map = L.map('map', { preferCanvas: true });
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Tiles &copy; Esri'
@@ -130,33 +190,53 @@ const AREAS = [
     window.addEventListener('resize', () => { map.setMinZoom(map.getBoundsZoom(bounds)); map.fitBounds(bounds); });
     map.createPane('areas').style.zIndex = 350;
     const areaRenderer = L.canvas({ pane: 'areas' });
-    const layerGroup = L.layerGroup().addTo(map);
+    const layerGroup = L.featureGroup().addTo(map);
     const polyLayer = L.layerGroup(), barLayer = L.layerGroup();
+    //ordine dei blocchi: stato, controlli, legenda, istogrammi, poi aree/contatore/barra/sezioni/export
+    const $ = id => document.getElementById(id);
+    const pad = n => String(n).padStart(2, '0');
+    const fmtUTC = ms => { const d = new Date(ms); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()); };
     const RANGES = [
-      ['Last day', 1], ['Last week', 7], ['Last month', 30],
-      ['Last 6 months', 182], ['Last year', 365],
-      ['Last 2 years', 730], ['Last 3 years', 1095]
+      ['Last day', 1, '24 h'], ['Last week', 7, '7 d'], ['Last month', 30, '30 d'],
+      ['Last 6 months', 182, '6 mo'], ['Last year', 365, '1 y'],
+      ['Last 2 years', 730, '2 y'], ['Last 3 years', 1095, '3 y']
     ];
     const FEATS = [['depth', 'Depth histogram'], ['month', 'Month histogram'], ['mag', 'Mw histogram'],
                    ['poly', 'Area polygons'], ['bars', 'Area count bars']];
-    let days = 7, reqId = 0, events = [], chartMode = null;
+    let days = 7, reqId = 0, allEvents = [], events = [], chartMode = null, limitHit = false;
+    let rangeStart = Date.now() - days * 864e5, rangeEnd = Date.now();
+    const sel = { a: 0, b: 1 };            //RT win, fraz [rangeStart, rangeEnd]
+    let colorMode = 'time';                //time | mag
     const on = { poly: false, bars: false };
+    let sec = null, slab = [], slabSet = new Set(), drawing = false, drawStart = null;
+    const v3 = { az: -35 * Math.PI / 180, el: 25 * Math.PI / 180, zoom: 1, eq: false };
     function magColor(m) {
       return m >= 5 ? '#800026' : m >= 4 ? '#BD0026' : m >= 3 ? '#E31A1C' : m >= 2 ? '#FC4E2A' : m >= 1 ? '#FD8D3C' : '#FFEDA0';
+    }
+    //CMtempo: vecchio  recente
+    const CM = ['#5b3cc4', '#2f7fe0', '#1fc8b8', '#a6e02f', '#ffc414', '#ff3b1f'];
+    const CMrgb = CM.map(h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)));
+    function cmap(f) {
+      f = Math.max(0, Math.min(1, f));
+      const p = f * (CMrgb.length - 1), i = Math.min(CMrgb.length - 2, Math.floor(p)), u = p - i, a = CMrgb[i], b = CMrgb[i + 1];
+      return 'rgb(' + [0, 1, 2].map(k => Math.round(a[k] + (b[k] - a[k]) * u)).join(',') + ')';
+    }
+    function colorOf(e) { return colorMode === 'time' ? cmap((e.ms - rangeStart) / Math.max(1, rangeEnd - rangeStart)) : magColor(e.mag); }
+    function setDays(d) {
+      days = d; sel.a = 0; sel.b = 1;
+      document.querySelectorAll('[data-days]').forEach(x => x.classList.toggle('active', +x.dataset.days === d));
+      fetchEarthquakes();
     }
     const ctl = L.control({position: 'topright'});
     ctl.onAdd = () => {
       const div = L.DomUtil.create('div', 'ctl');
       L.DomEvent.disableClickPropagation(div);
+      L.DomEvent.disableScrollPropagation(div);
       RANGES.forEach(([label, d]) => {
         const b = L.DomUtil.create('button', d === days ? 'active' : '', div);
         b.textContent = label;
         b.dataset.days = d;
-        b.onclick = () => {
-          days = d;
-          div.querySelectorAll('button[data-days]').forEach(x => x.classList.toggle('active', x === b));
-          fetchEarthquakes();
-        };
+        b.onclick = () => setDays(d);
       });
       div.appendChild(document.createElement('hr'));
       FEATS.forEach(([k, label]) => {
@@ -172,6 +252,13 @@ const AREAS = [
           refresh();
         };
       });
+      div.appendChild(document.createElement('hr'));
+      const act = (id, label, fn) => { const b = L.DomUtil.create('button', 'act', div); b.id = id; b.textContent = label; b.onclick = fn; return b; };
+      act('btnDraw', 'Draw section line', () => toggleDraw());
+      act('btnClear', 'Clear section', () => clearSection());
+      act('btn3d', '3D popup', () => toggle3D());
+      act('btnColor', 'Colour: time', () => toggleColor());
+      act('btnExp', 'Export JPG', () => exportJPG());
       const info = L.DomUtil.create('div', 'info', div);
       info.id = 'info';
       return div;
@@ -247,6 +334,7 @@ const AREAS = [
     }
     //aree sud
     const ramp = ['#ffffcc', '#ffeda0', '#fd8d3c', '#e31a1c', '#800026'];
+    function areaColor(a, mx) { return a.n ? ramp[Math.min(4, 1 + Math.floor(3.999 * Math.log(a.n + 1) / Math.log(mx + 1)))] : ramp[0]; }
     function drawAreas() {
       polyLayer.clearLayers(); barLayer.clearLayers();
       AREAS.forEach(a => a.n = 0);
@@ -254,8 +342,7 @@ const AREAS = [
       const mx = Math.max(1, ...AREAS.map(a => a.n));
       //larger, smaller. overlapping
       if (on.poly) AREAS.slice().sort((a, b) => b.ar - a.ar).forEach(a => {
-        const f = a.n ? ramp[Math.min(4, 1 + Math.floor(3.999 * Math.log(a.n + 1) / Math.log(mx + 1)))] : ramp[0];
-        L.polygon(a.h.map(p => [p[1], p[0]]), { pane: 'areas', renderer: areaRenderer, color: '#fff', weight: 1, fillColor: f, fillOpacity: 0.35 })
+        L.polygon(a.h.map(p => [p[1], p[0]]), { pane: 'areas', renderer: areaRenderer, color: '#fff', weight: 1, fillColor: areaColor(a, mx), fillOpacity: 0.35 })
           .bindPopup(`<b>${a[0]}</b><br>${a.n} events`).addTo(polyLayer);
       });
       if (on.bars) AREAS.filter(a => a.n).forEach(a => {
@@ -266,10 +353,365 @@ const AREAS = [
       [[polyLayer, on.poly], [barLayer, on.bars]].forEach(([g, s]) => s ? g.addTo(map) : map.removeLayer(g));
     }
     function refresh() { drawChart(); drawAreas(); }
+    const NDIG = 5, CH = 42, wheels = [];
+    (function () {
+      const odo = $('odo');
+      for (let i = 0; i < NDIG; i++) {
+        const w = document.createElement('div'); w.className = 'dg z';
+        const s = document.createElement('div'); s.className = 'st';
+        s.innerHTML = Array.from({ length: 100 }, (_, k) => '<i>' + (k % 10) + '</i>').join('');
+        const dur = (0.7 + 0.15 * (NDIG - 1 - i)) + 's';
+        s.style.transitionDuration = dur;
+        s.style.transform = `translateY(${-20 * CH}px)`;
+        w.appendChild(s); odo.appendChild(w);
+        const o = { w, s, pos: 20, dig: 0 };
+        s.addEventListener('transitionend', () => { // rotellina sempre cres
+          if (o.pos >= 60) {
+            s.style.transition = 'none'; o.pos -= 40; s.style.transform = `translateY(${-o.pos * CH}px)`;
+            void s.offsetHeight; s.style.transition = ''; s.style.transitionDuration = dur;
+          }
+        });
+        wheels.push(o);
+      }
+      const tabs = $('ctabs');
+      RANGES.forEach(([label, d, short]) => {
+        const b = document.createElement('button');
+        b.textContent = short; b.title = label; b.dataset.days = d;
+        if (d === days) b.className = 'active';
+        b.onclick = () => setDays(d);
+        tabs.appendChild(b);
+      });
+    })();
+    function setCount(n) {
+      n = Math.max(0, Math.min(Math.pow(10, NDIG) - 1, n));
+      const str = String(n).padStart(NDIG, '0');
+      let lead = true;
+      for (let i = 0; i < NDIG; i++) {
+        const d = +str[i], o = wheels[i], step = (d - o.dig + 10) % 10;
+        if (step) { o.pos += step; o.dig = d; o.s.style.transform = `translateY(${-o.pos * CH}px)`; }
+        if (d !== 0 || i === NDIG - 1) lead = false;
+        o.w.classList.toggle('z', lead);
+      }
+    }
+    //TR CB
+    function tickLabel(ms, span) {
+      const d = new Date(ms);
+      if (span <= 2 * 864e5) return pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + '<br>' + pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1);
+      if (span <= 100 * 864e5) return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1) + '<br>' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes());
+      return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
+    }
+    function buildBar() {
+      $('tbg').style.background = 'linear-gradient(90deg,' + CM.map((c, i) => c + ' ' + (i / (CM.length - 1) * 100).toFixed(1) + '%').join(',') + ')';
+      const span = rangeEnd - rangeStart; let h = '';
+      for (let i = 0; i <= 5; i++) h += `<div class="tk" style="left:${i * 20}%"><span>${tickLabel(rangeStart + i / 5 * span, span)}</span></div>`;
+      $('tbx').innerHTML = h;
+      updateBar();
+    }
+    function updateBar() {
+      const span = rangeEnd - rangeStart;
+      $('k0').style.left = sel.a * 100 + '%'; $('k1').style.left = sel.b * 100 + '%';
+      $('tbm0').style.width = sel.a * 100 + '%'; $('tbm1').style.width = (1 - sel.b) * 100 + '%';
+      $('tbA').textContent = fmtUTC(rangeStart + sel.a * span);
+      $('tbB').textContent = fmtUTC(rangeStart + sel.b * span) + ' UTC';
+      $('tbN').textContent = 'reference time';
+    }
+    (function () {
+      const tbt = $('tbt'); let drag = null;
+      const frac = ev => { const r = tbt.getBoundingClientRect(); let f = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)); return f < .005 ? 0 : f > .995 ? 1 : f; };
+      const move = f => { if (drag === 'a') sel.a = Math.min(f, sel.b - .01); else sel.b = Math.max(f, sel.a + .01); updateBar(); scheduleRender(); };
+      tbt.addEventListener('pointerdown', ev => {
+        const f = frac(ev);
+        drag = ev.target.id === 'k0' ? 'a' : ev.target.id === 'k1' ? 'b' : (Math.abs(f - sel.a) < Math.abs(f - sel.b) ? 'a' : 'b');
+        tbt.setPointerCapture(ev.pointerId); move(f);
+      });
+      tbt.addEventListener('pointermove', ev => { if (drag) move(frac(ev)); });
+      tbt.addEventListener('pointerup', () => { drag = null; });
+      tbt.addEventListener('dblclick', () => { sel.a = 0; sel.b = 1; updateBar(); scheduleRender(); });
+    })();
+    let rq = 0, rs = 0;
+    function scheduleRender() { if (rq) return; rq = requestAnimationFrame(() => { rq = 0; render(); }); }
+    function scheduleSec() { if (rs) return; rs = requestAnimationFrame(() => { rs = 0; updateSlab(); drawSection(); draw3D(); }); }
+    function applyFilter() {
+      const sp = rangeEnd - rangeStart, t0 = rangeStart + sel.a * sp, t1 = rangeStart + sel.b * sp;
+      events = allEvents.filter(e => (sel.a <= 0 || e.ms >= t0) && (sel.b >= 1 || e.ms <= t1));
+    }
+    layerGroup.on('click', ev => {
+      const e = ev.layer && ev.layer.ev; if (!e || drawing || drawStart) return;
+      L.popup().setLatLng([e.lat, e.lon]).setContent(`<b>M${e.mag.toFixed(1)}</b><br>${e.place}<br>Depth: ${e.depth} km<br>${e.t.toLocaleString()}<br><a href="https://terremoti.ingv.it/event/${e.eventId}" target="_blank">Details</a>`).openOn(map);
+    });
+    function render() {
+      applyFilter(); updateSlab();
+      layerGroup.clearLayers();
+      events.slice().sort((a, b) => a.mag - b.mag).forEach(e => {
+        const hi = slabSet.has(e);
+        const m = L.circleMarker([e.lat, e.lon], { radius: Math.max(2, e.mag * 2), fillColor: colorOf(e), color: hi ? '#fff' : '#000', weight: hi ? 1.4 : 0.5, opacity: 1, fillOpacity: 0.8 });
+        m.ev = e; m.addTo(layerGroup);
+      });
+      if (swathP) { swathP.bringToFront(); lineP.bringToFront(); }
+      refresh(); setCount(events.length);
+      const lab = RANGES.find(r => r[1] === days)[0].toLowerCase();
+      $('clabel').textContent = 'earthquakes \u00b7 ' + lab + (events.length !== allEvents.length ? ' (selected window)' : '');
+      $('info').textContent = events.length + (events.length !== allEvents.length ? ' / ' + allEvents.length : '') + ' events' + (limitHit ? ' (limit hit)' : '');
+      updateBar(); drawSection(); draw3D();
+    }
 
+    function toggleColor() {
+      colorMode = colorMode === 'time' ? 'mag' : 'time';
+      $('btnColor').textContent = 'Colour: ' + colorMode;
+      $('tbg').classList.toggle('gray', colorMode === 'mag');
+      document.querySelector('.mag-legend').classList.toggle('gray', colorMode === 'time');
+      render();
+    }
+    document.querySelector('.mag-legend').classList.add('gray');
+    function secProj(A, B, width) {
+      const lon0 = A.lng, lat0 = A.lat, ky = 110.57, kx = 111.32 * Math.cos(lat0 * Math.PI / 180);
+      const x = lon => (lon - lon0) * kx, y = lat => (lat - lat0) * ky;
+      const dx = x(B.lng), dy = y(B.lat), L_ = Math.hypot(dx, dy);
+      const ux = L_ > 1e-9 ? dx / L_ : 1, uy = L_ > 1e-9 ? dy / L_ : 0;
+      return { lon0, lat0, kx, ky, L: L_, ux, uy, hw: width / 2,
+        t: (lon, lat) => x(lon) * ux + y(lat) * uy,
+        d: (lon, lat) => -x(lon) * uy + y(lat) * ux };
+    }
+    const secLayer = L.layerGroup().addTo(map);
+    let swathP = null, lineP = null, mA = null, mB = null;
+    function mkHandle(lbl, ll, which) {
+      const m = L.marker(ll, { draggable: true, zIndexOffset: 2000, icon: L.divIcon({ className: '', iconSize: [22, 22], iconAnchor: [11, 11], html: `<div class="hd">${lbl}</div>` }) }).addTo(secLayer);
+      m.on('drag', () => { const p = m.getLatLng(); which === 'A' ? setSec(p, sec.B, false) : setSec(sec.A, p, false); });
+      m.on('dragend', () => scheduleRender());
+      return m;
+    }
+    function setSec(A, B, full) {
+      const w = sec ? sec.width : (+$('secw').value || 25);
+      sec = { A: { lat: A.lat, lng: A.lng }, B: { lat: B.lat, lng: B.lng }, width: w };
+      sec.g = secProj(sec.A, sec.B, w);
+      drawSecShapes();
+      if (full) scheduleRender(); else scheduleSec();
+    }
+    function drawSecShapes() {
+      const g = sec.g, hw = g.hw, inv = (X, Y) => [g.lat0 + Y / g.ky, g.lon0 + X / g.kx];
+      const c = [[-hw * g.uy, hw * g.ux], [g.L * g.ux - hw * g.uy, g.L * g.uy + hw * g.ux], [g.L * g.ux + hw * g.uy, g.L * g.uy - hw * g.ux], [hw * g.uy, -hw * g.ux]].map(p => inv(p[0], p[1]));
+      const ln = [[sec.A.lat, sec.A.lng], [sec.B.lat, sec.B.lng]];
+      if (!swathP) {
+        swathP = L.polygon(c, { color: '#00e5ff', weight: 1.5, dashArray: '6 4', fillColor: '#00e5ff', fillOpacity: .08, interactive: false }).addTo(secLayer);
+        lineP = L.polyline(ln, { color: '#00e5ff', weight: 2.5, interactive: false }).addTo(secLayer);
+        mA = mkHandle('A', ln[0], 'A'); mB = mkHandle('B', ln[1], 'B');
+      } else {
+        swathP.setLatLngs(c); lineP.setLatLngs(ln);
+        if (!drawing || drawStart) { mA.setLatLng(ln[0]); mB.setLatLng(ln[1]); }
+      }
+    }
+    function updateSlab() {
+      slab = []; slabSet = new Set();
+      if (!sec) return;
+      const g = sec.g;
+      events.forEach(e => {
+        const t = g.t(e.lon, e.lat); if (t < 0 || t > g.L) return;
+        const d = g.d(e.lon, e.lat); if (Math.abs(d) > g.hw) return;
+        slab.push({ e, t, d }); slabSet.add(e);
+      });
+    }
+    function toggleDraw(force) {
+      drawing = force !== undefined ? force : !drawing;
+      $('btnDraw').classList.toggle('active', drawing);
+      map.getContainer().style.cursor = drawing ? 'crosshair' : '';
+      drawing ? map.dragging.disable() : map.dragging.enable();
+    }
+    map.on('mousedown', e => { if (drawing) { drawStart = e.latlng; setSec(e.latlng, e.latlng, false); } });
+    map.on('mousemove', e => { if (drawing && drawStart) setSec(drawStart, e.latlng, false); });
+    document.addEventListener('mouseup', () => {
+      if (!(drawing && drawStart)) return;
+      drawStart = null; toggleDraw(false);
+      if (sec.g.L < 1) { clearSection(); return; }
+      showWin(secwin, 10, 90); scheduleRender();
+    });
+    function clearSection() {
+      secLayer.clearLayers(); swathP = lineP = mA = mB = null; sec = null; slab = []; slabSet = new Set();
+      secwin.style.display = 'none'; win3d.style.display = 'none'; $('btn3d').classList.remove('active');
+      scheduleRender();
+    }
+    //finestre popup
+    const secwin = $('secwin'), seccv = $('seccv'), win3d = $('win3d'), cv3 = $('cv3'); let zTop = 1100;
+    function showWin(w, left, top) {
+      if (!w.dataset.placed) { w.style.left = left + 'px'; w.style.top = top + 'px'; w.dataset.placed = 1; }
+      w.style.display = 'flex'; w.style.zIndex = ++zTop; scheduleSec();
+    }
+    function toggle3D() {
+      if (!sec) { $('info').textContent = 'Draw a section line first'; return; }
+      const open = win3d.style.display !== 'flex';
+      if (open) showWin(win3d, Math.max(10, innerWidth - 170 - 350), 10); else win3d.style.display = 'none';
+      $('btn3d').classList.toggle('active', open); $('b3d').classList.toggle('active', open);
+    }
+    [secwin, win3d].forEach(win => {
+      const h = win.querySelector('.wh'); let st = null;
+      win.addEventListener('pointerdown', () => { win.style.zIndex = ++zTop; });
+      h.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; st = { dx: e.clientX - win.offsetLeft, dy: e.clientY - win.offsetTop }; h.setPointerCapture(e.pointerId); });
+      h.addEventListener('pointermove', e => { if (st) { win.style.left = Math.max(0, e.clientX - st.dx) + 'px'; win.style.top = Math.max(0, e.clientY - st.dy) + 'px'; } });
+      h.addEventListener('pointerup', () => { st = null; });
+    });
+    new ResizeObserver(() => drawSection()).observe(secwin);
+    new ResizeObserver(() => draw3D()).observe(win3d);
+    $('secx').onclick = () => { secwin.style.display = 'none'; };
+    $('x3d').onclick = () => { win3d.style.display = 'none'; $('btn3d').classList.remove('active'); $('b3d').classList.remove('active'); };
+    $('b3d').onclick = () => toggle3D();
+    $('b3eq').onclick = () => { v3.eq = !v3.eq; $('b3eq').classList.toggle('active', v3.eq); draw3D(); };
+    $('sec11').onchange = () => drawSection();
+    $('secw').onchange = () => { const w = Math.max(1, +$('secw').value || 25); if (sec) { sec.width = w; sec.g = secProj(sec.A, sec.B, w); drawSecShapes(); scheduleRender(); } };
+
+    function fitCanvas(cv) {
+      const r = cv.parentElement.getBoundingClientRect(), dpr = window.devicePixelRatio || 1, w = Math.max(10, r.width), h = Math.max(10, r.height);
+      if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+      const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); return [c, w, h];
+    }
+    function niceStep(range, n) { const raw = Math.max(range, 1e-9) / n, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p; }
+    function slabDepth() { const dm = slab.reduce((m, s) => Math.max(m, s.e.depth), 0); return Math.max(10, Math.ceil(dm / 10) * 10); }
+    //sez2d
+    let secPts = [];
+    function drawSection() {
+      if (!sec || secwin.style.display !== 'flex') return;
+      const [c, W, H] = fitCanvas(seccv), g = sec.g;
+      c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
+      const ml = 46, mr = 14, mt = 14, mb = 38; let pw = W - ml - mr, ph = H - mt - mb;
+      const D = slabDepth(); let sx = pw / g.L, sy = ph / D;
+      if ($('sec11').checked) { const s = Math.min(sx, sy); sx = sy = s; pw = g.L * s; ph = D * s; }
+      const X = t => ml + t * sx, Y = z => mt + z * sy;
+      c.font = '10px sans-serif'; c.lineWidth = 1;
+      const st = niceStep(g.L, Math.max(2, pw / 70)), sz = niceStep(D, Math.max(2, ph / 40));
+      c.textAlign = 'center';
+      for (let t = 0; t <= g.L + 1e-6; t += st) { const x = X(t); c.strokeStyle = '#e3e3e3'; c.beginPath(); c.moveTo(x, mt); c.lineTo(x, mt + ph); c.stroke(); c.fillStyle = '#000'; c.fillText(+t.toFixed(3), x, mt + ph + 12); }
+      c.textAlign = 'right';
+      for (let z = 0; z <= D + 1e-6; z += sz) { const y = Y(z); c.strokeStyle = '#e3e3e3'; c.beginPath(); c.moveTo(ml, y); c.lineTo(ml + pw, y); c.stroke(); c.fillStyle = '#000'; c.fillText(+z.toFixed(3), ml - 4, y + 3); }
+      c.strokeStyle = '#000'; c.strokeRect(ml, mt, pw, ph);
+      c.textAlign = 'center'; c.font = '11px sans-serif'; c.fillStyle = '#000';
+      c.fillText('Distance A \u2192 B (km)', ml + pw / 2, H - 6);
+      c.save(); c.translate(11, mt + ph / 2); c.rotate(-Math.PI / 2); c.fillText('Depth (km)', 0, 0); c.restore();
+      c.font = 'bold 12px sans-serif'; c.fillStyle = '#006978'; c.textAlign = 'left'; c.fillText('A', ml + 4, mt + 13); c.textAlign = 'right'; c.fillText('B', ml + pw - 4, mt + 13);
+      secPts = [];
+      slab.slice().sort((a, b) => a.e.mag - b.e.mag).forEach(s => {
+        const r = Math.max(2, s.e.mag * 1.8), x = X(s.t), y = Y(s.e.depth);
+        c.beginPath(); c.arc(x, y, r, 0, 6.2832); c.globalAlpha = .85; c.fillStyle = colorOf(s.e); c.fill(); c.globalAlpha = 1; c.lineWidth = .6; c.strokeStyle = '#000'; c.stroke();
+        secPts.push({ x, y, r, s });
+      });
+      const f = p => p.lat.toFixed(3) + ', ' + p.lng.toFixed(3);
+      $('sectitle').textContent = 'Section A (' + f(sec.A) + ') \u2192 B (' + f(sec.B) + ')';
+      $('secinfo').textContent = slab.length + ' events \u00b7 L = ' + g.L.toFixed(1) + ' km \u00b7 d \u2264 ' + g.hw + ' km';
+    }
+    seccv.addEventListener('mousemove', ev => {
+      const r = seccv.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top, tip = $('sectip');
+      let best = null, bd = 1e9;
+      secPts.forEach(p => { const d = Math.hypot(p.x - x, p.y - y); if (d < p.r + 4 && d < bd) { bd = d; best = p; } });
+      if (!best) { tip.style.display = 'none'; return; }
+      const e = best.s.e;
+      tip.innerHTML = `<b>M${e.mag}</b> &middot; depth ${e.depth} km<br>lat ${e.lat} &middot; lon ${e.lon}<br>${e.t.toISOString().slice(0, 19)}Z<br>t ${best.s.t.toFixed(1)} km &middot; d ${best.s.d.toFixed(1)} km`;
+      tip.style.display = 'block'; tip.style.left = Math.min(x + 12, r.width - 190) + 'px'; tip.style.top = Math.max(0, y - 62) + 'px';
+    });
+    seccv.addEventListener('mouseleave', () => { $('sectip').style.display = 'none'; });
+    //sez3D
+    function draw3D() {
+      if (win3d.style.display !== 'flex') return;
+      const [c, W, H] = fitCanvas(cv3);
+      c.fillStyle = '#0f1722'; c.fillRect(0, 0, W, H);
+      if (!sec) return;
+      const g = sec.g, D = slabDepth(), hx = g.L / 2, hy = g.hw, hz = D / 2, m = Math.max(hx, hy, hz);
+      const sx = v3.eq ? 1 / m : 1 / hx, sy = v3.eq ? 1 / m : 1 / hy, sz = v3.eq ? 1 / m : 1 / hz;
+      const ex = hx * sx, ey = hy * sy, ez = hz * sz;
+      const ca = Math.cos(v3.az), sa = Math.sin(v3.az), ce = Math.cos(v3.el), se = Math.sin(v3.el), sc = Math.min(W, H) * 0.27 * v3.zoom;
+      const P = (X, Y, Z) => { const x1 = X * ca - Y * sa, y1 = X * sa + Y * ca, w = y1 * ce + Z * se, f = 1 / (1 + 0.15 * w); return [W / 2 + x1 * f * sc, H / 2 + (Z * ce - y1 * se) * f * sc, w, f]; };
+      const cs = []; for (let i = 0; i < 8; i++) cs.push(P((i & 1 ? 1 : -1) * ex, (i & 2 ? 1 : -1) * ey, (i & 4 ? 1 : -1) * ez));
+      c.beginPath(); [0, 1, 3, 2].forEach((i, k) => k ? c.lineTo(cs[i][0], cs[i][1]) : c.moveTo(cs[i][0], cs[i][1])); c.closePath();
+      c.fillStyle = 'rgba(80,160,255,.14)'; c.fill();
+      c.strokeStyle = 'rgba(190,205,230,.55)'; c.lineWidth = 1;
+      for (let i = 0; i < 8; i++) [1, 2, 4].forEach(b => { if (!(i & b)) { c.beginPath(); c.moveTo(cs[i][0], cs[i][1]); c.lineTo(cs[i | b][0], cs[i | b][1]); c.stroke(); } });
+      const pts = slab.map(s => ({ p: P((s.t - hx) * sx, s.d * sy, (s.e.depth - hz) * sz), s })).sort((a, b) => b.p[2] - a.p[2]);
+      pts.forEach(({ p, s }) => {
+        const r = Math.max(1.5, s.e.mag * 1.5) * p[3] * Math.sqrt(v3.zoom);
+        c.beginPath(); c.arc(p[0], p[1], r, 0, 6.2832); c.globalAlpha = .9; c.fillStyle = colorOf(s.e); c.fill(); c.globalAlpha = 1; c.lineWidth = .5; c.strokeStyle = '#000'; c.stroke();
+      });
+      c.font = 'bold 12px sans-serif'; c.fillStyle = '#00e5ff'; c.textAlign = 'center';
+      const pa = P(-ex, 0, -ez), pb = P(ex, 0, -ez); c.fillText('A', pa[0], pa[1] - 6); c.fillText('B', pb[0], pb[1] - 6);
+      c.font = '10px sans-serif'; c.fillStyle = '#aab6c8'; c.textAlign = 'left';
+      const p0 = P(-ex, -ey, -ez), p1 = P(-ex, -ey, ez); c.fillText('0 km', p0[0] + 4, p0[1] - 3); c.fillText(D + ' km', p1[0] + 4, p1[1] + 11);
+      $('info3').textContent = slab.length + ' events \u00b7 ' + g.L.toFixed(0) + '\u00d7' + sec.width + '\u00d7' + D + ' km \u00b7 drag = rotate, wheel = zoom';
+    }
+    (function () {
+      let st = null;
+      cv3.addEventListener('pointerdown', e => { st = { x: e.clientX, y: e.clientY }; cv3.setPointerCapture(e.pointerId); });
+      cv3.addEventListener('pointermove', e => { if (!st) return; v3.az += (e.clientX - st.x) * 0.01; v3.el = Math.max(-1.5, Math.min(1.5, v3.el + (e.clientY - st.y) * 0.01)); st = { x: e.clientX, y: e.clientY }; draw3D(); });
+      cv3.addEventListener('pointerup', () => { st = null; });
+      cv3.addEventListener('wheel', e => { e.preventDefault(); v3.zoom = Math.max(.3, Math.min(6, v3.zoom * Math.exp(-e.deltaY * 0.001))); draw3D(); }, { passive: false });
+      cv3.addEventListener('dblclick', () => { v3.az = -35 * Math.PI / 180; v3.el = 25 * Math.PI / 180; v3.zoom = 1; draw3D(); });
+    })();
+    //esportaJPG
+    async function exportJPG() {
+      const btn = $('btnExp'); btn.disabled = true; btn.textContent = 'Exporting...';
+      try {
+        const Z = 9, T = 256, SC = T * Math.pow(2, Z), S = 1.6;
+        const mx = lon => (lon + 180) / 360 * SC;
+        const my = lat => { const r = lat * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * SC; };
+        const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
+        const x0 = mx(sw.lng), x1 = mx(ne.lng), y0 = my(ne.lat), y1 = my(sw.lat);
+        const W = Math.round(x1 - x0), H = Math.round(y1 - y0);
+        const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+        const c = cv.getContext('2d'); c.fillStyle = '#1a1a1a'; c.fillRect(0, 0, W, H);
+        const jobs = [];
+        for (let ty = Math.floor(y0 / T); ty <= Math.floor((y1 - 1) / T); ty++) for (let tx = Math.floor(x0 / T); tx <= Math.floor((x1 - 1) / T); tx++)
+          jobs.push(new Promise(res => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { c.drawImage(im, tx * T - x0, ty * T - y0); res(1); }; im.onerror = () => res(0);
+            im.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${Z}/${ty}/${tx}`; }));
+        const okTiles = (await Promise.all(jobs)).reduce((a, b) => a + b, 0);
+        const P = (lon, lat) => [mx(lon) - x0, my(lat) - y0];
+        const mxn = Math.max(1, ...AREAS.map(a => a.n));
+        if (on.poly) AREAS.slice().sort((a, b) => b.ar - a.ar).forEach(a => {
+          c.beginPath(); a.h.forEach((p, i) => { const q = P(p[0], p[1]); i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]); }); c.closePath();
+          c.globalAlpha = .35; c.fillStyle = areaColor(a, mxn); c.fill(); c.globalAlpha = 1; c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke();
+        });
+        events.slice().sort((a, b) => a.mag - b.mag).forEach(e => {
+          const q = P(e.lon, e.lat), hi = slabSet.has(e);
+          c.beginPath(); c.arc(q[0], q[1], Math.max(2, e.mag * 2) * S, 0, 6.2832); c.globalAlpha = .8; c.fillStyle = colorOf(e); c.fill(); c.globalAlpha = 1; c.lineWidth = hi ? 2 : .8; c.strokeStyle = hi ? '#fff' : '#000'; c.stroke();
+        });
+        if (on.bars) AREAS.filter(a => a.n).forEach(a => {
+          const h = (6 + Math.round(70 * a.n / mxn)) * S, q = P(a.cx, a.cy);
+          c.fillStyle = 'rgba(8,81,156,.85)'; c.fillRect(q[0] - 8 * S, q[1] - h, 16 * S, h); c.strokeStyle = '#000'; c.lineWidth = 1; c.strokeRect(q[0] - 8 * S, q[1] - h, 16 * S, h);
+          c.font = 'bold ' + 11 * S + 'px sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#fff'; c.strokeText(a.n, q[0], q[1] - h - 4); c.fillStyle = '#000'; c.fillText(a.n, q[0], q[1] - h - 4);
+        });
+        if (sec) {
+          const g = sec.g, hw = g.hw, inv = (X, Y) => P(g.lon0 + X / g.kx, g.lat0 + Y / g.ky);
+          const cs = [[-hw * g.uy, hw * g.ux], [g.L * g.ux - hw * g.uy, g.L * g.uy + hw * g.ux], [g.L * g.ux + hw * g.uy, g.L * g.uy - hw * g.ux], [hw * g.uy, -hw * g.ux]].map(p => inv(p[0], p[1]));
+          c.beginPath(); cs.forEach((q, i) => i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1])); c.closePath();
+          c.fillStyle = 'rgba(0,229,255,.1)'; c.fill(); c.setLineDash([14, 9]); c.strokeStyle = '#00e5ff'; c.lineWidth = 2.5; c.stroke(); c.setLineDash([]);
+          const a = P(sec.A.lng, sec.A.lat), b = P(sec.B.lng, sec.B.lat);
+          c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.lineWidth = 4; c.stroke();
+          c.font = 'bold 28px sans-serif'; c.textAlign = 'center'; c.lineWidth = 5; c.strokeStyle = '#000'; c.fillStyle = '#00e5ff';
+          [['A', a], ['B', b]].forEach(([l, q]) => { c.strokeText(l, q[0], q[1] - 12); c.fillText(l, q[0], q[1] - 12); });
+        }
+        if (chartMode) { const cc = $('cv'); c.fillStyle = '#fff'; c.fillRect(20, H - cc.height - 40, cc.width + 16, cc.height + 16); c.drawImage(cc, 28, H - cc.height - 32); }
+        //titolo
+        const sp = rangeEnd - rangeStart, t0 = rangeStart + sel.a * sp, t1 = rangeStart + sel.b * sp;
+        const title = events.length + ' earthquakes', sub = fmtUTC(t0) + ' \u2192 ' + fmtUTC(t1) + ' UTC';
+        c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(W / 2 - 330, 24, 660, 92);
+        c.fillStyle = '#fff'; c.textAlign = 'center'; c.font = 'bold 44px sans-serif'; c.fillText(title, W / 2, 72); c.font = '24px sans-serif'; c.fillText(sub, W / 2, 104);
+        //CB basso centrale
+        const bw = 1100, bh = 34, bx = W / 2 - bw / 2, by = H - 120;
+        c.fillStyle = 'rgba(255,255,255,.9)'; c.fillRect(bx - 50, by - 20, bw + 100, 118);
+        if (colorMode === 'time') {
+          const gr = c.createLinearGradient(bx, 0, bx + bw, 0); CM.forEach((col, i) => gr.addColorStop(i / (CM.length - 1), col));
+          c.fillStyle = gr; c.fillRect(bx, by, bw, bh); c.strokeStyle = '#000'; c.lineWidth = 2; c.strokeRect(bx, by, bw, bh);
+          c.fillStyle = '#000'; c.font = '20px sans-serif'; c.textAlign = 'center';
+          for (let i = 0; i <= 5; i++) { const x = bx + i / 5 * bw, d = new Date(rangeStart + i / 5 * sp), lab = sp <= 100 * 864e5 ? pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) : fmtUTC(d).slice(0, 10);
+            c.fillRect(x - 1, by + bh, 2, 8); c.fillText(lab, x, by + bh + 30); }
+          c.fillStyle = 'rgba(255,255,255,.75)'; c.fillRect(bx, by, sel.a * bw, bh); c.fillRect(bx + sel.b * bw, by, (1 - sel.b) * bw, bh);
+        } else { c.fillStyle = '#000'; c.font = '22px sans-serif'; c.textAlign = 'center'; c.fillText('colour = magnitude', W / 2, by + 20); }
+        //filtro su area
+        c.strokeStyle = '#ff7800'; c.lineWidth = 8; c.strokeRect(4, 4, W - 8, H - 8);
+        const d = new Date(), name = d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + '.jpg';
+        const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.92));
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+        $('info').textContent = name + (okTiles ? '' : ' (no map tiles)');
+      } catch (err) { console.error(err); $('info').textContent = 'Export error'; }
+      btn.disabled = false; btn.textContent = 'Export JPG';
+    }
     async function fetchEarthquakes() {
       const id = ++reqId;
-      const info = document.getElementById('info');
+      const info = $('info');
       info.textContent = 'Loading...';
       const fmt = d => d.toISOString().slice(0, 19);
       const end = new Date(), start = new Date(end - days * 864e5);
@@ -277,25 +719,16 @@ const AREAS = [
       try {
         const res = await fetch(url);
         if (id !== reqId) return;
-        if (res.status === 204) { layerGroup.clearLayers(); events = []; refresh(); info.textContent = '0 events'; return; }
+        if (res.status === 204) { allEvents = []; limitHit = false; rangeStart = start.getTime(); rangeEnd = end.getTime(); buildBar(); render(); return; }
         if (!res.ok) { info.textContent = 'Error ' + res.status; return; }
         const data = await res.json();
         if (id !== reqId) return;
-        layerGroup.clearLayers();
-        events = data.features.map(f => ({ lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], depth: f.geometry.coordinates[2],
-          mag: Number(f.properties.mag) || 0, t: new Date(f.properties.time) }));
-        data.features.sort((a, b) => (a.properties.mag || 0) - (b.properties.mag || 0)).forEach(f => {
-          const [lon, lat, depth] = f.geometry.coordinates;
-          const { mag, place, time, eventId } = f.properties;
-          const m = Number(mag) || 0;
-          L.circleMarker([lat, lon], {
-            radius: Math.max(2, m * 2), fillColor: magColor(m),
-            color: '#000', weight: 0.5, opacity: 1, fillOpacity: 0.8
-          }).bindPopup(`<b>M${m.toFixed(1)}</b><br>${place}<br>Depth: ${depth} km<br>${new Date(time).toLocaleString()}<br><a href="https://terremoti.ingv.it/event/${eventId}" target="_blank">Details</a>`)
-            .addTo(layerGroup);
-        });
-        refresh();
-        info.textContent = data.features.length + ' events' + (data.features.length >= 10000 ? ' (limit hit)' : '');
+        //[lon, lat, depth_km], properties.mag
+        allEvents = data.features.map(f => ({ lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], depth: f.geometry.coordinates[2],
+          mag: Number(f.properties.mag) || 0, t: new Date(f.properties.time), ms: Date.parse(f.properties.time), place: f.properties.place, eventId: f.properties.eventId }));
+        limitHit = data.features.length >= 10000;
+        rangeStart = start.getTime(); rangeEnd = end.getTime();
+        buildBar(); render();
       } catch (e) {
         console.error('INGV fetch error:', e);
         info.textContent = 'Fetch error';
