@@ -44,7 +44,7 @@
     #eqtip { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 7px; width: 232px; background: #262930; border: 1px solid #3a3d45; border-radius: 5px; padding: 6px 8px; font: 11px/1.4 sans-serif; color: #ccc; text-align: left; z-index: 1002; box-shadow: 0 2px 8px rgba(0,0,0,.6); }
     /*RT CB */
     #timebar { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); width: min(520px, 34vw); z-index: 1001; background: rgba(255,255,255,.93); border-radius: 6px; padding: 5px 30px 3px; box-shadow: 0 1px 5px rgba(0,0,0,.5); font: 11px sans-serif; user-select: none; }
-    #timebar .tbh { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 5px; white-space: nowrap; }
+    #timebar .tbh, #depthbar .tbh { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 5px; white-space: nowrap; }
     .tbt { position: relative; height: 16px; cursor: pointer; touch-action: none; }
     .tbg { position: absolute; inset: 0; border: 1px solid #000; border-radius: 2px; }
     .tbg.gray { filter: grayscale(1); }
@@ -53,6 +53,10 @@
     .tbx { position: relative; height: 28px; margin-top: 3px; }
     .tbx .tk { position: absolute; top: 0; height: 5px; border-left: 1px solid #333; }
     .tbx .tk span { position: absolute; top: 6px; left: 0; transform: translateX(-50%); white-space: nowrap; font-size: 10px; text-align: center; line-height: 11px; }
+    #depthbar { position: absolute; bottom: 96px; left: 50%; transform: translateX(-50%); width: min(520px, 34vw); z-index: 1001; background: rgba(255,255,255,.93); border-radius: 6px; padding: 5px 30px 3px; box-shadow: 0 1px 5px rgba(0,0,0,.5); font: 11px sans-serif; user-select: none; display: none; }
+    .bbpop { min-width: 64px; text-align: center; }
+    .bbwait { font: 11px sans-serif; color: #666; }
+    .bblab { font: 10px sans-serif; color: #333; margin-top: 2px; }
     /*POPUP */
     .win { position: absolute; z-index: 1100; background: #fff; border-radius: 6px; box-shadow: 0 2px 12px rgba(0,0,0,.55); display: none; flex-direction: column; resize: both; overflow: hidden; min-width: 260px; min-height: 190px; font: 12px sans-serif; }
     .win .wh { background: #2b2f36; color: #fff; padding: 4px 6px; cursor: move; display: flex; justify-content: space-between; align-items: center; gap: 8px; user-select: none; touch-action: none; }
@@ -92,6 +96,16 @@
     </div>
     <div id="eqtip">Paste an INGV event id (e.g. <b>33456781</b>) and press &#10132;: the event is downloaded on its own and centred on the map. Click the star to get the waveform / picks links.</div>
   </div>
+    <div id="depthbar">
+    <div class="tbh"><span id="dbA">0 km</span><b id="dbN">depth</b><span id="dbB">— km</span></div>
+    <div class="tbt" id="dbt">
+      <div class="tbg" id="dbg"></div>
+      <div class="tbm" id="dbm0" style="left:0;width:0"></div>
+      <div class="tbm" id="dbm1" style="right:0;width:0"></div>
+      <div class="tbk" id="dk0" style="left:0"></div>
+      <div class="tbk" id="dk1" style="left:100%"></div>
+    </div>
+  </div>
   <div id="timebar">
     <div class="tbh"><span id="tbA"></span><b id="tbN"></b><span id="tbB"></span></div>
     <div class="tbt" id="tbt">
@@ -121,7 +135,7 @@
   </div>
 
   <div class="win" id="helpwin" style="width:430px;height:440px">
-    <div class="wh"><span>Info &amp; help</span><span><button id="helpx">&#10005;</button></span></div>
+    <div class="wh"><span>Information</span><span><button id="helpx">&#10005;</button></span></div>
     <div class="wb"></div>
   </div>
 
@@ -200,6 +214,7 @@ const AREAS = [
 ["Piana batiale ionica",[[37.8876,15.5676],[37.8889,15.583],[37.881,15.593],[37.849,15.601],[37.723,15.832],[37.723,16.238],[37.7438,16.2314],[37.744,16.238],[37.744,16.278],[38.101,16.509],[38.1343,16.509],[38.143,16.5151],[38.143,16.59],[38.268,16.955],[38.625,16.955],[38.761,17.158],[38.771,17.158],[38.782,17.483],[39.495,17.497],[39.495,17.538],[39.7308,18.313],[39.7308,18.3131],[39.736,18.35],[37.01,17.998],[37.0309,15.5052],[37.031,15.507],[37.556,15.344],[37.87,15.561],[37.881,15.561]],37.671,17.24],
 ["Ofanto",[[41.109,16.062],[40.868,15.804],[40.868,15.75],[41.046,15.547],[41.088,15.547],[41.361,16.184],[41.287,16.427],[41.245,16.427]],41.046,15.777],
 ["Capitanata",[[41.382,16.17],[41.3577,16.1764],[41.088,15.547],[41.078,15.547],[41.078,15.507],[41.245,15.29],[41.612,15.331],[41.654,15.358],[41.686,15.656],[41.444,16.008]],41.382,15.628]
+
 ];
     const polyArea = h => Math.abs(h.reduce((s, p, i) => { const q = h[(i+1) % h.length]; return s + p[0]*q[1] - q[0]*p[1]; }, 0)) / 2;
     function inside(h, x, y) {
@@ -261,9 +276,11 @@ const AREAS = [
     let reqId = 0, allEvents = [], events = [], chartMode = null, limitHit = false;
     let rangeStart = Date.now() - days * 864e5, rangeEnd = Date.now();
     const sel = { a: 0, b: 1 };
-    let colorMode = 'time';                 // 'time' | 'mag' | 'kde'
+    let colorMode = 'time';                 //time|mag|kde|depth
     let kdeBW = 10;
-    const on = { poly: false, bars: false, kde: false };
+    const on = { poly: false, bars: false, kde: false, beach: false };
+    let depthMin = 0, depthMax = 200;
+    const dsel = { a: 0, b: 1 };            //finestra prof (frazioni depthMin/depthMax)
     let showEvents = true;
     let secs = [], activeSec = null, drawing = false, drawStart = null, drawPreviewSec = null;
     const secLayer = L.layerGroup().addTo(map);
@@ -273,7 +290,7 @@ const AREAS = [
     function magColor(m) {
       return m >= 5 ? '#800026' : m >= 4 ? '#BD0026' : m >= 3 ? '#E31A1C' : m >= 2 ? '#FC4E2A' : m >= 1 ? '#FD8D3C' : '#FFEDA0';
     }
-    //CMtempo: vecchio -> recente
+    //CMtempo: vecchio recente
     const CM = ['#5b3cc4', '#2f7fe0', '#1fc8b8', '#a6e02f', '#ffc414', '#ff3b1f'];
     const CMrgb = CM.map(h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)));
     function cmap(f) {
@@ -295,9 +312,199 @@ const AREAS = [
       return KDE_STOPS.map((st, i) =>
         `<stop offset="${(i * 100 / (KDE_STOPS.length - 1)).toFixed(1)}%" stop-color="rgb(${st.join(',')})"/>`).join('');
     }
+    const DEPTH_STOPS = [[198,219,239],[158,202,225],[107,174,214],[66,146,198],[33,113,181],[8,69,148],[8,48,107]];
+    function depthColorRGB(v) {
+      v = Math.max(0, Math.min(1, v || 0));
+      const p = v * (DEPTH_STOPS.length - 1);
+      const i = Math.min(DEPTH_STOPS.length - 2, Math.floor(p)), u = p - i;
+      const a = DEPTH_STOPS[i], b = DEPTH_STOPS[i + 1];
+      return [0, 1, 2].map(k => Math.round(a[k] + (b[k] - a[k]) * u));
+    }
+    function depthColor(d) {
+      return 'rgb(' + depthColorRGB((d - depthMin) / Math.max(1, depthMax - depthMin)).join(',') + ')';
+    }
+    function depthGradientStops() {
+      return DEPTH_STOPS.map((st, i) =>
+        `<stop offset="${(i * 100 / (DEPTH_STOPS.length - 1)).toFixed(1)}%" stop-color="rgb(${st.join(',')})"/>`).join('');
+    }    
+    //foc mec
+    function rgbOf(c) {
+      if (typeof c !== 'string') return [0, 0, 0];
+      if (c[0] === '#') {
+        let h = c.slice(1);
+        if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+        return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+      }
+      const m = c.match(/\d+/g);
+      return m ? [+m[0], +m[1], +m[2]] : [0, 0, 0];
+    }
+    //strike, dip, rake x=N y=E z=Down
+    function mecaTensor(strike, dip, rake) {
+      const p = strike*Math.PI/180, d = dip*Math.PI/180, l = rake*Math.PI/180;
+      const sp = Math.sin(p), cp = Math.cos(p), sd = Math.sin(d), cd = Math.cos(d), sl = Math.sin(l), cl = Math.cos(l);
+      const s = [cp, sp, 0];                            // strike dir
+      const u = [sp*cd, -cp*cd, -sd];                   // up-dip
+      const n = [sp*sd, -cp*sd, cd];                    // fault normal
+      const slip = [s[0]*cl + u[0]*sl, s[1]*cl + u[1]*sl, s[2]*cl + u[2]*sl];
+      const M = [[0,0,0],[0,0,0],[0,0,0]];
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) M[i][j] = slip[i]*n[j] + n[i]*slip[j];
+      return M;
+    }
+    //emisfero in basso (nero compressionale) 
+    const _bbCache = new Map();
+    function beachballCanvas(strike, dip, rake, size, fill) {
+      fill = fill || '#000000';
+      const key = (+strike).toFixed(1)+'_'+(+dip).toFixed(1)+'_'+(+rake).toFixed(1)+'_'+size+'_'+fill;
+      if (_bbCache.has(key)) return _bbCache.get(key);
+      const SS = 3, N = Math.max(24, Math.round(size * SS));
+      const tmp = document.createElement('canvas'); tmp.width = tmp.height = N;
+      const g = tmp.getContext('2d');
+      const img = g.createImageData(N, N);
+      const M = mecaTensor(+strike, +dip, +rake), fc = rgbOf(fill);
+      const c0 = N / 2, Rr = N / 2 - 1, inv = 1 / (Rr * Math.SQRT2);
+      for (let py = 0; py < N; py++) {
+        const dy = c0 - (py + 0.5);
+        for (let px = 0; px < N; px++) {
+          const dx = (px + 0.5) - c0;
+          const idx = (py * N + px) * 4;
+          const rr = Math.sqrt(dx*dx + dy*dy);
+          if (rr > Rr) { img.data[idx + 3] = 0; continue; }
+          const th = 2 * Math.asin(Math.min(1, rr * inv));   // rr = R*sqrt(2)*sin(th/2)
+          const az = Math.atan2(dx, dy);                     // azimuth antior da N
+          const st = Math.sin(th), ct = Math.cos(th);
+          const r0 = st * Math.cos(az), r1 = st * Math.sin(az), r2 = ct;
+          const A = r0*(M[0][0]*r0 + M[0][1]*r1 + M[0][2]*r2)
+                  + r1*(M[1][0]*r0 + M[1][1]*r1 + M[1][2]*r2)
+                  + r2*(M[2][0]*r0 + M[2][1]*r1 + M[2][2]*r2);
+          if (A > 0) { img.data[idx] = fc[0]; img.data[idx+1] = fc[1]; img.data[idx+2] = fc[2]; }
+          else       { img.data[idx] = 255;   img.data[idx+1] = 255;   img.data[idx+2] = 255;   }
+          img.data[idx + 3] = 255;
+        }
+      }
+      g.putImageData(img, 0, 0);
+      const N2 = Math.round(size * 2);
+      const out = document.createElement('canvas'); out.width = out.height = N2;
+      const oc = out.getContext('2d');
+      oc.imageSmoothingEnabled = true; oc.imageSmoothingQuality = 'high';
+      oc.drawImage(tmp, 0, 0, N2, N2);
+      oc.beginPath(); oc.arc(N2/2, N2/2, N2/2 - 1, 0, 6.283185307);
+      oc.lineWidth = Math.max(1, N2/32); oc.strokeStyle = '#000'; oc.stroke();
+      if (_bbCache.size > 3000) _bbCache.clear();
+      _bbCache.set(key, out);
+      return out;
+    }
+	//INGV quakeml 
+    const mecaCache = new Map();      // eventId strike,dip,rake o null
+    const mecaPending = new Set();
+    const mecaQueue = [];
+    let mecaActive = 0;
+    const MECA_CONC = 5;
+
+    function parseMecaEl(ev) {
+      const np = ev.getElementsByTagNameNS('*', 'nodalPlane1')[0];
+      if (!np) return null;
+      const v = nm => {
+        const el = np.getElementsByTagNameNS('*', nm)[0];
+        if (!el) return NaN;
+        const val = el.getElementsByTagNameNS('*', 'value')[0];
+        return parseFloat(val ? val.textContent : el.textContent);
+      };
+      const strike = v('strike'), dip = v('dip'), rake = v('rake');
+      return [strike, dip, rake].every(isFinite) ? { strike, dip, rake } : null;
+    }
+    function parseMecaDoc(doc) {
+      const out = new Map();
+      const evs = doc.getElementsByTagNameNS('*', 'event');
+      for (let i = 0; i < evs.length; i++) {
+        const ev = evs[i];
+        const pid = ev.getAttribute('publicID') || '';
+        const mm = pid.match(/eventid=(\d+)/) || pid.match(/(\d+)\s*$/);
+        if (!mm) continue;
+        const fm = ev.getElementsByTagNameNS('*', 'focalMechanism')[0];
+        out.set(mm[1], fm ? parseMecaEl(fm) : null);
+      }
+      return out;
+    }
+    async function fetchMeca(id) {
+      id = String(id);
+      if (mecaCache.has(id)) return mecaCache.get(id);
+      const url = 'https://webservices.ingv.it/fdsnws/event/1/query?format=xml&includemomenttensor=true&eventid=' + encodeURIComponent(id);
+      let res = null;
+      try {
+        const r = await fetch(url);
+        if (r.ok) {
+          const m = parseMecaDoc(new DOMParser().parseFromString(await r.text(), 'application/xml'));
+          res = m.has(id) ? m.get(id) : (m.size ? [...m.values()][0] : null);
+        }
+      } catch (e) { console.warn('meca', id, e); }
+      mecaCache.set(id, res);
+      return res;
+    }
+    function queueMeca(id) {
+      id = String(id);
+      if (mecaCache.has(id) || mecaPending.has(id)) return;
+      mecaPending.add(id); mecaQueue.push(id); pumpMeca();
+    }
+    let mTimer = null;
+    function scheduleMarkers() {
+      if (mTimer) return;
+      mTimer = setTimeout(() => { mTimer = null; renderMarkers(); }, 250);
+    }
+    function pumpMeca() {
+      while (mecaActive < MECA_CONC && mecaQueue.length) {
+        const id = mecaQueue.shift();
+        mecaActive++;
+        fetchMeca(id).catch(() => {}).then(() => {
+          mecaActive--; mecaPending.delete(id);
+          if (on.beach) scheduleMarkers();
+          pumpMeca();
+        });
+      }
+    }
+    function beachIcon(e, m) {
+      const size = Math.max(12, Math.min(34, Math.round(8 + e.mag * 4)));
+      const cv = beachballCanvas(m.strike, m.dip, m.rake, size, colorOf(e));
+      if (!cv._dataUrl) cv._dataUrl = cv.toDataURL();
+      return L.divIcon({ className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2],
+        html: `<img src="${cv._dataUrl}" width="${size}" height="${size}" style="display:block;pointer-events:none">` });
+    }
+    function fillPopupMeca(e) {
+      const holder = document.getElementById('bbpop-' + e.eventId);
+      if (!holder) return;
+      holder.innerHTML = '<div class="bbwait">loading…</div>';
+      fetchMeca(e.eventId).then(m => {
+        const h = document.getElementById('bbpop-' + e.eventId);
+        if (!h) return;
+        if (!m) { h.innerHTML = '<div class="bbwait">no MT</div>'; return; }
+        h.innerHTML = '';
+        const cv = beachballCanvas(m.strike, m.dip, m.rake, 64, '#000000');
+        cv.style.width = cv.style.height = '64px';
+        h.appendChild(cv);
+        const lab = document.createElement('div');
+        lab.className = 'bblab';
+        lab.textContent = m.strike.toFixed(0) + '/' + m.dip.toFixed(0) + '/' + m.rake.toFixed(0);
+        h.appendChild(lab);
+      });
+    }
+    function openEventPopup(e, opts) {
+      L.popup(Object.assign({ maxWidth: 340 }, opts || {}))
+        .setLatLng([e.lat, e.lon]).setContent(eventPopupHTML(e)).openOn(map);
+      setTimeout(() => fillPopupMeca(e), 0);
+    }
+
+    function applyFilter() {
+      const sp = rangeEnd - rangeStart, t0 = rangeStart + sel.a * sp, t1 = rangeStart + sel.b * sp;
+      const d0 = depthMin + dsel.a * (depthMax - depthMin);
+      const d1 = depthMin + dsel.b * (depthMax - depthMin);
+      const useD = colorMode === 'depth';
+      events = allEvents.filter(e => (sel.a <= 0 || e.ms >= t0) && (sel.b >= 1 || e.ms <= t1)
+                                   && (!useD || (e.depth >= d0 && e.depth <= d1)));
+    }
+        
     function colorOf(e) {
       if (colorMode === 'time') return cmap((e.ms - rangeStart) / Math.max(1, rangeEnd - rangeStart));
       if (colorMode === 'mag') return magColor(e.mag);
+      if (colorMode === 'depth') return depthColor(e.depth);
       if (colorMode === 'kde') return kdeColor(e.kde ?? 0);
       return '#999';
     }
@@ -409,7 +616,7 @@ const AREAS = [
       const c = cv.getContext('2d');
       const img = c.createImageData(gw, gh);
       for (let j = 0; j < gh; j++) {
-        const row = gh - 1 - j;                 //row 0 = north
+        const row = gh - 1 - j;                 //row 0 nord
         for (let i = 0; i < gw; i++) {
           const v = norm[j * gw + i];
           const idx = (row * gw + i) * 4;
@@ -428,15 +635,6 @@ const AREAS = [
       if (kdeOverlay) { kdeOverlay.setUrl(url); kdeOverlay.setBounds(bnds); }
       else kdeOverlay = L.imageOverlay(url, bnds, { pane: 'kde', opacity: 0.85, interactive: false }).addTo(map);
       updateLegends();
-    }
-    function updateLegends() {
-      const ml = $('magLegend'), kl = $('kdeLegend');
-      if (ml) {
-        ml.style.display = colorMode === 'kde' ? 'none' : 'block';
-        const svg = ml.querySelector('svg');
-        if (svg) svg.style.filter = colorMode === 'time' ? 'grayscale(1)' : 'none';
-      }
-      if (kl) kl.style.display = (colorMode === 'kde' || on.kde) ? 'block' : 'none';
     }
     function toggleEvents() {
       showEvents = !showEvents;
@@ -501,6 +699,8 @@ const AREAS = [
       act('btnColor', 'Colour: time', () => toggleColor());
       act('btnDiss', 'DISS sources', () => toggleDISS());
       act('btnExp', 'Export JPG', () => exportJPG());
+      act('btnBB', 'Beachballs: off', () => toggleBeach());
+      act('btnCat', 'Export catalog (+S/D/R)', () => exportCatalogMeca());      
       div.appendChild(document.createElement('hr'));
       const kd = L.DomUtil.create('div', 'info', div);
       kd.innerHTML = 'KDE bandwidth: <input id="kdeBW" type="number" value="10" min="1" max="200" step="1" style="width:52px"> km';
@@ -545,7 +745,15 @@ const AREAS = [
 		'<rect width="120" height="14" fill="url(#kdeGrad)" stroke="#000"/></svg>' +
 		'<div style="font-size:10px;display:flex;justify-content:space-between;width:120px;margin:0 auto;"><span>0</span><span>1</span></div>' +
 		'<div style="font-size:10px;color:#666;margin-top:2px">log-normalised &middot; bwr</div>';
-
+	  const depDiv = L.DomUtil.create('div', '', div);
+	  depDiv.id = 'depthLegend';
+	  depDiv.style.marginTop = '8px';
+	  depDiv.style.display = 'none';
+	  depDiv.innerHTML =
+		'<b>Depth</b>' +
+		'<svg width="120" height="18"><defs><linearGradient id="depGrad">' + depthGradientStops() + '</linearGradient></defs>' +
+		'<rect width="120" height="14" fill="url(#depGrad)" stroke="#000"/></svg>' +
+		'<div style="font-size:10px;display:flex;justify-content:space-between;width:120px;margin:0 auto;"><span>0 km</span><span id="depLegMax">200 km</span></div>';
 	  return div;
 	};
 	combinedLegend.addTo(map);
@@ -577,7 +785,8 @@ const AREAS = [
     }
     function bin(vals, w, min) {
       if (!vals.length) return [[], []];
-      const lo = Math.floor((min ?? Math.min(...vals)) / w) * w, n = Math.floor((Math.max(...vals) - lo) / w) + 1;
+      let vmin = Infinity, vmax = -Infinity; for (const v of vals) { if (v < vmin) vmin = v; if (v > vmax) vmax = v; }
+      const lo = Math.floor((min ?? vmin) / w) * w, n = Math.floor((vmax - lo) / w) + 1;
       const cnt = new Array(n).fill(0), lab = [];
       vals.forEach(v => cnt[Math.min(n - 1, Math.floor((v - lo) / w))]++);
       for (let i = 0; i < n; i++) lab.push((lo + i * w).toFixed(w < 1 ? 1 : 0));
@@ -593,7 +802,7 @@ const AREAS = [
           return a && a[0] === selArea;
         });
       }
-      const years = Math.max(1 / 365.25, (rangeEnd - rangeStart) / (365.25 * 864e5));
+      const years = Math.max(1 / 365.25, (sel.b - sel.a) * (rangeEnd - rangeStart) / (365.25 * 864e5));
       const binSize = 5;
       let maxDepth = 0;
       evts.forEach(e => { if (e.depth > maxDepth) maxDepth = e.depth; });
@@ -642,7 +851,7 @@ const AREAS = [
       else {
         const keys = events.map(e => e.t.getFullYear() * 12 + e.t.getMonth());
         if (!keys.length) return drawHist('Events per month', [], [], 'Month');
-        const lo = Math.min(...keys), n = Math.max(...keys) - lo + 1, c = new Array(n).fill(0), l = [];
+        const lo = keys.reduce((a, b) => a < b ? a : b), n = keys.reduce((a, b) => a > b ? a : b) - lo + 1, c = new Array(n).fill(0), l = [];
         keys.forEach(k => c[k - lo]++);
         for (let i = 0; i < n; i++) { const k = lo + i; l.push(Math.floor(k / 12) + '-' + String(k % 12 + 1).padStart(2, '0')); }
         drawHist('Events per month', l, c, 'Month (local time)');
@@ -739,58 +948,181 @@ const AREAS = [
       });
       tbt.addEventListener('pointermove', ev => { if (drag) move(frac(ev)); });
       tbt.addEventListener('pointerup', () => { drag = null; });
+      tbt.addEventListener('pointercancel', () => { drag = null; });
       tbt.addEventListener('dblclick', () => { sel.a = 0; sel.b = 1; updateBar(); scheduleRender(); });
     })();
 
+    function buildDepthBar() {
+      const stops = DEPTH_STOPS.map((s, i) => `rgb(${s.join(',')}) ${(i / (DEPTH_STOPS.length - 1) * 100).toFixed(1)}%`).join(',');
+      $('dbg').style.background = 'linear-gradient(90deg,' + stops + ')';
+      updateDepthBar();
+    }
+    function updateDepthBar() {
+      $('dk0').style.left = dsel.a * 100 + '%';
+      $('dk1').style.left = dsel.b * 100 + '%';
+      $('dbm0').style.width = dsel.a * 100 + '%';
+      $('dbm1').style.width = (1 - dsel.b) * 100 + '%';
+      const d0 = depthMin + dsel.a * (depthMax - depthMin);
+      const d1 = depthMin + dsel.b * (depthMax - depthMin);
+      $('dbA').textContent = d0.toFixed(0) + ' km';
+      $('dbB').textContent = d1.toFixed(0) + ' km';
+    }
+    (function () {
+      const tbt = $('dbt'); let drag = null;
+      const frac = ev => { const r = tbt.getBoundingClientRect(); let f = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)); return f < .005 ? 0 : f > .995 ? 1 : f; };
+      const move = f => { if (drag === 'a') dsel.a = Math.min(f, dsel.b - .01); else dsel.b = Math.max(f, dsel.a + .01); updateDepthBar(); scheduleRender(); };
+      tbt.addEventListener('pointerdown', ev => {
+        const f = frac(ev);
+        drag = ev.target.id === 'dk0' ? 'a' : ev.target.id === 'dk1' ? 'b' : (Math.abs(f - dsel.a) < Math.abs(f - dsel.b) ? 'a' : 'b');
+        tbt.setPointerCapture(ev.pointerId); move(f);
+      });
+      tbt.addEventListener('pointermove', ev => { if (drag) move(frac(ev)); });
+      tbt.addEventListener('pointerup', () => { drag = null; });
+      tbt.addEventListener('pointercancel', () => { drag = null; });
+      tbt.addEventListener('dblclick', () => { dsel.a = 0; dsel.b = 1; updateDepthBar(); scheduleRender(); });
+      buildDepthBar();
+    })();
     let rq = 0, rs = 0;
     function scheduleRender() { if (rq) return; rq = requestAnimationFrame(() => { rq = 0; render(); }); }
     function scheduleSec() { if (rs) return; rs = requestAnimationFrame(() => { rs = 0; updateSlab(); drawSection(); draw3D(); }); }
 
-    function applyFilter() {
-      const sp = rangeEnd - rangeStart, t0 = rangeStart + sel.a * sp, t1 = rangeStart + sel.b * sp;
-      events = allEvents.filter(e => (sel.a <= 0 || e.ms >= t0) && (sel.b >= 1 || e.ms <= t1));
-    }
-    function eventPopupHTML(e) {//non funziona provare in altro modo con altra request dallo script csh
+    function eventPopupHTML(e) {
       const isideUrl = `https://iside.rm.ingv.it/iside/standard/result.jsp?eventid=${encodeURIComponent(e.eventId)}`;
       const detailsUrl = `https://terremoti.ingv.it/event/${encodeURIComponent(e.eventId)}`;
-      return `<b>M${e.mag.toFixed(1)}</b> &middot; ${e.place}<br>` +
-        `Depth: ${e.depth} km &middot; ${e.t.toLocaleString()}<br>` +
-        `<div style="margin-top:6px;display:flex;flex-direction:column;gap:3px;line-height:1.4">` +
-        `  <a href="#" onclick="downloadPicks('${e.eventId}');return false;">&#11015; Picks &amp; arrivals (.txt)</a>` +
-        `  <a href="${isideUrl}" target="_blank" rel="noopener">&#11015; Download waveform (ISIDE / EIDA)</a>` +
-        `  <a href="${detailsUrl}" target="_blank" rel="noopener">&#9432; Event details (INGV)</a>` +
-        `</div>`;
+      return `<div style="display:flex;gap:8px;align-items:flex-start">` +
+        `<div id="bbpop-${e.eventId}" class="bbpop"></div>` +
+        `<div style="min-width:150px">` +
+          `<b>M${e.mag.toFixed(1)}</b> &middot; ${e.place || ''}<br>` +
+          `Depth: ${e.depth} km &middot; ${e.t.toLocaleString()}<br>` +
+          `<div style="margin-top:6px;display:flex;flex-direction:column;gap:3px;line-height:1.4">` +
+          `  <a href="#" onclick="downloadPicks('${e.eventId}');return false;">&#11015; Picks &amp; arrivals (.txt)</a>` +
+          `  <a href="${isideUrl}" target="_blank" rel="noopener">&#11015; Download waveform (ISIDE / EIDA)</a>` +
+          `  <a href="${detailsUrl}" target="_blank" rel="noopener">&#9432; Event details (INGV)</a>` +
+          `</div>` +
+        `</div></div>`;
     }
     layerGroup.on('click', ev => {
-      const e = ev.layer && ev.layer.ev; if (!e || drawing || drawStart || polyDrawing) return;
-      L.popup().setLatLng([e.lat, e.lon]).setContent(eventPopupHTML(e)).openOn(map);
+      const e = ev.layer && ev.layer.ev;
+      if (!e || drawing || drawStart || polyDrawing) return;
+      openEventPopup(e);
     });
+    function renderMarkers() {
+      layerGroup.clearLayers();
+      events.slice().sort((a, b) => a.mag - b.mag).forEach(e => {
+        let mk = null;
+        if (on.beach) {
+          const m = mecaCache.get(String(e.eventId));
+          if (m) mk = L.marker([e.lat, e.lon], { icon: beachIcon(e, m) });
+        }
+        if (!mk) {
+          const hi = activeSec && activeSec.slabSet.has(e);
+          mk = L.circleMarker([e.lat, e.lon], {
+            radius: Math.max(2, e.mag * 2), fillColor: colorOf(e),
+            color: hi ? '#fff' : '#000', weight: hi ? 1.4 : 0.5, opacity: 1, fillOpacity: 0.8
+          });
+        }
+        mk.ev = e; mk.addTo(layerGroup);
+      });
+      secs.forEach(s => { if (s.layers) { s.layers.poly.bringToFront(); s.layers.line.bringToFront(); } });
+    }
+    function queueTopMeca() { events.slice().sort((a, b) => b.mag - a.mag).slice(0, 400).forEach(e => queueMeca(e.eventId)); }
+    function toggleBeach() {
+      on.beach = !on.beach;
+      const b = $('btnBB');
+      if (b) { b.textContent = 'Beachballs: ' + (on.beach ? 'on' : 'off'); b.classList.toggle('active', on.beach); }
+      if (on.beach) {
+        events.slice().sort((a, b2) => b2.mag - a.mag).slice(0, 400).forEach(e => queueMeca(e.eventId));
+      }
+      renderMarkers();
+    }
 
+    async function bulkMeca(t0, t1, onProgress) {
+      const CHUNK = 120 * 864e5;
+      const n = Math.max(1, Math.ceil((t1 - t0) / CHUNK));
+      for (let i = 0; i < n; i++) {
+        const a = t0 + i * CHUNK, b = Math.min(t0 + (i + 1) * CHUNK, t1);
+        if (onProgress) onProgress(i + 1, n);
+        const url = 'https://webservices.ingv.it/fdsnws/event/1/query?format=xml&includemomenttensor=true' +
+          '&minlatitude=35.8&maxlatitude=41.8&minlongitude=12&maxlongitude=19.5&limit=10000&orderby=time' +
+          `&starttime=${fmtISO(new Date(a))}&endtime=${fmtISO(new Date(b))}`;
+        try {
+          const res = await fetch(url);
+          if (!res.ok) { console.warn('bulkMeca', res.status); continue; }
+          parseMecaDoc(new DOMParser().parseFromString(await res.text(), 'application/xml'))
+            .forEach((v, k) => { if (!mecaCache.has(k)) mecaCache.set(k, v); });
+        } catch (e) { console.warn('bulkMeca', e); }
+      }
+    }
+
+    async function exportCatalogMeca() {
+      const info = $('info');
+      const list = events.slice().sort((a, b) => a.ms - b.ms);
+      if (!list.length) { info.textContent = 'No events in the current window'; return; }
+      const sp = rangeEnd - rangeStart, t0 = rangeStart + sel.a * sp, t1 = rangeStart + sel.b * sp;
+      const ids = [...new Set(list.map(e => String(e.eventId)))];
+      if (ids.some(id => !mecaCache.has(id))) {
+        info.textContent = 'Focal mechanisms: querying…';
+        await bulkMeca(t0, t1, (i, n) => { info.textContent = `Focal mechanisms: chunk ${i}/${n}…`; });
+        const still = ids.filter(id => !mecaCache.has(id));
+        const cap = Math.min(still.length, 120);
+        let done = 0;
+        for (let i = 0; i < cap; i += 6) {
+          await Promise.all(still.slice(i, i + 6).map(id => fetchMeca(id)));
+          done += Math.min(6, cap - i);
+          info.textContent = `Focal mechanisms: ${done}/${cap}…`;
+        }
+      }
+      const head = '#YYYYMMDD HHMMSS.MS LAT LON DEP M STRIKE DIP RAKE\n';
+      const lines = list.map(e => {
+        const m = mecaCache.get(String(e.eventId));
+        const d = new Date(e.ms);
+        const ymd = d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate());
+        const hms = pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds());
+        const ms = String(d.getUTCMilliseconds()).padStart(3, '0');
+        const mec = m ? [m.strike.toFixed(0), m.dip.toFixed(0), m.rake.toFixed(0)].join(' ') : '- - -';
+        return `${ymd} ${hms}.${ms} ${(+e.lat).toFixed(4)} ${(+e.lon).toFixed(4)} ${(+e.depth).toFixed(2)} ${(+e.mag).toFixed(1)} ${mec}`;
+      });
+      const d = new Date();
+      const name = `catalog_meca_${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}_${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}.txt`;
+      downloadText(name, head + lines.join('\n') + '\n');
+      info.textContent = `${name} — ${list.length} events`;
+    }    
+    function toggleColor() {
+      if (colorMode === 'time') colorMode = 'mag';
+      else if (colorMode === 'mag') colorMode = 'kde';
+      else if (colorMode === 'kde') colorMode = 'depth';
+      else colorMode = 'time';
+      $('btnColor').textContent = 'Colour: ' + colorMode;
+      $('tbg').classList.toggle('gray', colorMode !== 'time');
+      $('depthbar').style.display = colorMode === 'depth' ? 'block' : 'none';
+      updateLegends();
+      render();
+    }
+    function updateLegends() {
+      const ml = $('magLegend'), kl = $('kdeLegend'), dl = $('depthLegend');
+      if (ml) {
+        ml.style.display = (colorMode === 'kde' || colorMode === 'depth') ? 'none' : 'block';
+        const svg = ml.querySelector('svg');
+        if (svg) svg.style.filter = colorMode === 'time' ? 'grayscale(1)' : 'none';
+      }
+      if (kl) kl.style.display = (colorMode === 'kde' || on.kde) ? 'block' : 'none';
+      if (dl) { dl.style.display = colorMode === 'depth' ? 'block' : 'none'; const dm = $('depLegMax'); if (dm) dm.textContent = depthMax + ' km'; }
+    }        
     function render() {
+      let mxD = 0;
+      allEvents.forEach(e => { if (e.depth > mxD) mxD = e.depth; });
+      depthMax = Math.max(50, Math.ceil(mxD / 50) * 50);
       applyFilter();
       if (colorMode === 'kde') computeKDE();
       updateSlab();
-      layerGroup.clearLayers();
-      events.slice().sort((a, b) => a.mag - b.mag).forEach(e => {
-        const hi = activeSec && activeSec.slabSet.has(e);
-        const m = L.circleMarker([e.lat, e.lon], { radius: Math.max(2, e.mag * 2), fillColor: colorOf(e), color: hi ? '#fff' : '#000', weight: hi ? 1.4 : 0.5, opacity: 1, fillOpacity: 0.8 });
-        m.ev = e; m.addTo(layerGroup);
-      });
+      renderMarkers();
       secs.forEach(s => { if (s.layers) { s.layers.poly.bringToFront(); s.layers.line.bringToFront(); s.layers.mA.setZIndexOffset(2000); s.layers.mB.setZIndexOffset(2000); } });
       refresh(); setCount(events.length);
       const lab = RANGES[daysIdx][2].toLowerCase();
       $('clabel').textContent = 'earthquakes \u00b7 ' + lab + (events.length !== allEvents.length ? ' (selected window)' : '');
       $('info').textContent = events.length + (events.length !== allEvents.length ? ' / ' + allEvents.length : '') + ' events' + (limitHit ? ' (limit hit)' : '');
-      updateBar(); drawSection(); draw3D();
-    }
-    function toggleColor() {
-      if (colorMode === 'time') colorMode = 'mag';
-      else if (colorMode === 'mag') colorMode = 'kde';
-      else colorMode = 'time';
-      $('btnColor').textContent = 'Colour: ' + colorMode;
-      $('tbg').classList.toggle('gray', colorMode !== 'time');
-      updateLegends();
-      render();
+      $('depthbar').style.display = colorMode === 'depth' ? 'block' : 'none';
+      updateBar(); updateDepthBar(); if (on.beach) queueTopMeca(); drawSection(); draw3D();
     }
     function secProj(A, B, width) {
       const lon0 = A.lng, lat0 = A.lat, ky = 110.57, kx = 111.32 * Math.cos(lat0 * Math.PI / 180);
@@ -857,6 +1189,7 @@ const AREAS = [
       if (activeSec === s) activeSec = secs.length ? secs[secs.length - 1] : null;
       if (activeSec) updateSectionStyle(activeSec);
       updateSectionUI();
+      scheduleRender();
       if (!secs.length) {
         secwin.style.display = 'none';
         win3d.style.display = 'none';
@@ -1224,8 +1557,8 @@ const AREAS = [
         searchLayer.clearLayers();
         L.circleMarker([e.lat, e.lon], { radius: Math.max(4, e.mag * 2.4), color: '#00e5ff', weight: 2, fillColor: colorOf(e), fillOpacity: .85 }).addTo(searchLayer);
         L.marker([e.lat, e.lon], { zIndexOffset: 3000, icon: L.divIcon({ className: '', iconSize: [26, 26], iconAnchor: [13, 13], html: '<div class="smark">&#9733;</div>' }) }).addTo(searchLayer);
-        L.popup({ maxWidth: 320 }).setLatLng([e.lat, e.lon]).setContent(eventPopupHTML(e)).openOn(map);
         map.setView([e.lat, e.lon], Math.max(map.getZoom(), 9));
+        openEventPopup(e, { maxWidth: 320 });     
         info.textContent = 'Found M' + e.mag.toFixed(1) + ' \u00b7 ' + e.place;
       } catch (err) {
         console.error(err);
@@ -1323,8 +1656,9 @@ const AREAS = [
       <p class="hs"><b>Time bar</b> (bottom centre) — drag the two white handles to select a sub-window of
       the downloaded period (double-click resets to the full range).</p>
       <p class="hs"><b>Top-right buttons</b><br>
-      &middot; <i>Last 1 hour … Last 25 years</i>: download period.<br>
-      &middot; <i>Depth / Month / Mw histogram</i>: chart in the bottom-left corner.<br>
+      &middot; <i>Last 1 hour … Last 25 years</i>: download period. N.B. Be patient when you request a larger time period and
+      do not be surprised if your browser slows down.<br>
+      &middot; <i>Depth / Month / M histogram</i>: chart in the bottom-left corner.<br>
       &middot; <i>Rate vs depth</i>: events/year per 5 km depth bin; the selector above the chart
         restricts the count to one INGV tectonic area.<br>
       &middot; <i>KDE density map</i>: Gaussian kernel density of the epicentres, blue–white–red scale
@@ -1334,11 +1668,16 @@ const AREAS = [
       &middot; <i>Draw section line</i>: click-drag on the map to create a cross-section
         (the width box is ±km). Drag the A/B handles to move it.<br>
       &middot; <i>Polygon catalog</i>: click the map to add vertices, close on the first vertex or with a
-        double-click. Every earthquake inside the polygon and inside the selected time window is
+        double-click. Every earthquake inside the polygon AND inside the selected time window is
         downloaded as a .txt catalog (<code>YYYYMMDD HHMMSS.MS LAT LON DEP M</code>).<br>
       &middot; <i>Clear sections</i>: remove all sections.<br>
       &middot; <i>3D popup</i>: 3-D view of the active section (drag = rotate, wheel = zoom, 1:1:1 = equal axes).<br>
-      &middot; <i>Colour</i>: cycles time / magnitude / KDE colouring.<br>
+      &middot; <i>Colour</i>: cycles time / magnitude / KDE / depth colouring (depth mode adds a depth-window bar above the time bar).<br>
+      &middot; <i>Beachballs</i>: draw epicentres as focal-mechanism beachballs (moment tensors
+      downloaded from INGV; strongest 400 events of the current view).<br>
+      &middot; <i>Export catalog (+S/D/R)</i>: .txt with
+      <code>YYYYMMDD HHMMSS.MS LAT LON DEP M STRIKE DIP RAKE</code> for the current
+     time window and depth window (active in <i>Colour: depth</i> mode).<br>
       &middot; <i>DISS sources</i>: overlay of the DISS 3.3.1 seismogenic sources.<br>
       &middot; <i>Export JPG</i>: save the map with all overlays and the legend as a JPEG.</p>
       <p class="hs"><b>Event popup</b> — click an epicentre to download the waveform, get the
@@ -1415,18 +1754,14 @@ const AREAS = [
           c.globalAlpha = .35; c.fillStyle = areaColor(a, mxn); c.fill(); c.globalAlpha = 1; c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke();
         });
         if (dissLayer) {
-          dissLayer.eachLayer(l => {
-            if (l.getLatLngs) {
-              const rings = l.getLatLngs();
-              rings.forEach(ring => {
-                c.beginPath();
-                ring.forEach((ll, i) => { const q = P(ll.lng, ll.lat); i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]); });
-                c.closePath();
-                c.fillStyle = 'rgba(255,0,255,.05)'; c.fill();
-                c.setLineDash([6, 4]); c.strokeStyle = '#ff00ff'; c.lineWidth = 1.5; c.stroke(); c.setLineDash([]);
-              });
-            }
-          });
+          const walk = (a, poly) => {
+            if (!a || !a.length) return;
+            if (a[0].lat === undefined) { a.forEach(x => walk(x, poly)); return; }
+            c.beginPath(); a.forEach((ll, i) => { const q = P(ll.lng, ll.lat); i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]); });
+            if (poly) { c.closePath(); c.fillStyle = 'rgba(255,0,255,.05)'; c.fill(); }
+            c.setLineDash([6, 4]); c.strokeStyle = '#ff00ff'; c.lineWidth = 1.5; c.stroke(); c.setLineDash([]);
+          };
+          dissLayer.eachLayer(l => { if (l.getLatLngs) walk(l.getLatLngs(), l instanceof L.Polygon); });
         }
         if (on.kde && kdeCanvas && kdeGrid) {
           const gr = kdeGrid;
@@ -1479,6 +1814,12 @@ const AREAS = [
           c.fillStyle = gr; c.fillRect(bx, by, bw, bh); c.strokeStyle = '#000'; c.lineWidth = 2; c.strokeRect(bx, by, bw, bh);
           c.fillStyle = '#000'; c.font = '20px sans-serif'; c.textAlign = 'center';
           c.fillText('0', bx, by + bh + 30); c.fillText('1', bx + bw, by + bh + 30); c.fillText('KDE density (log, bwr)', bx + bw / 2, by + bh + 30);
+        } else if (colorMode === 'depth') {
+          const gr = c.createLinearGradient(bx, 0, bx + bw, 0);
+          DEPTH_STOPS.forEach((st, i) => gr.addColorStop(i / (DEPTH_STOPS.length - 1), `rgb(${st[0]},${st[1]},${st[2]})`));
+          c.fillStyle = gr; c.fillRect(bx, by, bw, bh); c.strokeStyle = '#000'; c.lineWidth = 2; c.strokeRect(bx, by, bw, bh);
+          c.fillStyle = '#000'; c.font = '20px sans-serif'; c.textAlign = 'center';
+          c.fillText(depthMin + ' km', bx, by + bh + 30); c.fillText(depthMax + ' km', bx + bw, by + bh + 30); c.fillText('Depth', bx + bw / 2, by + bh + 30);
         } else { c.fillStyle = '#000'; c.font = '22px sans-serif'; c.textAlign = 'center'; c.fillText('colour = magnitude', W / 2, by + 20); }
         c.strokeStyle = '#ff7800'; c.lineWidth = 8; c.strokeRect(4, 4, W - 8, H - 8);
         const d = new Date(), name = d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + '.jpg';
