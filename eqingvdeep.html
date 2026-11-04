@@ -1,3 +1,4 @@
+<!-- FDR v3 earthquake visualizer 20261104 Seismology lab CS --->
 <!DOCTYPE html>
 <html>
 <head>
@@ -5,76 +6,9 @@
   <title>INGVRTEQS</title>
   <meta name="viewport" content="width=device-width, initial-scale=0.5">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    html, body, #map { height: 100%; margin: 0; }
-    .leaflet-popup-content { font-size: 14px; }
-    .leaflet-popup-content a { color: #08519c; text-decoration: none; }
-    .leaflet-popup-content a:hover { text-decoration: underline; }
-    .ctl { background: #fff; padding: 6px; border-radius: 4px; box-shadow: 0 1px 5px rgba(0,0,0,.4); max-height: calc(100vh - 40px); overflow-y: auto; }
-    .ctl button { display: block; width: 100%; margin: 2px 0; padding: 4px 8px; cursor: pointer; border: 1px solid #999; background: #f4f4f4; }
-    .ctl button.active { background: #BD0026; color: #fff; border-color: #800026; }
-    .ctl button.feat.active { background: #08519c; border-color: #08306b; color:#fff; }
-    .ctl button.act.active { background: #e65100; border-color: #bf360c; color: #fff; }
-    .ctl hr { margin: 4px 0; border: 0; border-top: 1px solid #ccc; }
-    .ctl .info { font-size: 12px; margin-top: 4px; text-align: center; }
-    #chart { position: absolute; left: 10px; bottom: 25px; z-index: 1000; background: #fff; padding: 4px; border-radius: 4px; box-shadow: 0 1px 5px rgba(0,0,0,.4); display: none; }
-    .abar { text-align: center; font: bold 10px sans-serif; color: #000; }
-    .abar div { margin: 0 auto; width: 16px; border: 1px solid #000; background: #08519c; opacity: .85; }
-    .mag-legend { text-align: center; font: 11px sans-serif; }
-    .mag-legend svg { display: block; margin: 4px auto 0; }
-    .mag-legend text { font: bold 8px sans-serif; fill: #000; paint-order: stroke; stroke: #fff; stroke-width: 2px; stroke-linejoin: round; }
-    #counter { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #16181d; border: 1px solid #000; border-radius: 8px; padding: 6px 10px 8px; box-shadow: 0 2px 8px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.12); text-align: center; color: #ccc; font: 12px sans-serif; user-select: none; display: flex; gap: 8px; align-items: flex-start; }
-    #cmain { display: flex; flex-direction: column; align-items: center; }
-    #helpBtn { width: 22px; height: 22px; flex: 0 0 auto; margin-top: 2px; border-radius: 50%; border: 1px solid #3a3d45; background: #262930; color: #4fc3f7; font: bold 13px/1 "DejaVu Sans", sans-serif; cursor: pointer; padding: 0; }
-    #helpBtn:hover { background: #343a44; border-color: #4fc3f7; }
-    #counter .cl { margin-bottom: 5px; }
-    #odo { display: flex; gap: 3px; justify-content: center; }
-    .dg { width: 28px; height: 42px; overflow: hidden; position: relative; background: #000; border-radius: 4px; box-shadow: inset 0 0 6px #000; }
-    .dg::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(#000 0, rgba(0,0,0,0) 28%, rgba(0,0,0,0) 72%, #000 100%); }
-    .dg::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgba(255,255,255,.14); z-index: 3; }
-    .dg .st { transition: transform .8s cubic-bezier(.25,.9,.3,1); }
-    .dg i { display: block; height: 42px; font: normal 600 30px/42px "DejaVu Sans Mono", Menlo, Consolas, monospace; color: #f4f4f4; text-align: center; }
-    .dg.z i { color: #4a4d55; }
-    #ctabs { display: flex; gap: 3px; margin-top: 7px; justify-content: center; }
-    #ctabs select { font: 11px sans-serif; padding: 3px 5px; border-radius: 3px; border: 1px solid #3a3d45; background: #262930; color: #ddd; max-width: 180px; }
-    #esearch { display: flex; gap: 3px; margin-top: 6px; justify-content: center; align-items: center; }
-    #esearch input { width: 104px; font: 11px sans-serif; padding: 3px 5px; border-radius: 3px; border: 1px solid #3a3d45; background: #262930; color: #ddd; user-select: text; }
-    #esearch button { font: 11px sans-serif; padding: 3px 6px; border-radius: 3px; border: 1px solid #3a3d45; background: #262930; color: #ddd; cursor: pointer; }
-    #esearch button:hover { background: #343a44; }
-    #eqtip { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 7px; width: 232px; background: #262930; border: 1px solid #3a3d45; border-radius: 5px; padding: 6px 8px; font: 11px/1.4 sans-serif; color: #ccc; text-align: left; z-index: 1002; box-shadow: 0 2px 8px rgba(0,0,0,.6); }
-    /*RT CB */
-    #timebar { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); width: min(520px, 34vw); z-index: 1001; background: rgba(255,255,255,.93); border-radius: 6px; padding: 5px 30px 3px; box-shadow: 0 1px 5px rgba(0,0,0,.5); font: 11px sans-serif; user-select: none; }
-    #timebar .tbh, #depthbar .tbh { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 5px; white-space: nowrap; }
-    .tbt { position: relative; height: 16px; cursor: pointer; touch-action: none; }
-    .tbg { position: absolute; inset: 0; border: 1px solid #000; border-radius: 2px; }
-    .tbg.gray { filter: grayscale(1); }
-    .tbm { position: absolute; top: 0; bottom: 0; background: rgba(255,255,255,.75); }
-    .tbk { position: absolute; top: -4px; width: 10px; height: 24px; margin-left: -5px; background: #fff; border: 2px solid #222; border-radius: 3px; box-sizing: border-box; cursor: ew-resize; }
-    .tbx { position: relative; height: 28px; margin-top: 3px; }
-    .tbx .tk { position: absolute; top: 0; height: 5px; border-left: 1px solid #333; }
-    .tbx .tk span { position: absolute; top: 6px; left: 0; transform: translateX(-50%); white-space: nowrap; font-size: 10px; text-align: center; line-height: 11px; }
-    #depthbar { position: absolute; bottom: 96px; left: 50%; transform: translateX(-50%); width: min(520px, 34vw); z-index: 1001; background: rgba(255,255,255,.93); border-radius: 6px; padding: 5px 30px 3px; box-shadow: 0 1px 5px rgba(0,0,0,.5); font: 11px sans-serif; user-select: none; display: none; }
-    .bbpop { min-width: 64px; text-align: center; }
-    .bbwait { font: 11px sans-serif; color: #666; }
-    .bblab { font: 10px sans-serif; color: #333; margin-top: 2px; }
-    /*POPUP */
-    .win { position: absolute; z-index: 1100; background: #fff; border-radius: 6px; box-shadow: 0 2px 12px rgba(0,0,0,.55); display: none; flex-direction: column; resize: both; overflow: hidden; min-width: 260px; min-height: 190px; font: 12px sans-serif; }
-    .win .wh { background: #2b2f36; color: #fff; padding: 4px 6px; cursor: move; display: flex; justify-content: space-between; align-items: center; gap: 8px; user-select: none; touch-action: none; }
-    .win .wh button { margin-left: 4px; padding: 1px 7px; cursor: pointer; border: 1px solid #666; background: #444; color: #fff; border-radius: 3px; font: 11px sans-serif; }
-    .win .wh button.active { background: #e65100; border-color: #bf360c; }
-    .win .wb { position: relative; flex: 1; min-height: 0; }
-    .win canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-    .win .wf { padding: 3px 8px; border-top: 1px solid #ccc; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    #sectip { position: absolute; display: none; pointer-events: none; background: rgba(20,20,20,.92); color: #fff; padding: 4px 6px; border-radius: 3px; font: 11px/1.35 sans-serif; white-space: nowrap; z-index: 5; }
-    .hd { width: 22px; height: 22px; border-radius: 50%; background: #00e5ff; border: 2px solid #003b44; color: #003b44; font: bold 12px/18px sans-serif; text-align: center; cursor: move; box-sizing: border-box; }
-    .smark { width: 26px; height: 26px; border-radius: 50%; background: #00e5ff; border: 2px solid #003b44; color: #003b44; font: bold 14px/22px sans-serif; text-align: center; box-sizing: border-box; }
-    #rateAreaBar { display: none; margin-bottom: 4px; font: 11px sans-serif; }
-    #rateAreaBar select { font-size: 11px; max-width: 240px; }
-    #kdeLegend { display: none; }
-    #helpwin .wb { overflow: auto; padding: 9px 11px; font: 12px/1.5 sans-serif; color: #222; }
-    #helpwin b { color: #08519c; }
-    #helpwin .hs { margin: 0 0 7px; }
-  </style>
+<style>html,body,#map{height:100%;margin:0}.leaflet-popup-content{font-size:14px}.leaflet-popup-content a{color:#08519c;text-decoration:none}.leaflet-popup-content a:hover{text-decoration:underline}.ctl{background:#fff;padding:6px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.4);max-height:calc(100vh - 40px);overflow-y:auto}.ctl button{display:block;width:100%;margin:2px 0;padding:4px 8px;cursor:pointer;border:1px solid #999;background:#f4f4f4}.ctl button.active{background:#BD0026;color:#fff;border-color:#800026}.ctl button.feat.active{background:#08519c;border-color:#08306b;color:#fff}.ctl button.act.active{background:#e65100;border-color:#bf360c;color:#fff}.ctl hr{margin:4px 0;border:0;border-top:1px solid #ccc}.ctl .info{font-size:12px;margin-top:4px;text-align:center}#chart{position:absolute;left:10px;bottom:25px;z-index:1000;background:#fff;padding:4px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.4);display:none}#rateAreaBar{display:none;margin-bottom:4px;font:11px sans-serif}#rateAreaBar select{font-size:11px;max-width:240px}.abar{text-align:center;font:bold 10px sans-serif;color:#000}.abar div{margin:0 auto;width:16px;border:1px solid #000;background:#08519c;opacity:.85}.mag-legend{text-align:center;font:11px sans-serif}.mag-legend svg{display:block;margin:4px auto 0}.mag-legend text{font:bold 8px sans-serif;fill:#000;paint-order:stroke;stroke:#fff;stroke-width:2px;stroke-linejoin:round}#kdeLegend{display:none}#counter{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;background:#16181d;border:1px solid #000;border-radius:8px;padding:4px 10px;box-shadow:0 2px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12);color:#ccc;font:11px sans-serif;user-select:none;display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;max-width:94vw}#cmain{display:flex;flex-direction:row;align-items:center;gap:8px;cursor:pointer}#cmain:hover .cl{color:#4fc3f7}#helpBtn{flex:0 0 auto;width:18px;height:18px;padding:0;border-radius:50%;border:1px solid #3a3d45;background:#262930;color:#4fc3f7;font:bold 11px/1 "DejaVu Sans",sans-serif;cursor:pointer}#helpBtn:hover{background:#343a44;border-color:#4fc3f7}#counter .cl{margin-bottom:0;font-size:11px;white-space:nowrap}#counter.collapsed #clabel::after{content:' \25BE';font-size:10px;opacity:.55}#counter:not(.collapsed) #clabel::after{content:' \25B4';font-size:10px;opacity:.55}#cpanel{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;justify-content:center;font:10px sans-serif}#counter.collapsed #cpanel{display:none}#counter.collapsed #eqtip{display:none !important}#cpanel select,#cpanel input,#cpanel button{font:10px/14px sans-serif;padding:2px 6px;border-radius:3px;border:1px solid #3a3d45;background:#262930;color:#ddd;box-sizing:border-box}#cpanel select{max-width:96px;padding:2px 4px}#cpanel input#eqid{width:80px}#cpanel input#dtStart,#cpanel input#dtEnd{width:88px;font-family:"DejaVu Sans Mono",Menlo,Consolas,monospace}#cpanel input:focus{outline:1px solid #4fc3f7}#cpanel button{cursor:pointer}#cpanel button:hover{background:#343a44}#cpanel .csep{width:1px;height:16px;background:#3a3d45;margin:0 2px}#odo{display:flex;gap:2px;justify-content:center}.dg{width:28px;height:42px;overflow:hidden;position:relative;background:#000;border-radius:4px;box-shadow:inset 0 0 6px #000}.dg::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(#000 0,rgba(0,0,0,0) 28%,rgba(0,0,0,0) 72%,#000 100%)}.dg::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,.14);z-index:3}.dg .st{transition:transform .8s cubic-bezier(.25,.9,.3,1)}.dg i{display:block;height:42px;font:normal 600 30px/42px "DejaVu Sans Mono",Menlo,Consolas,monospace;color:#f4f4f4;text-align:center}.dg.z i{color:#4a4d55}#eqtip{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:7px;width:232px;padding:6px 8px;background:#262930;border:1px solid #3a3d45;border-radius:5px;font:11px/1.4 sans-serif;color:#ccc;text-align:left;z-index:1002;box-shadow:0 2px 8px rgba(0,0,0,.6)}#timebar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:min(520px,34vw);z-index:1001;background:rgba(255,255,255,.93);border-radius:6px;padding:5px 30px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);font:11px sans-serif;user-select:none}#depthbar{position:absolute;bottom:96px;left:50%;transform:translateX(-50%);width:min(520px,34vw);z-index:1001;background:rgba(255,255,255,.93);border-radius:6px;padding:5px 30px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);font:11px sans-serif;user-select:none;display:none}#timebar .tbh,#depthbar .tbh{display:flex;justify-content:space-between;gap:8px;margin-bottom:5px;white-space:nowrap}.tbt{position:relative;height:16px;cursor:pointer;touch-action:none}.tbg{position:absolute;inset:0;border:1px solid #000;border-radius:2px}.tbg.gray{filter:grayscale(1)}.tbm{position:absolute;top:0;bottom:0;background:rgba(255,255,255,.75)}.tbk{position:absolute;top:-4px;width:10px;height:24px;margin-left:-5px;background:#fff;border:2px solid #222;border-radius:3px;box-sizing:border-box;cursor:ew-resize}.tbx{position:relative;height:28px;margin-top:3px}.tbx .tk{position:absolute;top:0;height:5px;border-left:1px solid #333}.tbx .tk span{position:absolute;top:6px;left:0;transform:translateX(-50%);white-space:nowrap;font-size:10px;text-align:center;line-height:11px}.bbpop{min-width:64px;text-align:center}.bbwait{font:11px sans-serif;color:#666}.bblab{font:10px sans-serif;color:#333;margin-top:2px}.win{position:absolute;z-index:1100;background:#fff;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.55);display:none;flex-direction:column;resize:both;overflow:hidden;min-width:260px;min-height:190px;font:12px sans-serif}.win .wh{background:#2b2f36;color:#fff;padding:4px 6px;cursor:move;display:flex;justify-content:space-between;align-items:center;gap:8px;user-select:none;touch-action:none}.win .wh button{margin-left:4px;padding:1px 7px;cursor:pointer;border:1px solid #666;background:#444;color:#fff;border-radius:3px;font:11px sans-serif}.win .wh button.active{background:#e65100;border-color:#bf360c}.win .wb{position:relative;flex:1;min-height:0}.win canvas{position:absolute;left:0;top:0;width:100%;height:100%}.win .wf{padding:3px 8px;border-top:1px solid #ccc;display:flex;gap:10px;align-items:center;flex-wrap:wrap}#sectip{position:absolute;display:none;pointer-events:none;background:rgba(20,20,20,.92);color:#fff;padding:4px 6px;border-radius:3px;font:11px/1.35 sans-serif;white-space:nowrap;z-index:5}.hd{width:22px;height:22px;border-radius:50%;background:#00e5ff;border:2px solid #003b44;color:#003b44;font:bold 12px/18px sans-serif;text-align:center;cursor:move;box-sizing:border-box}.smark{width:26px;height:26px;border-radius:50%;background:#00e5ff;border:2px solid #003b44;color:#003b44;font:bold 14px/22px sans-serif;text-align:center;box-sizing:border-box}#helpwin .wb{overflow:auto;padding:9px 11px;font:12px/1.5 sans-serif;color:#222}#helpwin b{color:#08519c}#helpwin .hs{margin:0 0 7px}</style>
+</head>
+
 </head>
 <body>
   <div id="map"></div>
@@ -82,20 +16,25 @@
     <div id="rateAreaBar">Area: <select id="rsel"><option value="">All areas</option></select></div>
     <canvas id="cv" width="440" height="270"></canvas>
   </div>
-  <div id="counter">
-    <button id="helpBtn" title="Information">i</button>
-    <div id="cmain">
-      <div class="cl" id="clabel">earthquakes</div>
-      <div id="odo"></div>
-      <div id="ctabs"><select id="csel"></select></div>
-      <div id="esearch">
-        <input id="eqid" type="text" placeholder="event id" autocomplete="off" />
-        <button id="eqgo" title="Find event">&#10132;</button>
-        <button id="eqinfo" title="About event search">i</button>
-      </div>
-    </div>
-    <div id="eqtip">Paste an INGV event id (e.g. <b>33456781</b>) and press &#10132;: the event is downloaded on its own and centred on the map. Click the star to get the waveform / picks links.</div>
+<div id="counter" class="collapsed">
+  <button id="helpBtn" title="Information">i</button>
+  <div id="cmain" title="Click to expand / collapse options">
+    <div class="cl" id="clabel">earthquakes</div>
+    <div id="odo"></div>
   </div>
+  <div id="cpanel">
+    <select id="csel" title="Time range"></select>
+    <span class="csep"></span>
+    <input id="eqid" type="text" placeholder="event id" autocomplete="off" title="INGV event id" />
+    <button id="eqgo" title="Find event">&#10132;</button>
+    <button id="eqinfo" title="About event search">i</button>
+    <span class="csep"></span>
+    <input id="dtStart" type="text" placeholder="start" autocomplete="off" title="Start date, UTC (YYYYMMDD, YYYY-MM-DD, YYYY/MM/DD, YYYY MM DD)" />
+    <input id="dtEnd"   type="text" placeholder="end"   autocomplete="off" title="End date, UTC (YYYYMMDD, YYYY-MM-DD, YYYY/MM/DD, YYYY MM DD)" />
+    <button id="dtGo" title="Apply date range">&#10003;</button>
+  </div>
+  <div id="eqtip">Paste an INGV event id (e.g. <b>33456781</b>) and press &#10132;: the event is downloaded on its own and centred on the map. Click the star to get the waveform / picks links.</div>
+</div>
     <div id="depthbar">
     <div class="tbh"><span id="dbA">0 km</span><b id="dbN">depth</b><span id="dbB">— km</span></div>
     <div class="tbt" id="dbt">
@@ -138,7 +77,6 @@
     <div class="wh"><span>Information</span><span><button id="helpx">&#10005;</button></span></div>
     <div class="wb"></div>
   </div>
-
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
 const AREAS = [
@@ -258,30 +196,12 @@ const AREAS = [
 	  return div;
 	};
 	baseCtl.addTo(map);
-
-	//document.getElementById('map').style.backgroundColor = '#ffffff';
-	//Worldwide coastline overlay (Natural Earth 50m)
-	//const coastlinesUrl = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_15m_coastline.geojson';
-	//fetch(coastlinesUrl)
-	//  .then(res => res.json())
-	//  .then(data => {
-	//	L.geoJSON(data, {
-	//	  style: {
-	//	    color: '#000000',   
-	//	    weight: 1,          
-	//	    opacity: 1,
-	//	    fillOpacity: 0       
-	//	  }
-	//	}).addTo(map);
-	//  })
-	//  .catch(err => console.error('Could not load coastlines:', err));
- 
     const bounds = L.latLngBounds([35.8, 12], [41.8, 19.5]);
     L.rectangle(bounds, {color: "#ff7800", weight: 1, fill: false}).addTo(map);
     map.fitBounds(bounds);
     map.setMinZoom(map.getBoundsZoom(bounds));
-    map.setMaxBounds(bounds);
-    map.options.maxBoundsViscosity = 1.0;
+    map.setMaxBounds(bounds.pad(0.2));
+    map.options.maxBoundsViscosity = -0.3;
     window.addEventListener('resize', () => { map.setMinZoom(map.getBoundsZoom(bounds)); map.fitBounds(bounds); });
     map.createPane('areas').style.zIndex = 350;
     map.createPane('kde').style.zIndex = 250;
@@ -317,9 +237,10 @@ const AREAS = [
       ['Last 25 years',  9125,  '25 y']
     ];
     const FEATS = [['depth', 'Depth histogram'], ['month', 'Month histogram'], ['mag', 'Mw histogram'],
-                   ['rateDepth', 'Rate vs depth'], ['kde', 'KDE density map'],
-                   ['poly', 'Area polygons'], ['bars', 'Area count bars']];
+                   ['rateDepth', 'Rate vs depth'], ['kde', 'KDE density map'],['poly', 'Area polygons'], ['bars', 'Area count bars']];
     let daysIdx = 6, days = RANGES[daysIdx][1];
+    let customRange = null;                 //{s,e} ms: START/END manuale, null = 'last N'
+    const dtDirty = { start: false, end: false };
     let reqId = 0, allEvents = [], events = [], chartMode = null, limitHit = false;
     let rangeStart = Date.now() - days * 864e5, rangeEnd = Date.now();
     const sel = { a: 0, b: 1 };
@@ -705,6 +626,7 @@ const AREAS = [
     function setDays(idx) {
       daysIdx = idx;
       days = RANGES[idx][1];
+      customRange = null; dtDirty.start = dtDirty.end = false;
       sel.a = 0; sel.b = 1;
       document.querySelectorAll('[data-idx]').forEach(x => x.classList.toggle('active', +x.dataset.idx === idx));
       const cs = $('csel'); if (cs) cs.value = idx;
@@ -912,8 +834,8 @@ const AREAS = [
       events.forEach(e => { const a = BYSIZE.find(a => inside(a.h, e.lon, e.lat)); if (a) a.n++; });
       const mx = Math.max(1, ...AREAS.map(a => a.n));
       if (on.poly) AREAS.slice().sort((a, b) => b.ar - a.ar).forEach(a => {
-        L.polygon(a.h.map(p => [p[1], p[0]]), { pane: 'areas', renderer: areaRenderer, color: '#fff', weight: 1, fillColor: areaColor(a, mx), fillOpacity: 0.35 })
-          .bindPopup(`<b>${a[0]}</b><br>${a.n} events`).addTo(polyLayer);
+       // L.polygon(a.h.map(p => [p[1], p[0]]), { pane: 'areas', renderer: areaRenderer, color: '#fff', weight: 1, fillColor: areaColor(a, mx), fillOpacity: 0.35 }).bindPopup(`<b>${a[0]}</b><br>${a.n} events`).addTo(polyLayer);
+        L.polygon(a.h.map(p => [p[1], p[0]]), { pane: 'areas', renderer: areaRenderer, interactive: false, color: '#fff', weight: 1, fillColor: areaColor(a, mx), fillOpacity: 0.35 }).addTo(polyLayer);
       });
       if (on.bars) AREAS.filter(a => a.n).forEach(a => {
         const h = 6 + Math.round(70 * a.n / mx);
@@ -923,6 +845,15 @@ const AREAS = [
       [[polyLayer, on.poly], [barLayer, on.bars]].forEach(([g, s]) => s ? g.addTo(map) : map.removeLayer(g));
     }
     function refresh() { drawChart(); drawAreas(); drawKDE(); }
+    
+    let evClickTs = -1;
+	layerGroup.on('click', ev => { if (ev.layer && ev.layer.ev && ev.originalEvent) evClickTs = ev.originalEvent.timeStamp; });
+	map.on('click', ev => {
+	  if (!on.poly || drawing || drawStart || polyDrawing || (ev.originalEvent && ev.originalEvent.timeStamp === evClickTs)) return;
+	  const a = BYSIZE.find(a => inside(a.h, ev.latlng.lng, ev.latlng.lat));
+	  if (a) L.popup().setLatLng(ev.latlng).setContent(`<b>${a[0]}</b><br>${a.n} events`).openOn(map);
+	});
+    
     const NDIG = 5, CH = 42, wheels = [];
     (function () {
       const odo = $('odo');
@@ -952,6 +883,7 @@ const AREAS = [
       });
       cs.onchange = () => setDays(+cs.value);
     })();
+    $('cmain').onclick = () => $('counter').classList.toggle('collapsed');
     function setCount(n) {
       n = Math.max(0, Math.min(Math.pow(10, NDIG) - 1, n));
       const str = String(n).padStart(NDIG, '0');
@@ -976,6 +908,65 @@ const AREAS = [
       $('tbx').innerHTML = h;
       updateBar();
     }
+
+function parseYMD(s) {
+  //YYYYMMDD, YYYY-MM-DD, YYYY/MM/DD, YYYY MM DD
+  const digits = String(s || '').replace(/\D/g, '');
+  if (digits.length !== 8) return NaN;
+  const y = +digits.slice(0, 4), m = +digits.slice(4, 6), d = +digits.slice(6, 8);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return NaN;
+  return dt.getTime();
+}
+
+function fmtYMD(ms) {
+  const d = new Date(ms);
+  return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate());
+}
+
+function syncDateInputs() {
+  const s = $('dtStart'), e = $('dtEnd');
+  if (!s || !e) return;
+  const span = rangeEnd - rangeStart;
+  if (!dtDirty.start && document.activeElement !== s)
+    s.value = fmtYMD(rangeStart + sel.a * span);
+  if (!dtDirty.end && document.activeElement !== e) {
+    const endMs = rangeStart + sel.b * span;
+    e.value = fmtYMD(Math.max(rangeStart, endMs - 1));
+  }
+}
+
+function applyDateRange() {
+  const info = $('info');
+  const sVal = $('dtStart').value, eVal = $('dtEnd').value;
+  const sMs = parseYMD(sVal);
+  const eMs = parseYMD(eVal);
+  if (!isFinite(sMs) || !isFinite(eMs)) {
+    console.warn('[date-range] parse failed:', sVal, eVal);
+    info.textContent = 'Date range: enter YYYYMMDD (or YYYY-MM-DD) for both START and END';
+    return;
+  }
+  if (sMs > eMs) {
+    info.textContent = 'Date range: START is after END';
+    return;
+  }
+  const now = Date.now();
+  if (sMs >= now) { info.textContent = 'Date range: START is in the future'; return; }
+  customRange = { s: sMs, e: Math.min(now, eMs + 864e5) };
+  sel.a = 0; sel.b = 1;
+  dtDirty.start = false; dtDirty.end = false;
+  fetchEarthquakes();     
+}
+
+['dtStart', 'dtEnd'].forEach(id => {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener('focus', () => el.select());
+  el.addEventListener('input', () => { if (id === 'dtStart') dtDirty.start = true; else dtDirty.end = true; });
+  el.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); applyDateRange(); } });
+});
+if ($('dtGo')) $('dtGo').onclick = applyDateRange;
+
     function updateBar() {
       const span = rangeEnd - rangeStart;
       $('k0').style.left = sel.a * 100 + '%'; $('k1').style.left = sel.b * 100 + '%';
@@ -983,6 +974,7 @@ const AREAS = [
       $('tbA').textContent = fmtUTC(rangeStart + sel.a * span);
       $('tbB').textContent = fmtUTC(rangeStart + sel.b * span) + ' UTC';
       $('tbN').textContent = 'reference time';
+        syncDateInputs();                          
     }
     (function () {
       const tbt = $('tbt'); let drag = null;
@@ -1040,7 +1032,7 @@ const AREAS = [
         `<div id="bbpop-${e.eventId}" class="bbpop"></div>` +
         `<div style="min-width:150px">` +
           `<b>M${e.mag.toFixed(1)}</b> &middot; ${e.place || ''}<br>` +
-          `Depth: ${e.depth} km &middot; ${e.t.toLocaleString()}<br>` +
+          `Depth: ${e.depth} km &middot; ${fmtYMD(e.t)} ${e.t.toISOString().slice(11,19)} UTC<br>` +
           `<div style="margin-top:6px;display:flex;flex-direction:column;gap:3px;line-height:1.4">` +
           `  <a href="#" onclick="downloadPicks('${e.eventId}');return false;">&#11015; Picks &amp; arrivals (.txt)</a>` +
           `  <a href="${isideUrl}" target="_blank" rel="noopener">&#11015; Download waveform (ISIDE / EIDA)</a>` +
@@ -1165,7 +1157,7 @@ const AREAS = [
       renderMarkers();
       secs.forEach(s => { if (s.layers) { s.layers.poly.bringToFront(); s.layers.line.bringToFront(); s.layers.mA.setZIndexOffset(2000); s.layers.mB.setZIndexOffset(2000); } });
       refresh(); setCount(events.length);
-      const lab = RANGES[daysIdx][2].toLowerCase();
+      const lab = customRange ? 'custom' : RANGES[daysIdx][2].toLowerCase();
       $('clabel').textContent = 'earthquakes \u00b7 ' + lab + (events.length !== allEvents.length ? ' (selected window)' : '');
       $('info').textContent = events.length + (events.length !== allEvents.length ? ' / ' + allEvents.length : '') + ' events' + (limitHit ? ' (limit hit)' : '');
       $('depthbar').style.display = colorMode === 'depth' ? 'block' : 'none';
@@ -1407,7 +1399,7 @@ const AREAS = [
       for (let z = 0; z <= D + 1e-6; z += sz) { const y = Y(z); c.strokeStyle = '#e3e3e3'; c.beginPath(); c.moveTo(ml, y); c.lineTo(ml + pw, y); c.stroke(); c.fillStyle = '#000'; c.fillText(+z.toFixed(3), ml - 4, y + 3); }
       c.strokeStyle = '#000'; c.strokeRect(ml, mt, pw, ph);
       c.textAlign = 'center'; c.font = '11px sans-serif'; c.fillStyle = '#000';
-      c.fillText('Distance ' + (s.la||'A') + ' \u2192 ' + (s.lb||'B') + ' (km)', ml + pw / 2, H - 6);
+      c.fillText('Distance ' + (s.la||'A') + ' ' + (s.lb||'B') + ' (km)', ml + pw / 2, H - 6);
       c.save(); c.translate(11, mt + ph / 2); c.rotate(-Math.PI / 2); c.fillText('Depth (km)', 0, 0); c.restore();
       c.font = 'bold 12px sans-serif'; c.fillStyle = '#006978'; c.textAlign = 'left'; c.fillText(s.la || 'A', ml + 4, mt + 13); c.textAlign = 'right'; c.fillText(s.lb || 'B', ml + pw - 4, mt + 13);
       secPts = [];
@@ -1417,7 +1409,7 @@ const AREAS = [
         secPts.push({ x, y, r, s: sp });
       });
       const f = p => p.lat.toFixed(3) + ', ' + p.lng.toFixed(3);
-      $('sectitle').textContent = 'Section ' + (secs.indexOf(s) + 1) + ' (' + (s.la||'A') + (s.lb||'B') + ') ' + f(s.A) + ' \u2192 ' + f(s.B);
+      $('sectitle').textContent = 'Section ' + (secs.indexOf(s) + 1) + ' (' + (s.la||'A') + (s.lb||'B') + ') ' + f(s.A) + '  ' + f(s.B);
       $('secinfo').textContent = s.slab.length + ' events \u00b7 L = ' + g.L.toFixed(1) + ' km \u00b7 d \u2264 ' + g.hw + ' km';
     }
     seccv.addEventListener('mousemove', ev => {
@@ -1846,7 +1838,7 @@ const AREAS = [
 		const d0 = depthMin + dsel.a * (depthMax - depthMin);
 		const d1 = depthMin + dsel.b * (depthMax - depthMin);
 		const title = events.length + ' earthquakes';
-		let sub = fmtUTC(t0) + ' \u2192 ' + fmtUTC(t1) + ' UTC';
+		let sub = fmtUTC(t0) + '  ' + fmtUTC(t1) + ' UTC';
 		if (colorMode === 'depth') sub += '  \u00b7  depth ' + d0.toFixed(0) + '\u2013' + d1.toFixed(0) + ' km';
 		c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(W / 2 - 400, 24, 800, 92);
 		c.fillStyle = '#fff'; c.textAlign = 'center';
@@ -1890,7 +1882,7 @@ const AREAS = [
 		    c.fillText(lab, x, rowY0 + bh + 28);
 		  }
 		  c.fillStyle = '#333'; c.font = '16px sans-serif';
-		  c.fillText('selected  ' + fmtUTC(t0) + '  \u2192  ' + fmtUTC(t1) + ' UTC', bx + bw / 2, rowY0 + bh + 54);
+		  c.fillText('selected  ' + fmtUTC(t0) + '    ' + fmtUTC(t1) + ' UTC', bx + bw / 2, rowY0 + bh + 54);
 		} else if (colorMode === 'kde') {
 		  legendBar(rowY0, KDE_STOPS.map((st, i) => [i / (KDE_STOPS.length - 1), `rgb(${st.join(',')})`]));
 		  c.fillStyle = '#000'; c.font = '18px sans-serif';
@@ -1914,7 +1906,7 @@ const AREAS = [
 		  c.fillStyle = '#000'; c.font = '16px sans-serif';
 		  c.textAlign = 'left';   c.fillText(fmtUTC(rangeStart), bx, rowY1 + bh + 24);
 		  c.textAlign = 'right';  c.fillText(fmtUTC(rangeEnd) + ' UTC', bx + bw, rowY1 + bh + 24);
-		  c.textAlign = 'center'; c.fillText('time window \u2014 selected ' + fmtUTC(t0) + ' \u2192 ' + fmtUTC(t1), bx + bw / 2, rowY1 + bh + 24);
+		  c.textAlign = 'center'; c.fillText('time window \u2014 selected ' + fmtUTC(t0) + fmtUTC(t1), bx + bw / 2, rowY1 + bh + 24);
 		}
 
 		c.strokeStyle = '#ff7800'; c.lineWidth = 8; c.strokeRect(4, 4, W - 8, H - 8);
@@ -1943,12 +1935,14 @@ const AREAS = [
       const info = $('info');
       info.textContent = 'Loading...';
       const fmt = d => d.toISOString().slice(0, 19);
-      const end = new Date(), start = new Date(end - days * 864e5);
+      const end = customRange ? new Date(customRange.e) : new Date();
+      const start = customRange ? new Date(customRange.s) : new Date(end - days * 864e5);
+      const spanDays = (end - start) / 864e5;
       rangeStart = start.getTime(); rangeEnd = end.getTime();
       const baseUrl = 'https://webservices.ingv.it/fdsnws/event/1/query?format=geojson' +
         '&minlatitude=35.8&maxlatitude=41.8&minlongitude=12&maxlongitude=19.5&limit=10000&orderby=time';
       try {
-        if (days < 1095) {
+        if (spanDays < 1095) {
           const url = `${baseUrl}&starttime=${fmt(start)}&endtime=${fmt(end)}`;
           const res = await fetch(url);
           if (id !== reqId) return;
@@ -2006,7 +2000,7 @@ const AREAS = [
     })();
 
     fetchEarthquakes();
-    setInterval(() => { if (days <= 30) fetchEarthquakes(); }, 60000);
+    setInterval(() => { if (!customRange && days <= 30) fetchEarthquakes(); }, 60000);
   </script>
 </body>
 </html>
