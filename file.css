@@ -25,10 +25,12 @@ body {
     flex-direction: column;
     margin-bottom: 10px; 
 }
-
 #main-menu {
     position: relative;
     z-index: 1000; 
 }
-#depthbar { position: absolute; bottom: 78px; left: 50%; transform: translateX(-50%); width: min(520px, 34vw); z-index: 1001; background: rgba(255,255,255,.93); 
-           border-radius: 6px; padding: 5px 30px 3px; box-shadow: 0 1px 5px rgba(0,0,0,.5); font: 11px sans-serif; user-select: none; display: none; }
+#depthbar { position: absolute; bottom: 78px; left: 50%; transform: translateX(-50%); width: min(520px, 34vw); z-index: 1001; background: rgba(255,255,255,.93); border-radius: 6px; padding: 5px 30px 3px; box-shadow: 0 1px 5px rgba(0,0,0,.5); font: 11px sans-serif; user-select: none; display: none; }
+#odo { cursor: pointer; }
+#counter.collapsed #ctabs,
+#counter.collapsed #esearch,
+#counter.collapsed #drange { display: none; }
