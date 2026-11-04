@@ -8,10 +8,12 @@
   <style>
     html, body, #map { height: 100%; margin: 0; }
     .leaflet-popup-content { font-size: 14px; }
+    .leaflet-popup-content a { color: #08519c; text-decoration: none; }
+    .leaflet-popup-content a:hover { text-decoration: underline; }
     .ctl { background: #fff; padding: 6px; border-radius: 4px; box-shadow: 0 1px 5px rgba(0,0,0,.4); max-height: calc(100vh - 40px); overflow-y: auto; }
     .ctl button { display: block; width: 100%; margin: 2px 0; padding: 4px 8px; cursor: pointer; border: 1px solid #999; background: #f4f4f4; }
     .ctl button.active { background: #BD0026; color: #fff; border-color: #800026; }
-    .ctl button.feat.active { background: #08519c; border-color: #08306b; }
+    .ctl button.feat.active { background: #08519c; border-color: #08306b; color:#fff; }
     .ctl button.act.active { background: #e65100; border-color: #bf360c; color: #fff; }
     .ctl hr { margin: 4px 0; border: 0; border-top: 1px solid #ccc; }
     .ctl .info { font-size: 12px; margin-top: 4px; text-align: center; }
@@ -20,9 +22,11 @@
     .abar div { margin: 0 auto; width: 16px; border: 1px solid #000; background: #08519c; opacity: .85; }
     .mag-legend { text-align: center; font: 11px sans-serif; }
     .mag-legend svg { display: block; margin: 4px auto 0; }
-    .mag-legend.gray svg { filter: grayscale(1); }
     .mag-legend text { font: bold 8px sans-serif; fill: #000; paint-order: stroke; stroke: #fff; stroke-width: 2px; stroke-linejoin: round; }
-    #counter { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #16181d; border: 1px solid #000; border-radius: 8px; padding: 6px 10px 8px; box-shadow: 0 2px 8px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.12); text-align: center; color: #ccc; font: 12px sans-serif; user-select: none; }
+    #counter { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #16181d; border: 1px solid #000; border-radius: 8px; padding: 6px 10px 8px; box-shadow: 0 2px 8px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.12); text-align: center; color: #ccc; font: 12px sans-serif; user-select: none; display: flex; gap: 8px; align-items: flex-start; }
+    #cmain { display: flex; flex-direction: column; align-items: center; }
+    #helpBtn { width: 22px; height: 22px; flex: 0 0 auto; margin-top: 2px; border-radius: 50%; border: 1px solid #3a3d45; background: #262930; color: #4fc3f7; font: bold 13px/1 "DejaVu Sans", sans-serif; cursor: pointer; padding: 0; }
+    #helpBtn:hover { background: #343a44; border-color: #4fc3f7; }
     #counter .cl { margin-bottom: 5px; }
     #odo { display: flex; gap: 3px; justify-content: center; }
     .dg { width: 28px; height: 42px; overflow: hidden; position: relative; background: #000; border-radius: 4px; box-shadow: inset 0 0 6px #000; }
@@ -32,9 +36,12 @@
     .dg i { display: block; height: 42px; font: normal 600 30px/42px "DejaVu Sans Mono", Menlo, Consolas, monospace; color: #f4f4f4; text-align: center; }
     .dg.z i { color: #4a4d55; }
     #ctabs { display: flex; gap: 3px; margin-top: 7px; justify-content: center; }
-    #ctabs button { padding: 3px 7px; border: 1px solid #3a3d45; background: #262930; color: #bbb; border-radius: 3px; cursor: pointer; font: 11px sans-serif; }
-    #ctabs button:hover { background: #31343c; }
-    #ctabs button.active { background: #BD0026; border-color: #800026; color: #fff; }
+    #ctabs select { font: 11px sans-serif; padding: 3px 5px; border-radius: 3px; border: 1px solid #3a3d45; background: #262930; color: #ddd; max-width: 180px; }
+    #esearch { display: flex; gap: 3px; margin-top: 6px; justify-content: center; align-items: center; }
+    #esearch input { width: 104px; font: 11px sans-serif; padding: 3px 5px; border-radius: 3px; border: 1px solid #3a3d45; background: #262930; color: #ddd; user-select: text; }
+    #esearch button { font: 11px sans-serif; padding: 3px 6px; border-radius: 3px; border: 1px solid #3a3d45; background: #262930; color: #ddd; cursor: pointer; }
+    #esearch button:hover { background: #343a44; }
+    #eqtip { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 7px; width: 232px; background: #262930; border: 1px solid #3a3d45; border-radius: 5px; padding: 6px 8px; font: 11px/1.4 sans-serif; color: #ccc; text-align: left; z-index: 1002; box-shadow: 0 2px 8px rgba(0,0,0,.6); }
     /*RT CB */
     #timebar { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); width: min(520px, 34vw); z-index: 1001; background: rgba(255,255,255,.93); border-radius: 6px; padding: 5px 30px 3px; box-shadow: 0 1px 5px rgba(0,0,0,.5); font: 11px sans-serif; user-select: none; }
     #timebar .tbh { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 5px; white-space: nowrap; }
@@ -56,15 +63,34 @@
     .win .wf { padding: 3px 8px; border-top: 1px solid #ccc; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     #sectip { position: absolute; display: none; pointer-events: none; background: rgba(20,20,20,.92); color: #fff; padding: 4px 6px; border-radius: 3px; font: 11px/1.35 sans-serif; white-space: nowrap; z-index: 5; }
     .hd { width: 22px; height: 22px; border-radius: 50%; background: #00e5ff; border: 2px solid #003b44; color: #003b44; font: bold 12px/18px sans-serif; text-align: center; cursor: move; box-sizing: border-box; }
+    .smark { width: 26px; height: 26px; border-radius: 50%; background: #00e5ff; border: 2px solid #003b44; color: #003b44; font: bold 14px/22px sans-serif; text-align: center; box-sizing: border-box; }
+    #rateAreaBar { display: none; margin-bottom: 4px; font: 11px sans-serif; }
+    #rateAreaBar select { font-size: 11px; max-width: 240px; }
+    #kdeLegend { display: none; }
+    #helpwin .wb { overflow: auto; padding: 9px 11px; font: 12px/1.5 sans-serif; color: #222; }
+    #helpwin b { color: #08519c; }
+    #helpwin .hs { margin: 0 0 7px; }
   </style>
 </head>
 <body>
   <div id="map"></div>
-  <div id="chart"><canvas id="cv" width="440" height="270"></canvas></div>
+  <div id="chart">
+    <div id="rateAreaBar">Area: <select id="rsel"><option value="">All areas</option></select></div>
+    <canvas id="cv" width="440" height="270"></canvas>
+  </div>
   <div id="counter">
-    <div class="cl" id="clabel">earthquakes</div>
-    <div id="odo"></div>
-    <div id="ctabs"></div>
+    <button id="helpBtn" title="Info / help">i</button>
+    <div id="cmain">
+      <div class="cl" id="clabel">earthquakes</div>
+      <div id="odo"></div>
+      <div id="ctabs"><select id="csel"></select></div>
+      <div id="esearch">
+        <input id="eqid" type="text" placeholder="event id" autocomplete="off" />
+        <button id="eqgo" title="Find event">&#10132;</button>
+        <button id="eqinfo" title="About event search">i</button>
+      </div>
+    </div>
+    <div id="eqtip">Paste an INGV event id (e.g. <b>33456781</b>) and press &#10132;: the event is downloaded on its own and centred on the map. Click the star to get the waveform / picks links.</div>
   </div>
   <div id="timebar">
     <div class="tbh"><span id="tbA"></span><b id="tbN"></b><span id="tbB"></span></div>
@@ -77,12 +103,13 @@
     </div>
     <div class="tbx" id="tbx"></div>
   </div>
-  <div class="win" id="secwin" style="width:520px;height:330px">
+  <div class="win" id="secwin" style="width:520px;height:340px">
     <div class="wh"><span id="sectitle">Section</span><span><button id="b3d">3D</button><button id="secx">&#10005;</button></span></div>
     <div class="wb"><canvas id="seccv"></canvas><div id="sectip"></div></div>
     <div class="wf">
       <label>width <input id="secw" type="number" value="25" min="1" step="5" style="width:52px"> km (&plusmn;width/2)</label>
       <label><input id="sec11" type="checkbox"> 1:1</label>
+      <select id="secSel" style="font-size:11px;"></select>
       <span id="secinfo"></span>
     </div>
   </div>
@@ -92,6 +119,12 @@
     <div class="wb"><canvas id="cv3"></canvas></div>
     <div class="wf"><span id="info3"></span></div>
   </div>
+
+  <div class="win" id="helpwin" style="width:430px;height:440px">
+    <div class="wh"><span>Info &amp; help</span><span><button id="helpx">&#10005;</button></span></div>
+    <div class="wb"></div>
+  </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
 const AREAS = [
@@ -117,8 +150,8 @@ const AREAS = [
 ["Valle dell'Esaro",[[39.61,16.184],[39.725,16.197],[39.767,16.251],[39.767,16.333],[39.621,16.319]],39.673,16.251],
 ["Catena del Pollino",[[39.83,16.549],[39.8264,16.5389],[39.841,16.536],[39.841,16.481],[39.767,16.319],[39.767,16.2725],[39.83,16.238],[39.9033,16.0905],[39.904,16.102],[39.945,16.102],[40.05,15.994],[40.029,16.333],[39.998,16.333],[39.872,16.522],[39.872,16.549]],39.935,16.265],
 ["Marate-Rotonda",[[39.945,16.102],[39.904,16.102],[39.883,15.777],[40.04,15.656],[40.082,15.656],[40.05,15.994]],39.977,15.859],
-["Cilento",[[40.428, 15.155], [40.103, 15.628], [40.0689, 15.628], [40.061, 15.52],[40.0016, 15.4314], [40.008, 15.371], [40.015, 15.335], [40.030, 15.283],[40.060, 15.260], [40.090, 15.245], [40.108, 15.234], [40.140, 15.184],[40.155, 15.140], [40.166, 15.082], [40.181, 15.026], [40.194, 15.0179],[40.202, 15.012], [40.206, 15.0062], [40.2125, 14.9979], [40.2174, 14.9933],[40.2197, 14.9854], [40.219, 14.9755], [40.221, 14.9693], [40.227, 14.9632],[40.230, 14.9587], [40.233, 14.9482], [40.228, 14.9361], [40.231, 14.9265],[40.235, 14.9193], [40.241, 14.9113], [40.251, 14.9003], [40.270, 14.937],[40.2959, 14.9469], [40.3069, 14.9465], [40.3195, 14.9397], [40.3354, 14.9447],[40.339, 14.9535], [40.341, 14.9699], [40.3480, 14.9740], [40.351, 14.9793],[40.358, 14.980], [40.438, 15.073]],40.22,15.15],
-["Offshore Cilento",[[40.0016, 15.4314], [39.9886, 15.412], [39.925, 15.317], [39.589, 15.425],[39.589, 15.439], [39.589, 15.4459], [39.5889, 15.4539], [39.5787, 15.4565],[39.5377, 14.586], [39.589, 14.586], [39.9995, 14.7931], [40.238, 14.9118],[40.233, 14.9190], [40.228, 14.9335], [40.232, 14.9488], [40.2270, 14.9609],[40.2199, 14.9711], [40.2184, 14.9808], [40.2169, 14.9924], [40.210, 14.9989],[40.206, 15.0058], [40.201, 15.0133], [40.192, 15.0188], [40.186, 15.0227],[40.181, 15.026], [40.166, 15.082], [40.155, 15.140], [40.140, 15.184],[40.108, 15.234], [40.090, 15.245], [40.060, 15.260], [40.030, 15.283],[40.015, 15.335], [40.008, 15.371]],39.799,15.033],
+["Cilento",[[40.428,15.155],[40.103,15.628],[40.0689,15.628],[40.061,15.52],[40.0016,15.4314],[40.008,15.371],[40.015,15.335],[40.030,15.283],[40.060,15.260],[40.090,15.245],[40.108,15.234],[40.140,15.184],[40.155,15.140],[40.166,15.082],[40.181,15.026],[40.194,15.0179],[40.202,15.012],[40.206,15.0062],[40.2125,14.9979],[40.2174,14.9933],[40.2197,14.9854],[40.219,14.9755],[40.221,14.9693],[40.227,14.9632],[40.230,14.9587],[40.233,14.9482],[40.228,14.9361],[40.231,14.9265],[40.235,14.9193],[40.241,14.9113],[40.251,14.9003],[40.270,14.937],[40.2959,14.9469],[40.3069,14.9465],[40.3195,14.9397],[40.3354,14.9447],[40.339,14.9535],[40.341,14.9699],[40.3480,14.9740],[40.351,14.9793],[40.358,14.980],[40.438,15.073]],40.22,15.15],
+["Offshore Cilento",[[40.0016,15.4314],[39.9886,15.412],[39.925,15.317],[39.589,15.425],[39.589,15.439],[39.589,15.4459],[39.5889,15.4539],[39.5787,15.4565],[39.5377,14.586],[39.589,14.586],[39.9995,14.7931],[40.238,14.9118],[40.233,14.9190],[40.228,14.9335],[40.232,14.9488],[40.2270,14.9609],[40.2199,14.9711],[40.2184,14.9808],[40.2169,14.9924],[40.210,14.9989],[40.206,15.0058],[40.201,15.0133],[40.192,15.0188],[40.186,15.0227],[40.181,15.026],[40.166,15.082],[40.155,15.140],[40.140,15.184],[40.108,15.234],[40.090,15.245],[40.060,15.260],[40.030,15.283],[40.015,15.335],[40.008,15.371]],39.799,15.033],
 ["Golfo di Policastro",[[39.589,15.425],[39.925,15.317],[40.061,15.52],[40.071,15.656],[40.04,15.656],[39.883,15.777],[39.8841,15.7932],[39.862,15.7987],[39.862,15.75],[39.6,15.452],[39.589,15.4541]],39.872,15.534],
 ["Offshore Scalea-Diamante",[[39.453,15.48],[39.6,15.452],[39.862,15.75],[39.862,15.804],[39.568,15.886]],39.642,15.71],
 ["Alto Tirreno Cosentino",[[39.579,16.129],[39.579,16.021],[39.558,15.981],[39.5571,15.981],[39.547,15.913],[39.5654,15.877],[39.568,15.886],[39.862,15.804],[39.862,15.7987],[39.8841,15.7932],[39.9033,16.0905],[39.83,16.238],[39.767,16.2725],[39.767,16.251],[39.725,16.197],[39.621,16.1852],[39.621,16.143],[39.5848,16.1393]],39.757,16.021],
@@ -148,7 +181,7 @@ const AREAS = [
 ["Bacino di Cefalù",[[38.09,14.654],[38.069,14.654],[38.038,14.342],[38.048,13.977],[38.027,13.923],[38.0197,13.9234],[38.017,13.76],[38.132,13.516],[38.132,13.422],[38.205,13.327],[38.3,13.354],[38.509,13.53],[38.4993,13.5685],[38.488,13.571],[38.342,14.126],[38.363,14.505],[38.426,14.924],[38.4328,14.9215],[38.4377,14.9246],[38.4286,14.9429],[38.42,14.93],[38.39,14.92],[38.36,14.94],[38.35,14.97],[38.36,15.0],[38.3754,15.0102],[38.39,15.02],[38.42,15.01],[38.4367,14.9933],[38.44,15.0],[38.4534,15.0089],[38.4534,15.009],[38.4528,15.0096],[38.4062,15.0532],[38.4062,15.0533],[38.4048,15.0547],[38.3996,15.0594],[38.3996,15.0595],[38.3982,15.0608],[38.3908,15.0677],[38.3895,15.069],[38.3894,15.069],[38.3617,15.0951],[38.3157,15.0877],[38.3041,15.0805],[38.304,15.0805],[38.3023,15.0788],[38.281,15.0594],[38.2591,15.0217],[38.2583,15.0203],[38.2582,15.0203],[38.2514,15.0087],[38.2514,15.0086],[38.2515,15.0086],[38.2393,14.9878],[38.2385,14.9865],[38.2385,14.9864],[38.226,14.965],[38.2024,14.965],[38.1982,14.9619],[38.1955,14.9452],[38.195,14.9437],[38.195,14.897],[38.143,14.735]],38.226,13.814],
 ["Lipari",[[38.5,14.91],[38.52,14.94],[38.52,14.98],[38.5,15.01],[38.47,15.02],[38.44,15.0],[38.4367,14.9933],[38.44,14.99],[38.44,14.96],[38.4286,14.9429],[38.44,14.92],[38.47,14.9]],38.47,14.96],
 ["Vulcano",[[38.39,14.92],[38.42,14.93],[38.44,14.96],[38.44,14.99],[38.42,15.01],[38.39,15.02],[38.36,15.0],[38.35,14.97],[38.36,14.94]],38.385,14.97],
-["Tirreno Occidentale",[[38.2025, 13.2544], [38.207, 13.239], [38.1997, 13.2362], [38.1971, 13.2157],[38.187, 13.1345], [38.187, 13.1343], [38.1901, 13.1009], [38.1747, 13.0838],    [38.166, 13.0894], [38.1418, 13.0547], [38.123, 13.0662], [38.0911, 13.0697],[38.0624, 13.0274], [38.048, 12.9868], [38.048, 12.894], [38.122, 12.812], [38.122, 12.7881], [38.181, 12.7609], [38.181, 12.7378], [38.1928, 12.7318],[38.1755, 12.7199], [38.1259, 12.7254], [38.122, 12.72], [38.122, 12.69],[38.1185, 12.6847], [38.1163, 12.6624], [38.0984, 12.6539], [38.0982, 12.6536],[38.069, 12.609], [38.0632, 12.6058], [38.0717, 12.5763], [38.0314, 12.5234],[38.0214, 12.4929], [38.0112, 12.5042], [37.9971, 12.5029], [37.954, 12.4905],[37.9129, 12.4641], [37.8812, 12.4787], [37.85, 12.4693], [37.85, 12.2],[41.5, 12.2], [41.5, 12.5839], [41.4475, 12.6353], [41.4656, 12.654],[41.4237, 12.7485], [41.4135, 12.8622], [41.3798, 12.9238], [41.331, 12.9795],[41.2736, 13.0237], [41.2275, 13.0446], [41.2217, 13.0682], [41.2265, 13.0905],[41.2509, 13.1145], [41.2602, 13.1512], [41.278, 13.187], [41.2957, 13.2858],[41.2948, 13.3244], [41.2392, 13.4802], [41.2217, 13.4997], [41.2297, 13.5144],[41.2081, 13.5344], [41.2066, 13.544], [41.2081, 13.5755], [41.238, 13.5637],[41.2531, 13.5944], [41.2596, 13.6566], [41.2507, 13.6633], [41.2564, 13.7085],[41.2524, 13.7219], [41.2059, 13.7905], [41.1473, 13.8517], [41.0646, 13.9107],[41.0237, 13.918], [40.9964, 13.9653], [40.9218, 14.0213], [40.8742, 14.0445],[40.8376, 14.0523], [40.7965, 14.0412], [40.7896, 14.0477], [40.7835, 14.0825],[40.8222, 14.0762], [40.8313, 14.0825], [40.8338, 14.096], [40.8186, 14.1352],[40.8158, 14.1656], [40.8009, 14.1822], [40.8012, 14.2035], [40.8314, 14.2236],[40.8388, 14.2942], [40.7616, 14.3944], [40.7509, 14.4213], [40.7551, 14.4426],[40.7297, 14.4741], [40.7115, 14.4797], [40.6951, 14.4764], [40.686, 14.4442],[40.6369, 14.3874], [40.6244, 14.3377], [40.6054, 14.328], [40.5845, 14.3298],[40.5706, 14.3426], [40.5836, 14.3558], [40.6155, 14.422], [40.6326, 14.4866],[40.6136, 14.5442], [40.6177, 14.5713], [40.6491, 14.6257], [40.6491, 14.6904],[40.6668, 14.72], [40.6767, 14.7522], [40.6699, 14.782], [40.6326, 14.8355],[40.5731, 14.8888], [40.3976, 14.9983], [40.393, 14.9955], [40.384, 14.9982],[40.376, 14.9980], [40.3702, 14.9927], [40.364, 14.9854], [40.358, 14.9790],[40.3514, 14.9768],[40.3485, 14.9726], [40.3425, 14.9680], [40.3418, 14.9530],[40.3375, 14.9444], [40.3252, 14.9400], [40.3195, 14.9384], [40.317, 14.9394],[40.310, 14.9441], [40.300, 14.9461], [40.291, 14.9445], [40.281, 14.9406],[40.271, 14.9363], [40.264, 14.9257], [40.258, 14.9108], [40.252, 14.9008],[40.251, 14.8985], [40.239, 14.911], [39.589, 14.586], [39.5377, 14.586],[39.537, 14.572], [39.5246, 14.5734], [39.495, 14.315], [38.897, 14.058],[38.876, 14.004], [38.876, 13.923], [38.918, 13.787], [38.73, 13.7228],[38.73, 13.692], [38.551, 13.557], [38.4993, 13.5685], [38.509, 13.53],[38.3, 13.354], [38.2117, 13.325], [38.2206, 13.3181]],39.65,13.60],
+["Tirreno Occidentale",[[38.2025,13.2544],[38.207,13.239],[38.1997,13.2362],[38.1971,13.2157],[38.187,13.1345],[38.187,13.1343],[38.1901,13.1009],[38.1747,13.0838],[38.166,13.0894],[38.1418,13.0547],[38.123,13.0662],[38.0911,13.0697],[38.0624,13.0274],[38.048,12.9868],[38.048,12.894],[38.122,12.812],[38.122,12.7881],[38.181,12.7609],[38.181,12.7378],[38.1928,12.7318],[38.1755,12.7199],[38.1259,12.7254],[38.122,12.72],[38.122,12.69],[38.1185,12.6847],[38.1163,12.6624],[38.0984,12.6539],[38.0982,12.6536],[38.069,12.609],[38.0632,12.6058],[38.0717,12.5763],[38.0314,12.5234],[38.0214,12.4929],[38.0112,12.5042],[37.9971,12.5029],[37.954,12.4905],[37.9129,12.4641],[37.8812,12.4787],[37.85,12.4693],[37.85,12.2],[41.5,12.2],[41.5,12.5839],[41.4475,12.6353],[41.4656,12.654],[41.4237,12.7485],[41.4135,12.8622],[41.3798,12.9238],[41.331,12.9795],[41.2736,13.0237],[41.2275,13.0446],[41.2217,13.0682],[41.2265,13.0905],[41.2509,13.1145],[41.2602,13.1512],[41.278,13.187],[41.2957,13.2858],[41.2948,13.3244],[41.2392,13.4802],[41.2217,13.4997],[41.2297,13.5144],[41.2081,13.5344],[41.2066,13.544],[41.2081,13.5755],[41.238,13.5637],[41.2531,13.5944],[41.2596,13.6566],[41.2507,13.6633],[41.2564,13.7085],[41.2524,13.7219],[41.2059,13.7905],[41.1473,13.8517],[41.0646,13.9107],[41.0237,13.918],[40.9964,13.9653],[40.9218,14.0213],[40.8742,14.0445],[40.8376,14.0523],[40.7965,14.0412],[40.7896,14.0477],[40.7835,14.0825],[40.8222,14.0762],[40.8313,14.0825],[40.8338,14.096],[40.8186,14.1352],[40.8158,14.1656],[40.8009,14.1822],[40.8012,14.2035],[40.8314,14.2236],[40.8388,14.2942],[40.7616,14.3944],[40.7509,14.4213],[40.7551,14.4426],[40.7297,14.4741],[40.7115,14.4797],[40.6951,14.4764],[40.686,14.4442],[40.6369,14.3874],[40.6244,14.3377],[40.6054,14.328],[40.5845,14.3298],[40.5706,14.3426],[40.5836,14.3558],[40.6155,14.422],[40.6326,14.4866],[40.6136,14.5442],[40.6177,14.5713],[40.6491,14.6257],[40.6491,14.6904],[40.6668,14.72],[40.6767,14.7522],[40.6699,14.782],[40.6326,14.8355],[40.5731,14.8888],[40.3976,14.9983],[40.393,14.9955],[40.384,14.9982],[40.376,14.9980],[40.3702,14.9927],[40.364,14.9854],[40.358,14.9790],[40.3514,14.9768],[40.3485,14.9726],[40.3425,14.9680],[40.3418,14.9530],[40.3375,14.9444],[40.3252,14.9400],[40.3195,14.9384],[40.317,14.9394],[40.310,14.9441],[40.300,14.9461],[40.291,14.9445],[40.281,14.9406],[40.271,14.9363],[40.264,14.9257],[40.258,14.9108],[40.252,14.9008],[40.251,14.8985],[40.239,14.911],[39.589,14.586],[39.5377,14.586],[39.537,14.572],[39.5246,14.5734],[39.495,14.315],[38.897,14.058],[38.876,14.004],[38.876,13.923],[38.918,13.787],[38.73,13.7228],[38.73,13.692],[38.551,13.557],[38.4993,13.5685],[38.509,13.53],[38.3,13.354],[38.2117,13.325],[38.2206,13.3181]],39.65,13.60],
 ["Milazzo",[[38.1982,14.9619],[38.2024,14.965],[38.226,14.965],[38.2385,14.9864],[38.2393,14.9878],[38.2515,15.0086],[38.2514,15.0087],[38.2582,15.0203],[38.2591,15.0217],[38.281,15.0594],[38.3023,15.0788],[38.3041,15.0805],[38.3157,15.0877],[38.3617,15.0951],[38.36,15.1065],[38.3366,15.1307],[38.3189,15.1415],[38.3175,15.1412],[38.3171,15.1426],[38.2959,15.223],[38.2918,15.2387],[38.2929,15.2399],[38.2908,15.2525],[38.2892,15.254],[38.2895,15.2603],[38.3,15.507],[38.237,15.48],[38.132,15.222],[38.122,15.087],[38.174,14.965],[38.195,14.965]],38.216,15.141],
 ["Monti Peloritani",[[37.849,15.29],[37.933,15.019],[37.9306,15.0117],[37.9306,15.0116],[38.038,14.654],[38.09,14.654],[38.143,14.735],[38.195,14.897],[38.195,14.9437],[38.1955,14.9452],[38.1982,14.9619],[38.195,14.965],[38.174,14.965],[38.122,15.087],[38.132,15.222],[38.237,15.48],[38.2874,15.5016],[38.3,15.52],[38.3,15.574],[38.2828,15.5698],[38.2827,15.5698],[38.2825,15.5697],[38.2725,15.5673],[38.2453,15.5882],[38.2417,15.591],[38.2416,15.591],[38.2147,15.6117],[38.2112,15.6144],[38.2111,15.6144],[38.1883,15.6319],[38.1883,15.632],[38.1879,15.6323],[38.1602,15.6535],[38.158,15.6532],[38.1189,15.5967],[38.1167,15.5936],[38.1167,15.5935],[38.1075,15.5801],[38.1053,15.577],[38.1053,15.5769],[38.0938,15.5604],[38.0937,15.5603],[38.0937,15.5602],[38.0754,15.5338],[38.0685,15.5177],[38.0672,15.5146],[38.0672,15.5145],[38.0647,15.5082],[38.0653,15.5076],[38.0641,15.5066],[38.069,15.466],[38.0452,15.4614],[38.0451,15.4614],[38.045,15.4614],[38.0034,15.4534],[38.0032,15.4534],[38.0031,15.4534],[38.0002,15.4528],[38.0,15.4527],[37.9986,15.4525],[37.9981,15.4524],[37.9975,15.4515],[37.9973,15.4512],[37.9975,15.4505],[37.996,15.4493],[37.839,15.317],[37.8473,15.2894],[37.8476,15.2895],[37.8483,15.2897]],38.006,15.236],
 ["Stretto di Messina",[[38.0,15.4527],[38.0,15.4528],[38.0002,15.4528],[38.0031,15.4534],[38.0034,15.4534],[38.045,15.4614],[38.0452,15.4614],[38.069,15.466],[38.0641,15.5066],[38.0639,15.5081],[38.0647,15.5082],[38.0672,15.5145],[38.0685,15.5177],[38.0754,15.5338],[38.0937,15.5602],[38.0938,15.5604],[38.1053,15.5769],[38.1075,15.5801],[38.1167,15.5935],[38.1189,15.5967],[38.158,15.6532],[38.0896,15.7139],[38.0884,15.7149],[38.0625,15.7361],[38.0347,15.7438],[38.0333,15.7424],[38.0332,15.7424],[38.0301,15.7394],[38.0158,15.7257],[38.0165,15.7167],[38.0165,15.7166],[38.0166,15.7154],[38.017,15.71],[37.922,15.723],[37.9216,15.7247],[37.9216,15.7248],[37.9215,15.725],[37.9207,15.7283],[37.9206,15.7286],[37.9191,15.7193],[37.9187,15.7171],[37.9119,15.6755],[37.9119,15.6751],[37.9069,15.6449],[37.9068,15.6437],[37.8998,15.6011],[37.8997,15.6007],[37.8978,15.5888],[37.8889,15.583],[37.8876,15.5676],[37.8933,15.561],[37.891,15.547],[37.996,15.452],[37.9969,15.4522],[37.9986,15.4525]],37.975,15.588],
@@ -181,7 +214,7 @@ const AREAS = [
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Tiles &copy; Esri'
     }).addTo(map);
-    const bounds = L.latLngBounds([35.85, 12.2], [41.8, 19.5]);
+    const bounds = L.latLngBounds([35.8, 12], [41.8, 19.5]);
     L.rectangle(bounds, {color: "#ff7800", weight: 1, fill: false}).addTo(map);
     map.fitBounds(bounds);
     map.setMinZoom(map.getBoundsZoom(bounds));
@@ -189,31 +222,58 @@ const AREAS = [
     map.options.maxBoundsViscosity = 1.0;
     window.addEventListener('resize', () => { map.setMinZoom(map.getBoundsZoom(bounds)); map.fitBounds(bounds); });
     map.createPane('areas').style.zIndex = 350;
+    map.createPane('kde').style.zIndex = 250;
     const areaRenderer = L.canvas({ pane: 'areas' });
     const layerGroup = L.featureGroup().addTo(map);
     const polyLayer = L.layerGroup(), barLayer = L.layerGroup();
+    const searchLayer = L.layerGroup().addTo(map);
     //ordine dei blocchi: stato, controlli, legenda, istogrammi, poi aree/contatore/barra/sezioni/export
     const $ = id => document.getElementById(id);
     const pad = n => String(n).padStart(2, '0');
     const fmtUTC = ms => { const d = new Date(ms); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()); };
+    const fmtISO = d => d.toISOString().slice(0, 19);
     const RANGES = [
-      ['Last day', 1, '24 h'], ['Last week', 7, '7 d'], ['Last month', 30, '30 d'],
-      ['Last 6 months', 182, '6 mo'], ['Last year', 365, '1 y'],
-      ['Last 2 years', 730, '2 y'], ['Last 3 years', 1095, '3 y']
+      ['Last 1 hour',    1/24,  '1 h'],
+      ['Last 6 hours',   6/24,  '6 h'],
+      ['Last 12 hours',  12/24, '12 h'],
+      ['Last 24 hours',  1,     '24 h'],
+      ['Last 3 days',    3,     '3 d'],
+      ['Last 5 days',    5,     '5 d'],
+      ['Last 7 days',    7,     '7 d'],
+      ['Last 15 days',   15,    '15 d'],
+      ['Last 30 days',   30,    '30 d'],
+      ['Last 3 months',  90,    '3 mo'],
+      ['Last 6 months',  182,   '6 mo'],
+      ['Last 9 months',  273,   '9 mo'],
+      ['Last 1 year',    365,   '1 y'],
+      ['Last 2 years',   730,   '2 y'],
+      ['Last 3 years',   1095,  '3 y'],
+      ['Last 5 years',   1825,  '5 y'],
+      ['Last 10 years',  3650,  '10 y'],
+      ['Last 15 years',  5475,  '15 y'],
+      ['Last 20 years',  7300,  '20 y'],
+      ['Last 25 years',  9125,  '25 y']
     ];
     const FEATS = [['depth', 'Depth histogram'], ['month', 'Month histogram'], ['mag', 'Mw histogram'],
+                   ['rateDepth', 'Rate vs depth'], ['kde', 'KDE density map'],
                    ['poly', 'Area polygons'], ['bars', 'Area count bars']];
-    let days = 7, reqId = 0, allEvents = [], events = [], chartMode = null, limitHit = false;
+    let daysIdx = 6, days = RANGES[daysIdx][1];
+    let reqId = 0, allEvents = [], events = [], chartMode = null, limitHit = false;
     let rangeStart = Date.now() - days * 864e5, rangeEnd = Date.now();
-    const sel = { a: 0, b: 1 };            //RT win, fraz [rangeStart, rangeEnd]
-    let colorMode = 'time';                //time | mag
-    const on = { poly: false, bars: false };
-    let sec = null, slab = [], slabSet = new Set(), drawing = false, drawStart = null;
+    const sel = { a: 0, b: 1 };
+    let colorMode = 'time';                 // 'time' | 'mag' | 'kde'
+    let kdeBW = 10;
+    const on = { poly: false, bars: false, kde: false };
+    let showEvents = true;
+    let secs = [], activeSec = null, drawing = false, drawStart = null, drawPreviewSec = null;
+    const secLayer = L.layerGroup().addTo(map);
     const v3 = { az: -35 * Math.PI / 180, el: 25 * Math.PI / 180, zoom: 1, eq: false };
+    let dissLayer = null;
+    let kdeGrid = null, kdeCanvas = null, kdeOverlay = null;
     function magColor(m) {
       return m >= 5 ? '#800026' : m >= 4 ? '#BD0026' : m >= 3 ? '#E31A1C' : m >= 2 ? '#FC4E2A' : m >= 1 ? '#FD8D3C' : '#FFEDA0';
     }
-    //CMtempo: vecchio  recente
+    //CMtempo: vecchio -> recente
     const CM = ['#5b3cc4', '#2f7fe0', '#1fc8b8', '#a6e02f', '#ffc414', '#ff3b1f'];
     const CMrgb = CM.map(h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)));
     function cmap(f) {
@@ -221,10 +281,188 @@ const AREAS = [
       const p = f * (CMrgb.length - 1), i = Math.min(CMrgb.length - 2, Math.floor(p)), u = p - i, a = CMrgb[i], b = CMrgb[i + 1];
       return 'rgb(' + [0, 1, 2].map(k => Math.round(a[k] + (b[k] - a[k]) * u)).join(',') + ')';
     }
-    function colorOf(e) { return colorMode === 'time' ? cmap((e.ms - rangeStart) / Math.max(1, rangeEnd - rangeStart)) : magColor(e.mag); }
-    function setDays(d) {
-      days = d; sel.a = 0; sel.b = 1;
-      document.querySelectorAll('[data-days]').forEach(x => x.classList.toggle('active', +x.dataset.days === d));
+    const KDE_STOPS = [[0,0,255],[64,64,255],[128,128,255],[191,191,255],[255,255,255],[255,191,191],[255,128,128],[255,64,64],[255,0,0]];
+    function kdeColorRGB(v) {
+      v = Math.max(0, Math.min(1, v || 0));
+      const p = v * (KDE_STOPS.length - 1);
+      const i = Math.min(KDE_STOPS.length - 2, Math.floor(p));
+      const u = p - i;
+      const a = KDE_STOPS[i], b = KDE_STOPS[i + 1];
+      return [0, 1, 2].map(k => Math.round(a[k] + (b[k] - a[k]) * u));
+    }
+    function kdeColor(v) { return 'rgb(' + kdeColorRGB(v).join(',') + ')'; }
+    function kdeGradientStops() {
+      return KDE_STOPS.map((st, i) =>
+        `<stop offset="${(i * 100 / (KDE_STOPS.length - 1)).toFixed(1)}%" stop-color="rgb(${st.join(',')})"/>`).join('');
+    }
+    function colorOf(e) {
+      if (colorMode === 'time') return cmap((e.ms - rangeStart) / Math.max(1, rangeEnd - rangeStart));
+      if (colorMode === 'mag') return magColor(e.mag);
+      if (colorMode === 'kde') return kdeColor(e.kde ?? 0);
+      return '#999';
+    }
+    function computeKDE() {
+      if (!events.length) return;
+      const lat0 = events[0].lat, lon0 = events[0].lon;
+      const kx = 111.32 * Math.cos(lat0 * Math.PI / 180), ky = 110.57;
+      const bw = Math.max(1, kdeBW);
+      const CELL = Math.max(bw, 1);
+      const grid = new Map();
+      const key = (i, j) => i + ',' + j;
+      events.forEach(e => {
+        const x = (e.lon - lon0) * kx, y = (e.lat - lat0) * ky;
+        const i = Math.floor(x / CELL), j = Math.floor(y / CELL);
+        const k = key(i, j);
+        if (!grid.has(k)) grid.set(k, []);
+        grid.get(k).push({ x, y });
+      });
+      const bw2 = 2 * bw * bw;
+      const RAD = Math.ceil(bw / CELL) + 1;
+      events.forEach(e => {
+        const x = (e.lon - lon0) * kx, y = (e.lat - lat0) * ky;
+        const i = Math.floor(x / CELL), j = Math.floor(y / CELL);
+        let sum = 0;
+        for (let di = -RAD; di <= RAD; di++) for (let dj = -RAD; dj <= RAD; dj++) {
+          const arr = grid.get(key(i + di, j + dj));
+          if (!arr) continue;
+          for (const p of arr) {
+            const dx = x - p.x, dy = y - p.y;
+            sum += Math.exp(-(dx*dx + dy*dy) / bw2);
+          }
+        }
+        e._dens = sum;
+      });
+      const logs = events.map(e => Math.log(e._dens + 1e-9));
+      let mn = Infinity, mx = -Infinity;
+      for (const v of logs) { if (v < mn) mn = v; if (v > mx) mx = v; }
+      const rng = mx - mn || 1;
+      events.forEach((e, i) => { e.kde = (logs[i] - mn) / rng; });
+    }
+    function computeKDEGrid() {
+      if (!events.length) { kdeGrid = null; return; }
+      const lat0 = events[0].lat, lon0 = events[0].lon;
+      const kx = 111.32 * Math.cos(lat0 * Math.PI / 180), ky = 110.57;
+      const bw = Math.max(1, kdeBW);
+      let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
+      const pts = events.map(e => {
+        const x = (e.lon - lon0) * kx, y = (e.lat - lat0) * ky;
+        if (x < xmin) xmin = x; if (x > xmax) xmax = x;
+        if (y < ymin) ymin = y; if (y > ymax) ymax = y;
+        return { x, y };
+      });
+      const pad = bw * 2;
+      xmin -= pad; xmax += pad; ymin -= pad; ymax += pad;
+      const maxN = 320;
+      let CELL = Math.max(1, bw / 2);
+      CELL = Math.max(CELL, (xmax - xmin) / maxN, (ymax - ymin) / maxN);
+      const gw = Math.max(2, Math.ceil((xmax - xmin) / CELL) + 1);
+      const gh = Math.max(2, Math.ceil((ymax - ymin) / CELL) + 1);
+      xmax = xmin + (gw - 1) * CELL;
+      ymax = ymin + (gh - 1) * CELL;
+      const grid = new Float32Array(gw * gh);
+      const inv2 = 1 / (2 * bw * bw);
+      const R = Math.ceil(3 * bw / CELL);
+      const kern = [];
+      for (let dj = -R; dj <= R; dj++) for (let di = -R; di <= R; di++) {
+        const ddx = di * CELL, ddy = dj * CELL;
+        const w = Math.exp(-(ddx * ddx + ddy * ddy) * inv2);
+        if (w > 1e-4) kern.push([di, dj, w]);
+      }
+      pts.forEach(p => {
+        const gx = Math.round((p.x - xmin) / CELL), gy = Math.round((p.y - ymin) / CELL);
+        for (let k = 0; k < kern.length; k++) {
+          const i = gx + kern[k][0], j = gy + kern[k][1];
+          if (i < 0 || i >= gw || j < 0 || j >= gh) continue;
+          grid[j * gw + i] += kern[k][2];
+        }
+      });
+      let mn = Infinity, mx = -Infinity;
+      for (let k = 0; k < grid.length; k++) {
+        const v = grid[k];
+        if (v > 1e-9) { const l = Math.log(v); if (l < mn) mn = l; if (l > mx) mx = l; }
+      }
+      if (!isFinite(mn)) { kdeGrid = null; return; }
+      const rng = (mx - mn) || 1;
+      const norm = new Float32Array(grid.length);
+      for (let k = 0; k < grid.length; k++) {
+        const v = grid[k];
+        norm[k] = v > 1e-9 ? Math.max(0, Math.min(1, (Math.log(v) - mn) / rng)) : 0;
+      }
+      kdeGrid = { gw, gh, norm, xmin, xmax, ymin, ymax, lat0, lon0, kx, ky };
+    }
+    function drawKDE() {
+      if (!on.kde) {
+        if (kdeOverlay) { map.removeLayer(kdeOverlay); kdeOverlay = null; }
+        kdeGrid = null; kdeCanvas = null;
+        updateLegends();
+        return;
+      }
+      computeKDEGrid();
+      if (!kdeGrid) {
+        if (kdeOverlay) { map.removeLayer(kdeOverlay); kdeOverlay = null; }
+        kdeCanvas = null;
+        updateLegends();
+        return;
+      }
+      const { gw, gh, norm, xmin, xmax, ymin, ymax, lat0, lon0, kx, ky } = kdeGrid;
+      const cv = document.createElement('canvas'); cv.width = gw; cv.height = gh;
+      const c = cv.getContext('2d');
+      const img = c.createImageData(gw, gh);
+      for (let j = 0; j < gh; j++) {
+        const row = gh - 1 - j;                 //row 0 = north
+        for (let i = 0; i < gw; i++) {
+          const v = norm[j * gw + i];
+          const idx = (row * gw + i) * 4;
+          if (v <= 0) { img.data[idx + 3] = 0; continue; }
+          const rgb = kdeColorRGB(v);
+          img.data[idx] = rgb[0]; img.data[idx + 1] = rgb[1]; img.data[idx + 2] = rgb[2];
+          img.data[idx + 3] = Math.round(255 * Math.min(0.9, 0.15 + v * 0.85));
+        }
+      }
+      c.putImageData(img, 0, 0);
+      kdeCanvas = cv;
+      const sw = [lat0 + ymin / ky, lon0 + xmin / kx];
+      const ne = [lat0 + ymax / ky, lon0 + xmax / kx];
+      const bnds = L.latLngBounds(sw, ne);
+      const url = cv.toDataURL();
+      if (kdeOverlay) { kdeOverlay.setUrl(url); kdeOverlay.setBounds(bnds); }
+      else kdeOverlay = L.imageOverlay(url, bnds, { pane: 'kde', opacity: 0.85, interactive: false }).addTo(map);
+      updateLegends();
+    }
+    function updateLegends() {
+      const ml = $('magLegend'), kl = $('kdeLegend');
+      if (ml) {
+        ml.style.display = colorMode === 'kde' ? 'none' : 'block';
+        const svg = ml.querySelector('svg');
+        if (svg) svg.style.filter = colorMode === 'time' ? 'grayscale(1)' : 'none';
+      }
+      if (kl) kl.style.display = (colorMode === 'kde' || on.kde) ? 'block' : 'none';
+    }
+    function toggleEvents() {
+      showEvents = !showEvents;
+      if (showEvents) layerGroup.addTo(map); else map.removeLayer(layerGroup);
+      const b = $('btnEq');
+      if (b) { b.textContent = showEvents ? 'Hide earthquakes' : 'Show earthquakes'; b.classList.toggle('active', !showEvents); }
+    }
+    function secLetters(i) {
+      return [String.fromCharCode(65 + (2 * i) % 26), String.fromCharCode(65 + (2 * i + 1) % 26)];
+    }
+    function relabelSections() {
+      secs.forEach((s, i) => {
+        const [a, b] = secLetters(i);
+        s.la = a; s.lb = b;
+        if (s.layers) {
+          s.layers.mA.setIcon(L.divIcon({ className: '', iconSize: [22, 22], iconAnchor: [11, 11], html: `<div class="hd">${a}</div>` }));
+          s.layers.mB.setIcon(L.divIcon({ className: '', iconSize: [22, 22], iconAnchor: [11, 11], html: `<div class="hd">${b}</div>` }));
+        }
+      });
+    }
+    function setDays(idx) {
+      daysIdx = idx;
+      days = RANGES[idx][1];
+      sel.a = 0; sel.b = 1;
+      document.querySelectorAll('[data-idx]').forEach(x => x.classList.toggle('active', +x.dataset.idx === idx));
+      const cs = $('csel'); if (cs) cs.value = idx;
       fetchEarthquakes();
     }
     const ctl = L.control({position: 'topright'});
@@ -232,67 +470,96 @@ const AREAS = [
       const div = L.DomUtil.create('div', 'ctl');
       L.DomEvent.disableClickPropagation(div);
       L.DomEvent.disableScrollPropagation(div);
-      RANGES.forEach(([label, d]) => {
-        const b = L.DomUtil.create('button', d === days ? 'active' : '', div);
+      RANGES.forEach(([label, d, short], idx) => {
+        const b = L.DomUtil.create('button', idx === daysIdx ? 'active' : '', div);
         b.textContent = label;
-        b.dataset.days = d;
-        b.onclick = () => setDays(d);
+        b.dataset.idx = idx;
+        b.onclick = () => setDays(idx);
       });
       div.appendChild(document.createElement('hr'));
       FEATS.forEach(([k, label]) => {
         const b = L.DomUtil.create('button', 'feat', div);
         b.textContent = label; b.dataset.k = k;
         b.onclick = () => {
-          if (k === 'poly' || k === 'bars') on[k] = !on[k];
+          if (k === 'poly' || k === 'bars' || k === 'kde') on[k] = !on[k];
           else chartMode = chartMode === k ? null : k;
           div.querySelectorAll('button.feat').forEach(x => {
             const kk = x.dataset.k;
-            x.classList.toggle('active', (kk === 'poly' || kk === 'bars') ? on[kk] : chartMode === kk);
+            x.classList.toggle('active', (kk === 'poly' || kk === 'bars' || kk === 'kde') ? on[kk] : chartMode === kk);
           });
           refresh();
+          updateLegends();
         };
       });
       div.appendChild(document.createElement('hr'));
       const act = (id, label, fn) => { const b = L.DomUtil.create('button', 'act', div); b.id = id; b.textContent = label; b.onclick = fn; return b; };
+      act('btnEq', 'Hide earthquakes', () => toggleEvents());
       act('btnDraw', 'Draw section line', () => toggleDraw());
-      act('btnClear', 'Clear section', () => clearSection());
+      act('btnPoly', 'Polygon catalog (.txt)', () => togglePolyDraw());
+      act('btnClear', 'Clear sections', () => clearSection());
       act('btn3d', '3D popup', () => toggle3D());
       act('btnColor', 'Colour: time', () => toggleColor());
+      act('btnDiss', 'DISS sources', () => toggleDISS());
       act('btnExp', 'Export JPG', () => exportJPG());
+      div.appendChild(document.createElement('hr'));
+      const kd = L.DomUtil.create('div', 'info', div);
+      kd.innerHTML = 'KDE bandwidth: <input id="kdeBW" type="number" value="10" min="1" max="200" step="1" style="width:52px"> km';
+      const kdIn = kd.querySelector('input');
+      kdIn.onchange = () => { kdeBW = Math.max(1, +kdIn.value || 10); if (colorMode === 'kde' || on.kde) render(); };
+
       const info = L.DomUtil.create('div', 'info', div);
       info.id = 'info';
       return div;
     };
     ctl.addTo(map);
-	const legend = L.control({ position: 'bottomright' });
-	legend.onAdd = () => {
-	  const div = L.DomUtil.create('div', 'ctl mag-legend');
-	  L.DomEvent.disableClickPropagation(div);
-	  div.innerHTML =
-		'<b>Magnitude</b>' +
-          '<svg width="32" height="36" viewBox="-12 -27 38 43" xmlns="http://www.w3.org/2000/svg">' +
-		  '<circle cx="0" cy="0"        r="10.6"   fill="#800026" fill-opacity="0.10" stroke="#800026" stroke-width="0.9"/>' +
-		  '<circle cx="0" cy="2.8"      r="7.8"    fill="#800026" fill-opacity="0.10" stroke="#800026" stroke-width="0.9"/>' +
-		  '<circle cx="0" cy="6.7"      r="3.9"    fill="#BD0026" fill-opacity="0.12" stroke="#BD0026" stroke-width="0.9"/>' +
-		  '<circle cx="0" cy="8.65"     r="1.95"   fill="#E31A1C" fill-opacity="0.15" stroke="#E31A1C" stroke-width="0.9"/>' +
-		  '<circle cx="0" cy="9.625"    r="0.975"  fill="#FD8D3C" fill-opacity="0.30" stroke="#FD8D3C" stroke-width="0.9"/>' +
-		  '<circle cx="0" cy="10.1125"  r="0.4875" fill="#FFEDA0" fill-opacity="0.60" stroke="#FFEDA0" stroke-width="0.9"/>' +
-			  '<text x="19"   y="14">1</text>' +
-			  '<text x="19"   y="7">2</text>' +
-			  '<text x="19"   y="0">3</text>' +
-			  '<text x="19"  y="-7">4</text>' +
-			  '<text x="19"  y="-13">5</text>' +
-			  '<text x="19"  y="-20">6</text>' +
-		'</svg>' +
-		'<div style="font-size:10px;color:#666;margin-top:2px">Mw / ML</div>';
-	  return div;
-	};
-	legend.addTo(map);
-    //istogrammi
+    const legend = L.control({ position: 'bottomright' });
+    legend.onAdd = () => {
+      const div = L.DomUtil.create('div', 'ctl mag-legend');
+      div.id = 'magLegend';
+      L.DomEvent.disableClickPropagation(div);
+      div.innerHTML =
+        '<b>Magnitude</b>' +
+        '<svg width="120" height="120" viewBox="-40 -40 80 80" xmlns="http://www.w3.org/2000/svg">' +
+          '<circle cx="0" cy="0"        r="10.6"   fill="#800026" fill-opacity="0.10" stroke="#800026" stroke-width="0.9"/>' +
+          '<circle cx="0" cy="2.8"      r="7.8"    fill="#800026" fill-opacity="0.10" stroke="#800026" stroke-width="0.9"/>' +
+          '<circle cx="0" cy="6.7"      r="3.9"    fill="#BD0026" fill-opacity="0.12" stroke="#BD0026" stroke-width="0.9"/>' +
+          '<circle cx="0" cy="8.65"     r="1.95"   fill="#E31A1C" fill-opacity="0.15" stroke="#E31A1C" stroke-width="0.9"/>' +
+          '<circle cx="0" cy="9.625"    r="0.975"  fill="#FD8D3C" fill-opacity="0.30" stroke="#FD8D3C" stroke-width="0.9"/>' +
+          '<circle cx="0" cy="10.1125"  r="0.4875" fill="#FFEDA0" fill-opacity="0.60" stroke="#FFEDA0" stroke-width="0.9"/>' +
+          '<text x="19"   y="14">1</text>' +
+          '<text x="19"   y="7">2</text>' +
+          '<text x="19"   y="0">3</text>' +
+          '<text x="19"  y="-7">4</text>' +
+          '<text x="19"  y="-13">5</text>' +
+          '<text x="19"  y="-20">6</text>' +
+        '</svg>' +
+        '<div style="font-size:10px;color:#666;margin-top:2px">Mw / ML</div>';
+      return div;
+    };
+    legend.addTo(map);
+    const kdeLegend = L.control({ position: 'bottomright' });
+    kdeLegend.onAdd = () => {
+      const div = L.DomUtil.create('div', 'ctl mag-legend');
+      div.id = 'kdeLegend';
+      L.DomEvent.disableClickPropagation(div);
+      div.innerHTML = '<b>KDE density</b>' +
+        '<svg width="120" height="18"><defs><linearGradient id="kdeGrad">' + kdeGradientStops() + '</linearGradient></defs>' +
+        '<rect width="120" height="14" fill="url(#kdeGrad)" stroke="#000"/></svg>' +
+        '<div style="font-size:10px;display:flex;justify-content:space-between;width:120px;margin:0 auto;"><span>0</span><span>1</span></div>' +
+        '<div style="font-size:10px;color:#666;margin-top:2px">log-normalised &middot; bwr</div>';
+      return div;
+    };
+    kdeLegend.addTo(map);
     function drawHist(title, labels, counts, xlab) {
       const cv = document.getElementById('cv'), c = cv.getContext('2d'), W = cv.width, H = cv.height;
+      c.clearRect(0, 0, W, H);
+      if (!counts.length) {
+        c.fillStyle = '#000'; c.font = '13px sans-serif'; c.textAlign = 'center';
+        c.fillText(title + ' (no data)', W / 2, H / 2);
+        return;
+      }
       const m = { l: 48, r: 10, t: 28, b: 48 }, pw = W - m.l - m.r, ph = H - m.t - m.b;
-      c.clearRect(0, 0, W, H); c.fillStyle = '#000'; c.font = 'bold 13px sans-serif'; c.textAlign = 'center';
+      c.fillStyle = '#000'; c.font = 'bold 13px sans-serif'; c.textAlign = 'center';
       c.fillText(title + '  (N=' + counts.reduce((a, b) => a + b, 0) + ')', W / 2, 16);
       const mx = Math.max(1, ...counts), bw = pw / counts.length;
       c.font = '10px sans-serif'; c.textAlign = 'right';
@@ -313,16 +580,66 @@ const AREAS = [
       if (!vals.length) return [[], []];
       const lo = Math.floor((min ?? Math.min(...vals)) / w) * w, n = Math.floor((Math.max(...vals) - lo) / w) + 1;
       const cnt = new Array(n).fill(0), lab = [];
-      vals.forEach(v => cnt[Math.floor((v - lo) / w)]++);
+      vals.forEach(v => cnt[Math.min(n - 1, Math.floor((v - lo) / w))]++);
       for (let i = 0; i < n; i++) lab.push((lo + i * w).toFixed(w < 1 ? 1 : 0));
       return [lab, cnt];
     }
+    function drawRateDepth() {
+      const cv = $('cv'), c = cv.getContext('2d'), W = cv.width, H = cv.height;
+      const selArea = $('rsel') ? $('rsel').value : '';
+      let evts = events;
+      if (selArea) {
+        evts = events.filter(e => {
+          const a = BYSIZE.find(a => inside(a.h, e.lon, e.lat));
+          return a && a[0] === selArea;
+        });
+      }
+      const years = Math.max(1 / 365.25, (rangeEnd - rangeStart) / (365.25 * 864e5));
+      const binSize = 5;
+      let maxDepth = 0;
+      evts.forEach(e => { if (e.depth > maxDepth) maxDepth = e.depth; });
+      maxDepth = Math.max(50, Math.ceil(maxDepth / binSize) * binSize);
+      const nBins = maxDepth / binSize;
+      const counts = new Array(nBins).fill(0);
+      evts.forEach(e => { counts[Math.min(nBins - 1, Math.floor(e.depth / binSize))]++; });
+      const rates = counts.map(n => n / years);
+      const maxRate = Math.max(0.01, ...rates);
+      const m = { l: 56, r: 10, t: 34, b: 46 };
+      const pw = W - m.l - m.r, ph = H - m.t - m.b;
+      c.clearRect(0, 0, W, H);
+      c.fillStyle = '#000'; c.font = 'bold 12px sans-serif'; c.textAlign = 'center';
+      c.fillText(selArea ? 'Rate vs depth — ' + selArea : 'Rate vs depth — all areas', W / 2, 14);
+      c.font = '10px sans-serif'; c.fillStyle = '#666';
+      c.fillText('N=' + evts.length + ' · ' + years.toFixed(years < 1 ? 3 : 1) + ' y · ' + binSize + ' km bins', W / 2, 27);
+      c.font = '10px sans-serif'; c.textAlign = 'right';
+      for (let i = 0; i <= 4; i++) {
+        const v = maxRate * i / 4, y = m.t + ph - ph * i / 4;
+        c.strokeStyle = '#ddd'; c.beginPath(); c.moveTo(m.l, y); c.lineTo(W - m.r, y); c.stroke();
+        c.fillStyle = '#000';
+        c.fillText(v.toFixed(v < 0.1 ? 3 : v < 1 ? 2 : 1), m.l - 4, y + 3);
+      }
+      c.save(); c.translate(11, m.t + ph / 2); c.rotate(-Math.PI / 2); c.textAlign = 'center'; c.font = '11px sans-serif'; c.fillStyle = '#000';
+      c.fillText('rate (events/year)', 0, 0); c.restore();
+      const bw = pw / nBins;
+      c.fillStyle = '#BD0026';
+      rates.forEach((r, i) => {
+        const h = ph * r / maxRate;
+        c.fillRect(m.l + i * bw + 1, m.t + ph - h, Math.max(1, bw - 2), h);
+      });
+      c.fillStyle = '#000'; c.font = '10px sans-serif'; c.textAlign = 'center';
+      const step = Math.max(1, Math.ceil(nBins / 10));
+      for (let i = 0; i < nBins; i += step) c.fillText((i + 0.5) * binSize, m.l + (i + 0.5) * bw, m.t + ph + 14);
+      c.font = '11px sans-serif'; c.fillText('depth (km)', m.l + pw / 2, H - 6);
+    }
     function drawChart() {
       const box = document.getElementById('chart');
+      const rateBar = document.getElementById('rateAreaBar');
       box.style.display = chartMode ? 'block' : 'none';
+      if (rateBar) rateBar.style.display = chartMode === 'rateDepth' ? 'block' : 'none';
       if (!chartMode) return;
       if (chartMode === 'depth') { const [l, c] = bin(events.map(e => e.depth), 5, 0); drawHist('Depth distribution (5 km bins)', l, c, 'Depth (km)'); }
       else if (chartMode === 'mag') { const [l, c] = bin(events.map(e => e.mag), 0.2); drawHist('Magnitude distribution (0.2 bins)', l, c, 'Magnitude (Mw/ML, source INGV)'); }
+      else if (chartMode === 'rateDepth') { drawRateDepth(); }
       else {
         const keys = events.map(e => e.t.getFullYear() * 12 + e.t.getMonth());
         if (!keys.length) return drawHist('Events per month', [], [], 'Month');
@@ -332,7 +649,6 @@ const AREAS = [
         drawHist('Events per month', l, c, 'Month (local time)');
       }
     }
-    //aree sud
     const ramp = ['#ffffcc', '#ffeda0', '#fd8d3c', '#e31a1c', '#800026'];
     function areaColor(a, mx) { return a.n ? ramp[Math.min(4, 1 + Math.floor(3.999 * Math.log(a.n + 1) / Math.log(mx + 1)))] : ramp[0]; }
     function drawAreas() {
@@ -340,7 +656,6 @@ const AREAS = [
       AREAS.forEach(a => a.n = 0);
       events.forEach(e => { const a = BYSIZE.find(a => inside(a.h, e.lon, e.lat)); if (a) a.n++; });
       const mx = Math.max(1, ...AREAS.map(a => a.n));
-      //larger, smaller. overlapping
       if (on.poly) AREAS.slice().sort((a, b) => b.ar - a.ar).forEach(a => {
         L.polygon(a.h.map(p => [p[1], p[0]]), { pane: 'areas', renderer: areaRenderer, color: '#fff', weight: 1, fillColor: areaColor(a, mx), fillOpacity: 0.35 })
           .bindPopup(`<b>${a[0]}</b><br>${a.n} events`).addTo(polyLayer);
@@ -352,7 +667,7 @@ const AREAS = [
       });
       [[polyLayer, on.poly], [barLayer, on.bars]].forEach(([g, s]) => s ? g.addTo(map) : map.removeLayer(g));
     }
-    function refresh() { drawChart(); drawAreas(); }
+    function refresh() { drawChart(); drawAreas(); drawKDE(); }
     const NDIG = 5, CH = 42, wheels = [];
     (function () {
       const odo = $('odo');
@@ -365,7 +680,7 @@ const AREAS = [
         s.style.transform = `translateY(${-20 * CH}px)`;
         w.appendChild(s); odo.appendChild(w);
         const o = { w, s, pos: 20, dig: 0 };
-        s.addEventListener('transitionend', () => { // rotellina sempre cres
+        s.addEventListener('transitionend', () => {
           if (o.pos >= 60) {
             s.style.transition = 'none'; o.pos -= 40; s.style.transform = `translateY(${-o.pos * CH}px)`;
             void s.offsetHeight; s.style.transition = ''; s.style.transitionDuration = dur;
@@ -373,14 +688,14 @@ const AREAS = [
         });
         wheels.push(o);
       }
-      const tabs = $('ctabs');
-      RANGES.forEach(([label, d, short]) => {
-        const b = document.createElement('button');
-        b.textContent = short; b.title = label; b.dataset.days = d;
-        if (d === days) b.className = 'active';
-        b.onclick = () => setDays(d);
-        tabs.appendChild(b);
+      const cs = $('csel');
+      RANGES.forEach(([label, d, short], idx) => {
+        const o = document.createElement('option');
+        o.value = idx; o.textContent = short; o.title = label;
+        if (idx === daysIdx) o.selected = true;
+        cs.appendChild(o);
       });
+      cs.onchange = () => setDays(+cs.value);
     })();
     function setCount(n) {
       n = Math.max(0, Math.min(Math.pow(10, NDIG) - 1, n));
@@ -393,7 +708,6 @@ const AREAS = [
         o.w.classList.toggle('z', lead);
       }
     }
-    //TR CB
     function tickLabel(ms, span) {
       const d = new Date(ms);
       if (span <= 2 * 864e5) return pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + '<br>' + pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1);
@@ -428,41 +742,57 @@ const AREAS = [
       tbt.addEventListener('pointerup', () => { drag = null; });
       tbt.addEventListener('dblclick', () => { sel.a = 0; sel.b = 1; updateBar(); scheduleRender(); });
     })();
+
     let rq = 0, rs = 0;
     function scheduleRender() { if (rq) return; rq = requestAnimationFrame(() => { rq = 0; render(); }); }
     function scheduleSec() { if (rs) return; rs = requestAnimationFrame(() => { rs = 0; updateSlab(); drawSection(); draw3D(); }); }
+
     function applyFilter() {
       const sp = rangeEnd - rangeStart, t0 = rangeStart + sel.a * sp, t1 = rangeStart + sel.b * sp;
       events = allEvents.filter(e => (sel.a <= 0 || e.ms >= t0) && (sel.b >= 1 || e.ms <= t1));
     }
+    function eventPopupHTML(e) {//non funziona provare in altro modo con altra request dallo script csh
+      const isideUrl = `https://iside.rm.ingv.it/iside/standard/result.jsp?eventid=${encodeURIComponent(e.eventId)}`;
+      const detailsUrl = `https://terremoti.ingv.it/event/${encodeURIComponent(e.eventId)}`;
+      return `<b>M${e.mag.toFixed(1)}</b> &middot; ${e.place}<br>` +
+        `Depth: ${e.depth} km &middot; ${e.t.toLocaleString()}<br>` +
+        `<div style="margin-top:6px;display:flex;flex-direction:column;gap:3px;line-height:1.4">` +
+        `  <a href="#" onclick="downloadPicks('${e.eventId}');return false;">&#11015; Picks &amp; arrivals (.txt)</a>` +
+        `  <a href="${isideUrl}" target="_blank" rel="noopener">&#11015; Download waveform (ISIDE / EIDA)</a>` +
+        `  <a href="${detailsUrl}" target="_blank" rel="noopener">&#9432; Event details (INGV)</a>` +
+        `</div>`;
+    }
     layerGroup.on('click', ev => {
-      const e = ev.layer && ev.layer.ev; if (!e || drawing || drawStart) return;
-      L.popup().setLatLng([e.lat, e.lon]).setContent(`<b>M${e.mag.toFixed(1)}</b><br>${e.place}<br>Depth: ${e.depth} km<br>${e.t.toLocaleString()}<br><a href="https://terremoti.ingv.it/event/${e.eventId}" target="_blank">Details</a>`).openOn(map);
+      const e = ev.layer && ev.layer.ev; if (!e || drawing || drawStart || polyDrawing) return;
+      L.popup().setLatLng([e.lat, e.lon]).setContent(eventPopupHTML(e)).openOn(map);
     });
+
     function render() {
-      applyFilter(); updateSlab();
+      applyFilter();
+      if (colorMode === 'kde') computeKDE();
+      updateSlab();
       layerGroup.clearLayers();
       events.slice().sort((a, b) => a.mag - b.mag).forEach(e => {
-        const hi = slabSet.has(e);
+        const hi = activeSec && activeSec.slabSet.has(e);
         const m = L.circleMarker([e.lat, e.lon], { radius: Math.max(2, e.mag * 2), fillColor: colorOf(e), color: hi ? '#fff' : '#000', weight: hi ? 1.4 : 0.5, opacity: 1, fillOpacity: 0.8 });
         m.ev = e; m.addTo(layerGroup);
       });
-      if (swathP) { swathP.bringToFront(); lineP.bringToFront(); }
+      secs.forEach(s => { if (s.layers) { s.layers.poly.bringToFront(); s.layers.line.bringToFront(); s.layers.mA.setZIndexOffset(2000); s.layers.mB.setZIndexOffset(2000); } });
       refresh(); setCount(events.length);
-      const lab = RANGES.find(r => r[1] === days)[0].toLowerCase();
+      const lab = RANGES[daysIdx][2].toLowerCase();
       $('clabel').textContent = 'earthquakes \u00b7 ' + lab + (events.length !== allEvents.length ? ' (selected window)' : '');
       $('info').textContent = events.length + (events.length !== allEvents.length ? ' / ' + allEvents.length : '') + ' events' + (limitHit ? ' (limit hit)' : '');
       updateBar(); drawSection(); draw3D();
     }
-
     function toggleColor() {
-      colorMode = colorMode === 'time' ? 'mag' : 'time';
+      if (colorMode === 'time') colorMode = 'mag';
+      else if (colorMode === 'mag') colorMode = 'kde';
+      else colorMode = 'time';
       $('btnColor').textContent = 'Colour: ' + colorMode;
-      $('tbg').classList.toggle('gray', colorMode === 'mag');
-      document.querySelector('.mag-legend').classList.toggle('gray', colorMode === 'time');
+      $('tbg').classList.toggle('gray', colorMode !== 'time');
+      updateLegends();
       render();
     }
-    document.querySelector('.mag-legend').classList.add('gray');
     function secProj(A, B, width) {
       const lon0 = A.lng, lat0 = A.lat, ky = 110.57, kx = 111.32 * Math.cos(lat0 * Math.PI / 180);
       const x = lon => (lon - lon0) * kx, y = lat => (lat - lat0) * ky;
@@ -472,76 +802,180 @@ const AREAS = [
         t: (lon, lat) => x(lon) * ux + y(lat) * uy,
         d: (lon, lat) => -x(lon) * uy + y(lat) * ux };
     }
-    const secLayer = L.layerGroup().addTo(map);
-    let swathP = null, lineP = null, mA = null, mB = null;
-    function mkHandle(lbl, ll, which) {
-      const m = L.marker(ll, { draggable: true, zIndexOffset: 2000, icon: L.divIcon({ className: '', iconSize: [22, 22], iconAnchor: [11, 11], html: `<div class="hd">${lbl}</div>` }) }).addTo(secLayer);
-      m.on('drag', () => { const p = m.getLatLng(); which === 'A' ? setSec(p, sec.B, false) : setSec(sec.A, p, false); });
-      m.on('dragend', () => scheduleRender());
-      return m;
+    function createSection(A, B, width) {
+      const s = {
+        id: 'sec_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        A: { lat: A.lat, lng: A.lng },
+        B: { lat: B.lat, lng: B.lng },
+        width: width,
+        la: 'A', lb: 'B',
+        slab: [],
+        slabSet: new Set(),
+        layers: null
+      };
+      s.g = secProj(s.A, s.B, s.width);
+      return s;
     }
-    function setSec(A, B, full) {
-      const w = sec ? sec.width : (+$('secw').value || 25);
-      sec = { A: { lat: A.lat, lng: A.lng }, B: { lat: B.lat, lng: B.lng }, width: w };
-      sec.g = secProj(sec.A, sec.B, w);
-      drawSecShapes();
-      if (full) scheduleRender(); else scheduleSec();
-    }
-    function drawSecShapes() {
-      const g = sec.g, hw = g.hw, inv = (X, Y) => [g.lat0 + Y / g.ky, g.lon0 + X / g.kx];
+    function addSectionToMap(s) {
+      const g = s.g, hw = g.hw;
+      const inv = (X, Y) => [g.lat0 + Y / g.ky, g.lon0 + X / g.kx];
       const c = [[-hw * g.uy, hw * g.ux], [g.L * g.ux - hw * g.uy, g.L * g.uy + hw * g.ux], [g.L * g.ux + hw * g.uy, g.L * g.uy - hw * g.ux], [hw * g.uy, -hw * g.ux]].map(p => inv(p[0], p[1]));
-      const ln = [[sec.A.lat, sec.A.lng], [sec.B.lat, sec.B.lng]];
-      if (!swathP) {
-        swathP = L.polygon(c, { color: '#00e5ff', weight: 1.5, dashArray: '6 4', fillColor: '#00e5ff', fillOpacity: .08, interactive: false }).addTo(secLayer);
-        lineP = L.polyline(ln, { color: '#00e5ff', weight: 2.5, interactive: false }).addTo(secLayer);
-        mA = mkHandle('A', ln[0], 'A'); mB = mkHandle('B', ln[1], 'B');
-      } else {
-        swathP.setLatLngs(c); lineP.setLatLngs(ln);
-        if (!drawing || drawStart) { mA.setLatLng(ln[0]); mB.setLatLng(ln[1]); }
+      const ln = [[s.A.lat, s.A.lng], [s.B.lat, s.B.lng]];
+      const poly = L.polygon(c, { color: '#00e5ff', weight: 1.5, dashArray: '6 4', fillColor: '#00e5ff', fillOpacity: .08, interactive: false }).addTo(secLayer);
+      const line = L.polyline(ln, { color: '#00e5ff', weight: 2.5, interactive: true }).addTo(secLayer);
+      line.on('click', ev => { L.DomEvent.stopPropagation(ev); setActiveSec(s); });
+      const mA = mkHandle('A', ln[0], s);
+      const mB = mkHandle('B', ln[1], s);
+      s.layers = { poly, line, mA, mB };
+      updateSectionStyle(s);
+    }
+    function updateSectionShapes(s) {
+      if (!s.layers) return;
+      const g = s.g, hw = g.hw;
+      const inv = (X, Y) => [g.lat0 + Y / g.ky, g.lon0 + X / g.kx];
+      const c = [[-hw * g.uy, hw * g.ux], [g.L * g.ux - hw * g.uy, g.L * g.uy + hw * g.ux], [g.L * g.ux + hw * g.uy, g.L * g.uy - hw * g.ux], [hw * g.uy, -hw * g.ux]].map(p => inv(p[0], p[1]));
+      const ln = [[s.A.lat, s.A.lng], [s.B.lat, s.B.lng]];
+      s.layers.poly.setLatLngs(c);
+      s.layers.line.setLatLngs(ln);
+      s.layers.mA.setLatLng(ln[0]);
+      s.layers.mB.setLatLng(ln[1]);
+    }
+    function updateSectionStyle(s) {
+      if (!s.layers) return;
+      const active = s === activeSec;
+      s.layers.poly.setStyle({ color: active ? '#00e5ff' : '#8090a0', fillColor: active ? '#00e5ff' : '#8090a0', fillOpacity: active ? 0.08 : 0.04, weight: active ? 1.5 : 1 });
+      s.layers.line.setStyle({ color: active ? '#00e5ff' : '#8090a0', weight: active ? 2.5 : 1.5 });
+    }
+    function removeSection(s) {
+      if (s.layers) {
+        secLayer.removeLayer(s.layers.poly);
+        secLayer.removeLayer(s.layers.line);
+        secLayer.removeLayer(s.layers.mA);
+        secLayer.removeLayer(s.layers.mB);
+      }
+      secs = secs.filter(x => x !== s);
+      relabelSections();
+      if (activeSec === s) activeSec = secs.length ? secs[secs.length - 1] : null;
+      if (activeSec) updateSectionStyle(activeSec);
+      updateSectionUI();
+      if (!secs.length) {
+        secwin.style.display = 'none';
+        win3d.style.display = 'none';
+        $('btn3d').classList.remove('active');
+        $('b3d').classList.remove('active');
       }
     }
-    function updateSlab() {
-      slab = []; slabSet = new Set();
-      if (!sec) return;
-      const g = sec.g;
-      events.forEach(e => {
-        const t = g.t(e.lon, e.lat); if (t < 0 || t > g.L) return;
-        const d = g.d(e.lon, e.lat); if (Math.abs(d) > g.hw) return;
-        slab.push({ e, t, d }); slabSet.add(e);
-      });
+    function setActiveSec(s) {
+      if (activeSec) updateSectionStyle(activeSec);
+      activeSec = s;
+      if (s) { updateSectionStyle(s); $('secw').value = s.width; }
+      updateSectionUI();
+      showWin(secwin, 10, 90);
+      scheduleRender();
     }
+    function updateSectionUI() {
+      const sel = $('secSel');
+      if (!sel) return;
+      sel.innerHTML = secs.map((s, i) => `<option value="${s.id}"${s === activeSec ? ' selected' : ''}>Section ${i+1} (${s.la||'A'}${s.lb||'B'}, ${s.g.L.toFixed(0)} km)</option>`).join('');
+      sel.onchange = () => {
+        const s = secs.find(x => x.id === sel.value);
+        if (s) setActiveSec(s);
+      };
+    }
+    function mkHandle(which, ll, s) {
+      const lbl = which === 'A' ? (s.la || 'A') : (s.lb || 'B');
+      const m = L.marker(ll, { draggable: true, zIndexOffset: 2000, icon: L.divIcon({ className: '', iconSize: [22, 22], iconAnchor: [11, 11], html: `<div class="hd">${lbl}</div>` }) }).addTo(secLayer);
+      m.on('drag', () => {
+        const p = m.getLatLng();
+        if (which === 'A') s.A = { lat: p.lat, lng: p.lng };
+        else s.B = { lat: p.lat, lng: p.lng };
+        s.g = secProj(s.A, s.B, s.width);
+        updateSectionShapes(s);
+        if (s === activeSec) scheduleSec();
+      });
+      m.on('dragend', () => { if (s === activeSec) scheduleRender(); });
+      m.on('click', ev => { L.DomEvent.stopPropagation(ev); setActiveSec(s); });
+      return m;
+    }
+
     function toggleDraw(force) {
       drawing = force !== undefined ? force : !drawing;
+      if (drawing) cancelPolyDraw();
       $('btnDraw').classList.toggle('active', drawing);
       map.getContainer().style.cursor = drawing ? 'crosshair' : '';
       drawing ? map.dragging.disable() : map.dragging.enable();
     }
-    map.on('mousedown', e => { if (drawing) { drawStart = e.latlng; setSec(e.latlng, e.latlng, false); } });
-    map.on('mousemove', e => { if (drawing && drawStart) setSec(drawStart, e.latlng, false); });
+    map.on('mousedown', e => {
+      if (drawing && !polyDrawing) {
+        drawStart = e.latlng;
+        const w = +$('secw').value || 25;
+        drawPreviewSec = createSection(e.latlng, e.latlng, w);
+        addSectionToMap(drawPreviewSec);
+      }
+    });
+    map.on('mousemove', e => {
+      if (drawing && drawStart && drawPreviewSec) {
+        drawPreviewSec.B = { lat: e.latlng.lat, lng: e.latlng.lng };
+        drawPreviewSec.g = secProj(drawPreviewSec.A, drawPreviewSec.B, drawPreviewSec.width);
+        updateSectionShapes(drawPreviewSec);
+      }
+    });
     document.addEventListener('mouseup', () => {
-      if (!(drawing && drawStart)) return;
-      drawStart = null; toggleDraw(false);
-      if (sec.g.L < 1) { clearSection(); return; }
-      showWin(secwin, 10, 90); scheduleRender();
+      if (!(drawing && drawStart) || !drawPreviewSec) return;
+      const s = drawPreviewSec;
+      drawPreviewSec = null;
+      drawStart = null;
+      toggleDraw(false);
+      if (s.g.L < 1) {
+        if (s.layers) {
+          secLayer.removeLayer(s.layers.poly);
+          secLayer.removeLayer(s.layers.line);
+          secLayer.removeLayer(s.layers.mA);
+          secLayer.removeLayer(s.layers.mB);
+        }
+        return;
+      }
+      secs.push(s);
+      relabelSections();
+      setActiveSec(s);
+      scheduleRender();
     });
     function clearSection() {
-      secLayer.clearLayers(); swathP = lineP = mA = mB = null; sec = null; slab = []; slabSet = new Set();
-      secwin.style.display = 'none'; win3d.style.display = 'none'; $('btn3d').classList.remove('active');
+      secs.slice().forEach(s => removeSection(s));
+      secs = []; activeSec = null;
+      secLayer.clearLayers();
+      secwin.style.display = 'none';
+      win3d.style.display = 'none';
+      $('btn3d').classList.remove('active');
+      $('b3d').classList.remove('active');
       scheduleRender();
     }
-    //finestre popup
-    const secwin = $('secwin'), seccv = $('seccv'), win3d = $('win3d'), cv3 = $('cv3'); let zTop = 1100;
+    function updateSlab() {
+      secs.forEach(s => {
+        s.slab = [];
+        s.slabSet = new Set();
+        const g = s.g;
+        events.forEach(e => {
+          const t = g.t(e.lon, e.lat); if (t < 0 || t > g.L) return;
+          const d = g.d(e.lon, e.lat); if (Math.abs(d) > g.hw) return;
+          s.slab.push({ e, t, d });
+          s.slabSet.add(e);
+        });
+      });
+    }
+    const secwin = $('secwin'), seccv = $('seccv'), win3d = $('win3d'), cv3 = $('cv3'), helpwin = $('helpwin');
+    let zTop = 1100;
     function showWin(w, left, top) {
       if (!w.dataset.placed) { w.style.left = left + 'px'; w.style.top = top + 'px'; w.dataset.placed = 1; }
       w.style.display = 'flex'; w.style.zIndex = ++zTop; scheduleSec();
     }
     function toggle3D() {
-      if (!sec) { $('info').textContent = 'Draw a section line first'; return; }
+      if (!activeSec) { $('info').textContent = 'Draw a section line first'; return; }
       const open = win3d.style.display !== 'flex';
       if (open) showWin(win3d, Math.max(10, innerWidth - 170 - 350), 10); else win3d.style.display = 'none';
       $('btn3d').classList.toggle('active', open); $('b3d').classList.toggle('active', open);
     }
-    [secwin, win3d].forEach(win => {
+    [secwin, win3d, helpwin].forEach(win => {
       const h = win.querySelector('.wh'); let st = null;
       win.addEventListener('pointerdown', () => { win.style.zIndex = ++zTop; });
       h.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; st = { dx: e.clientX - win.offsetLeft, dy: e.clientY - win.offsetTop }; h.setPointerCapture(e.pointerId); });
@@ -555,24 +989,36 @@ const AREAS = [
     $('b3d').onclick = () => toggle3D();
     $('b3eq').onclick = () => { v3.eq = !v3.eq; $('b3eq').classList.toggle('active', v3.eq); draw3D(); };
     $('sec11').onchange = () => drawSection();
-    $('secw').onchange = () => { const w = Math.max(1, +$('secw').value || 25); if (sec) { sec.width = w; sec.g = secProj(sec.A, sec.B, w); drawSecShapes(); scheduleRender(); } };
-
+    $('secw').onchange = () => {
+      const w = Math.max(1, +$('secw').value || 25);
+      if (activeSec) {
+        activeSec.width = w;
+        activeSec.g = secProj(activeSec.A, activeSec.B, w);
+        updateSectionShapes(activeSec);
+        updateSectionUI();
+        scheduleRender();
+      }
+    };
     function fitCanvas(cv) {
       const r = cv.parentElement.getBoundingClientRect(), dpr = window.devicePixelRatio || 1, w = Math.max(10, r.width), h = Math.max(10, r.height);
       if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
       const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); return [c, w, h];
     }
     function niceStep(range, n) { const raw = Math.max(range, 1e-9) / n, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p; }
-    function slabDepth() { const dm = slab.reduce((m, s) => Math.max(m, s.e.depth), 0); return Math.max(10, Math.ceil(dm / 10) * 10); }
-    //sez2d
+    function slabDepth() {
+      if (!activeSec) return 10;
+      const dm = activeSec.slab.reduce((m, x) => Math.max(m, x.e.depth), 0);
+      return Math.max(10, Math.ceil(dm / 10) * 10);
+    }
     let secPts = [];
     function drawSection() {
-      if (!sec || secwin.style.display !== 'flex') return;
-      const [c, W, H] = fitCanvas(seccv), g = sec.g;
+      if (!activeSec || secwin.style.display !== 'flex') return;
+      const s = activeSec;
+      const [c, W, H] = fitCanvas(seccv), g = s.g;
       c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
       const ml = 46, mr = 14, mt = 14, mb = 38; let pw = W - ml - mr, ph = H - mt - mb;
       const D = slabDepth(); let sx = pw / g.L, sy = ph / D;
-      if ($('sec11').checked) { const s = Math.min(sx, sy); sx = sy = s; pw = g.L * s; ph = D * s; }
+      if ($('sec11').checked) { const sc = Math.min(sx, sy); sx = sy = sc; pw = g.L * sc; ph = D * sc; }
       const X = t => ml + t * sx, Y = z => mt + z * sy;
       c.font = '10px sans-serif'; c.lineWidth = 1;
       const st = niceStep(g.L, Math.max(2, pw / 70)), sz = niceStep(D, Math.max(2, ph / 40));
@@ -582,18 +1028,18 @@ const AREAS = [
       for (let z = 0; z <= D + 1e-6; z += sz) { const y = Y(z); c.strokeStyle = '#e3e3e3'; c.beginPath(); c.moveTo(ml, y); c.lineTo(ml + pw, y); c.stroke(); c.fillStyle = '#000'; c.fillText(+z.toFixed(3), ml - 4, y + 3); }
       c.strokeStyle = '#000'; c.strokeRect(ml, mt, pw, ph);
       c.textAlign = 'center'; c.font = '11px sans-serif'; c.fillStyle = '#000';
-      c.fillText('Distance A \u2192 B (km)', ml + pw / 2, H - 6);
+      c.fillText('Distance ' + (s.la||'A') + ' \u2192 ' + (s.lb||'B') + ' (km)', ml + pw / 2, H - 6);
       c.save(); c.translate(11, mt + ph / 2); c.rotate(-Math.PI / 2); c.fillText('Depth (km)', 0, 0); c.restore();
-      c.font = 'bold 12px sans-serif'; c.fillStyle = '#006978'; c.textAlign = 'left'; c.fillText('A', ml + 4, mt + 13); c.textAlign = 'right'; c.fillText('B', ml + pw - 4, mt + 13);
+      c.font = 'bold 12px sans-serif'; c.fillStyle = '#006978'; c.textAlign = 'left'; c.fillText(s.la || 'A', ml + 4, mt + 13); c.textAlign = 'right'; c.fillText(s.lb || 'B', ml + pw - 4, mt + 13);
       secPts = [];
-      slab.slice().sort((a, b) => a.e.mag - b.e.mag).forEach(s => {
-        const r = Math.max(2, s.e.mag * 1.8), x = X(s.t), y = Y(s.e.depth);
-        c.beginPath(); c.arc(x, y, r, 0, 6.2832); c.globalAlpha = .85; c.fillStyle = colorOf(s.e); c.fill(); c.globalAlpha = 1; c.lineWidth = .6; c.strokeStyle = '#000'; c.stroke();
-        secPts.push({ x, y, r, s });
+      s.slab.slice().sort((a, b) => a.e.mag - b.e.mag).forEach(sp => {
+        const r = Math.max(2, sp.e.mag * 1.8), x = X(sp.t), y = Y(sp.e.depth);
+        c.beginPath(); c.arc(x, y, r, 0, 6.2832); c.globalAlpha = .85; c.fillStyle = colorOf(sp.e); c.fill(); c.globalAlpha = 1; c.lineWidth = .6; c.strokeStyle = '#000'; c.stroke();
+        secPts.push({ x, y, r, s: sp });
       });
       const f = p => p.lat.toFixed(3) + ', ' + p.lng.toFixed(3);
-      $('sectitle').textContent = 'Section A (' + f(sec.A) + ') \u2192 B (' + f(sec.B) + ')';
-      $('secinfo').textContent = slab.length + ' events \u00b7 L = ' + g.L.toFixed(1) + ' km \u00b7 d \u2264 ' + g.hw + ' km';
+      $('sectitle').textContent = 'Section ' + (secs.indexOf(s) + 1) + ' (' + (s.la||'A') + (s.lb||'B') + ') ' + f(s.A) + ' \u2192 ' + f(s.B);
+      $('secinfo').textContent = s.slab.length + ' events \u00b7 L = ' + g.L.toFixed(1) + ' km \u00b7 d \u2264 ' + g.hw + ' km';
     }
     seccv.addEventListener('mousemove', ev => {
       const r = seccv.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top, tip = $('sectip');
@@ -605,13 +1051,13 @@ const AREAS = [
       tip.style.display = 'block'; tip.style.left = Math.min(x + 12, r.width - 190) + 'px'; tip.style.top = Math.max(0, y - 62) + 'px';
     });
     seccv.addEventListener('mouseleave', () => { $('sectip').style.display = 'none'; });
-    //sez3D
     function draw3D() {
       if (win3d.style.display !== 'flex') return;
       const [c, W, H] = fitCanvas(cv3);
       c.fillStyle = '#0f1722'; c.fillRect(0, 0, W, H);
-      if (!sec) return;
-      const g = sec.g, D = slabDepth(), hx = g.L / 2, hy = g.hw, hz = D / 2, m = Math.max(hx, hy, hz);
+      if (!activeSec) return;
+      const s = activeSec;
+      const g = s.g, D = slabDepth(), hx = g.L / 2, hy = g.hw, hz = D / 2, m = Math.max(hx, hy, hz);
       const sx = v3.eq ? 1 / m : 1 / hx, sy = v3.eq ? 1 / m : 1 / hy, sz = v3.eq ? 1 / m : 1 / hz;
       const ex = hx * sx, ey = hy * sy, ez = hz * sz;
       const ca = Math.cos(v3.az), sa = Math.sin(v3.az), ce = Math.cos(v3.el), se = Math.sin(v3.el), sc = Math.min(W, H) * 0.27 * v3.zoom;
@@ -621,16 +1067,16 @@ const AREAS = [
       c.fillStyle = 'rgba(80,160,255,.14)'; c.fill();
       c.strokeStyle = 'rgba(190,205,230,.55)'; c.lineWidth = 1;
       for (let i = 0; i < 8; i++) [1, 2, 4].forEach(b => { if (!(i & b)) { c.beginPath(); c.moveTo(cs[i][0], cs[i][1]); c.lineTo(cs[i | b][0], cs[i | b][1]); c.stroke(); } });
-      const pts = slab.map(s => ({ p: P((s.t - hx) * sx, s.d * sy, (s.e.depth - hz) * sz), s })).sort((a, b) => b.p[2] - a.p[2]);
-      pts.forEach(({ p, s }) => {
-        const r = Math.max(1.5, s.e.mag * 1.5) * p[3] * Math.sqrt(v3.zoom);
-        c.beginPath(); c.arc(p[0], p[1], r, 0, 6.2832); c.globalAlpha = .9; c.fillStyle = colorOf(s.e); c.fill(); c.globalAlpha = 1; c.lineWidth = .5; c.strokeStyle = '#000'; c.stroke();
+      const pts = s.slab.map(sp => ({ p: P((sp.t - hx) * sx, sp.d * sy, (sp.e.depth - hz) * sz), s: sp })).sort((a, b) => b.p[2] - a.p[2]);
+      pts.forEach(({ p, s: sp }) => {
+        const r = Math.max(1.5, sp.e.mag * 1.5) * p[3] * Math.sqrt(v3.zoom);
+        c.beginPath(); c.arc(p[0], p[1], r, 0, 6.2832); c.globalAlpha = .9; c.fillStyle = colorOf(sp.e); c.fill(); c.globalAlpha = 1; c.lineWidth = .5; c.strokeStyle = '#000'; c.stroke();
       });
       c.font = 'bold 12px sans-serif'; c.fillStyle = '#00e5ff'; c.textAlign = 'center';
-      const pa = P(-ex, 0, -ez), pb = P(ex, 0, -ez); c.fillText('A', pa[0], pa[1] - 6); c.fillText('B', pb[0], pb[1] - 6);
+      const pa = P(-ex, 0, -ez), pb = P(ex, 0, -ez); c.fillText(s.la || 'A', pa[0], pa[1] - 6); c.fillText(s.lb || 'B', pb[0], pb[1] - 6);
       c.font = '10px sans-serif'; c.fillStyle = '#aab6c8'; c.textAlign = 'left';
       const p0 = P(-ex, -ey, -ez), p1 = P(-ex, -ey, ez); c.fillText('0 km', p0[0] + 4, p0[1] - 3); c.fillText(D + ' km', p1[0] + 4, p1[1] + 11);
-      $('info3').textContent = slab.length + ' events \u00b7 ' + g.L.toFixed(0) + '\u00d7' + sec.width + '\u00d7' + D + ' km \u00b7 drag = rotate, wheel = zoom';
+      $('info3').textContent = s.slab.length + ' events \u00b7 ' + g.L.toFixed(0) + '\u00d7' + s.width + '\u00d7' + D + ' km \u00b7 drag = rotate, wheel = zoom';
     }
     (function () {
       let st = null;
@@ -640,7 +1086,313 @@ const AREAS = [
       cv3.addEventListener('wheel', e => { e.preventDefault(); v3.zoom = Math.max(.3, Math.min(6, v3.zoom * Math.exp(-e.deltaY * 0.001))); draw3D(); }, { passive: false });
       cv3.addEventListener('dblclick', () => { v3.az = -35 * Math.PI / 180; v3.el = 25 * Math.PI / 180; v3.zoom = 1; draw3D(); });
     })();
-    //esportaJPG
+    let polyDrawing = false, polyPts = [], hoverPt = null, catPoly = null;
+    const polyPrev = L.layerGroup().addTo(map);
+
+    function startPolyDraw() {
+      if (drawing) toggleDraw(false);
+      polyDrawing = true;
+      polyPts = []; hoverPt = null;
+      polyPrev.clearLayers();
+      map.doubleClickZoom.disable();
+      map.getContainer().style.cursor = 'crosshair';
+      $('btnPoly').classList.add('active');
+      $('info').textContent = 'Polygon: click to add vertices, double-click (or click the first point) to close';
+    }
+    function cancelPolyDraw() {
+      if (!polyDrawing) return;
+      polyDrawing = false;
+      polyPts = []; hoverPt = null;
+      polyPrev.clearLayers();
+      map.doubleClickZoom.enable();
+      map.getContainer().style.cursor = drawing ? 'crosshair' : '';
+      $('btnPoly').classList.remove('active');
+    }
+    function togglePolyDraw() {
+      if (polyDrawing) { cancelPolyDraw(); $('info').textContent = 'Polygon cancelled'; return; }
+      if (catPoly) { map.removeLayer(catPoly); catPoly = null; }
+      startPolyDraw();
+    }
+    function updatePolyPreview() {
+      polyPrev.clearLayers();
+      if (!polyPts.length) return;
+      const pts = polyPts.map(p => [p.lat, p.lng]);
+      if (hoverPt) pts.push([hoverPt.lat, hoverPt.lng]);
+      L.polyline(pts, { color: '#ffd54f', weight: 2, dashArray: '6 4', interactive: false }).addTo(polyPrev);
+      if (polyPts.length >= 2)
+        L.polyline([pts[pts.length - 1], [polyPts[0].lat, polyPts[0].lng]],
+          { color: '#ffd54f', weight: 1, dashArray: '3 5', opacity: .6, interactive: false }).addTo(polyPrev);
+      polyPts.forEach(p => L.circleMarker([p.lat, p.lng],
+        { radius: 3, color: '#ffd54f', fillColor: '#ffd54f', fillOpacity: 1, interactive: false }).addTo(polyPrev));
+    }
+    async function finishPoly() {
+      if (!polyDrawing) return;
+      const raw = polyPts.slice();
+      cancelPolyDraw();
+      const pts = [];
+      raw.forEach(p => { if (!pts.length || pts[pts.length - 1].distanceTo(p) > 3) pts.push(p); });
+      if (pts.length < 3) { $('info').textContent = 'Polygon cancelled (at least 3 points needed)'; return; }
+      if (catPoly) { map.removeLayer(catPoly); catPoly = null; }
+      catPoly = L.polygon(pts, { color: '#ffd54f', weight: 2, dashArray: '6 4', fillColor: '#ffd54f', fillOpacity: .06, interactive: false }).addTo(map);
+      await exportCatalog(pts);
+    }
+    function downloadText(name, text) {
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    }
+    function eventLine(e) {
+      const d = new Date(e.ms);
+      const ymd = d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate());
+      const hms = pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds());
+      const ms = String(d.getUTCMilliseconds()).padStart(3, '0');
+      return `${ymd} ${hms}.${ms} ${(+e.lat).toFixed(4)} ${(+e.lon).toFixed(4)} ${(+e.depth).toFixed(2)} ${(+e.mag).toFixed(1)}`;
+    }
+    async function exportCatalog(pts) {
+      const info = $('info');
+      const span = rangeEnd - rangeStart;
+      const t0 = rangeStart + sel.a * span, t1 = rangeStart + sel.b * span;
+      const lats = pts.map(p => p.lat), lons = pts.map(p => p.lng);
+      const minlat = Math.min(...lats), maxlat = Math.max(...lats);
+      const minlon = Math.min(...lons), maxlon = Math.max(...lons);
+      const polyH = pts.map(p => [p.lng, p.lat]);
+      const base = 'https://webservices.ingv.it/fdsnws/event/1/query?format=geojson&orderby=time&limit=10000' +
+        `&minlatitude=${minlat.toFixed(3)}&maxlatitude=${maxlat.toFixed(3)}` +
+        `&minlongitude=${minlon.toFixed(3)}&maxlongitude=${maxlon.toFixed(3)}`;
+      const CHUNK = 180 * 864e5;
+      const n = Math.max(1, Math.ceil((t1 - t0) / CHUNK));
+      const found = [], seen = new Set();
+      for (let i = 0; i < n; i++) {
+        const a = t0 + i * CHUNK, b = Math.min(t0 + (i + 1) * CHUNK, t1);
+        info.textContent = `Polygon catalog: request ${i + 1}/${n}…`;
+        try {
+          const res = await fetch(`${base}&starttime=${fmtISO(new Date(a))}&endtime=${fmtISO(new Date(b))}`);
+          if (res.status === 204) continue;
+          if (!res.ok) { console.warn('catalog chunk', res.status); continue; }
+          const data = await res.json();
+          (data.features || []).forEach(f => {
+            const e = mapEvent(f);
+            if (seen.has(e.eventId)) return;
+            if (!inside(polyH, e.lon, e.lat)) return;
+            seen.add(e.eventId);
+            found.push(e);
+          });
+        } catch (err) { console.warn('catalog chunk', err); }
+      }
+      found.sort((a, b) => a.ms - b.ms);
+      const txt = found.map(eventLine).join('\n') + (found.length ? '\n' : '');
+      const d = new Date();
+      const name = `catalog_${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}_${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}.txt`;
+      downloadText(name, txt);
+      info.textContent = `${name} — ${found.length} events (${fmtUTC(t0)} → ${fmtUTC(t1)} UTC)`;
+    }
+    map.on('click', e => {
+      if (!polyDrawing || drawing) return;
+      if (polyPts.length >= 3) {
+        const a = map.latLngToContainerPoint(polyPts[0]);
+        const b = map.latLngToContainerPoint(e.latlng);
+        if (a.distanceTo(b) < 12) { finishPoly(); return; }
+      }
+      polyPts.push(e.latlng);
+      hoverPt = null;
+      updatePolyPreview();
+    });
+    map.on('mousemove', e => {
+      if (!polyDrawing) return;
+      hoverPt = e.latlng;
+      updatePolyPreview();
+    });
+    map.on('dblclick', e => {
+      if (!polyDrawing) return;
+      L.DomEvent.stop(e);
+      finishPoly();
+    });
+
+    async function searchEvent(raw) {
+      const id = (raw || '').trim();
+      const info = $('info');
+      if (!id) { info.textContent = 'Enter an event id'; return; }
+      info.textContent = 'Searching event ' + id + '…';
+      try {
+        const res = await fetch('https://webservices.ingv.it/fdsnws/event/1/query?format=geojson&eventid=' + encodeURIComponent(id));
+        if (res.status === 204) { info.textContent = 'Event ' + id + ' not found'; return; }
+        if (!res.ok) { info.textContent = 'Search error ' + res.status; return; }
+        const data = await res.json();
+        if (!data.features || !data.features.length) { info.textContent = 'Event ' + id + ' not found'; return; }
+        const e = mapEvent(data.features[0]);
+        searchLayer.clearLayers();
+        L.circleMarker([e.lat, e.lon], { radius: Math.max(4, e.mag * 2.4), color: '#00e5ff', weight: 2, fillColor: colorOf(e), fillOpacity: .85 }).addTo(searchLayer);
+        L.marker([e.lat, e.lon], { zIndexOffset: 3000, icon: L.divIcon({ className: '', iconSize: [26, 26], iconAnchor: [13, 13], html: '<div class="smark">&#9733;</div>' }) }).addTo(searchLayer);
+        L.popup({ maxWidth: 320 }).setLatLng([e.lat, e.lon]).setContent(eventPopupHTML(e)).openOn(map);
+        map.setView([e.lat, e.lon], Math.max(map.getZoom(), 9));
+        info.textContent = 'Found M' + e.mag.toFixed(1) + ' \u00b7 ' + e.place;
+      } catch (err) {
+        console.error(err);
+        info.textContent = 'Search error';
+      }
+    }
+    $('eqgo').onclick = () => searchEvent($('eqid').value);
+    $('eqid').addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); searchEvent($('eqid').value); } });
+    $('eqinfo').onclick = () => { const t = $('eqtip'); t.style.display = t.style.display === 'block' ? 'none' : 'block'; };
+
+    function buildPicksTxt(doc) {
+      const all = (el, name) => el ? Array.from(el.getElementsByTagNameNS('*', name)) : [];
+      const first = (el, name) => all(el, name)[0] || null;
+      const tx = n => n ? (n.textContent || '').trim() : '';
+      const val = (el, name) => { const n = first(el, name); if (!n) return ''; const v = first(n, 'value') || n; return tx(v); };
+      const unc = el => el ? tx(first(el, 'uncertainty')) : '';
+
+      const ev = first(doc, 'event') || doc.documentElement;
+      const org = first(ev, 'origin') || ev;
+      const latEl = first(org, 'latitude'), lonEl = first(org, 'longitude'), depEl = first(org, 'depth');
+      const magEl = first(org, 'magnitude') || first(ev, 'magnitude');
+      const magV = magEl ? val(magEl, 'value') : '';
+
+      const picks = new Map();
+      all(ev, 'pick').forEach(p => {
+        const w = first(p, 'waveformID');
+        let pol = tx(first(p, 'polarity'));
+        if (/^positive$/i.test(pol)) pol = '+';
+        else if (/^negative$/i.test(pol)) pol = '-';
+        else if (pol) pol = '?';
+        picks.set(p.getAttribute('publicID') || '', {
+          sta: w ? (w.getAttribute('stationCode') || '') : '',
+          net: w ? (w.getAttribute('networkCode') || '') : '',
+          time: val(p, 'time'),
+          pol,
+          pha: tx(first(p, 'phaseHint'))
+        });
+      });
+
+      const num = v => (v !== '' && isFinite(+v)) ? (+v).toFixed(2) : (v || '-');
+      const rows = [];
+      all(org, 'arrival').forEach(a => {
+        const pk = picks.get(tx(first(a, 'pickID'))) || { sta: '', net: '', time: '', pol: '', pha: '' };
+        rows.push([
+          (pk.sta || '-').padEnd(4),
+          (pk.net || '-').padEnd(3),
+          pk.time || '-',
+          pk.pol || '-',
+          tx(first(a, 'phase')) || pk.pha || '-',
+          num(val(a, 'azimuth')),
+          num(val(a, 'distance')),
+          num(val(a, 'takeoffAngle')),
+          num(val(a, 'timeResidual'))
+        ].join(' '));
+      });
+
+      const out = [
+        '#TIMEUTC LAT UNC_LAT LONG UNC_LON PROF UNC_PROF M UNC_M',
+        `#${val(org, 'time') || '-'} ${val(org, 'latitude') || '-'} ${unc(latEl) || '0'} ` +
+        `${val(org, 'longitude') || '-'} ${unc(lonEl) || '0'} ${val(org, 'depth') || '-'} ${unc(depEl) || '0'} ` +
+        `${magV || '-'} ${magEl ? (unc(magEl) || '0') : '0'}`,
+        'STA  NET TIME POL PHA AZIM DIST TKOFANGLE RES',
+        ...rows
+      ];
+      return out.join('\n') + '\n';
+    }
+    async function downloadPicks(eventId) {
+      const info = $('info');
+      info.textContent = 'Fetching picks for ' + eventId + '…';
+      const url = `https://webservices.ingv.it/fdsnws/event/1/query?eventid=${encodeURIComponent(eventId)}` +
+                  '&format=xml&includearrivals=true&includepicks=true';
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const xml = await res.text();
+        const doc = new DOMParser().parseFromString(xml, 'application/xml');
+        if (doc.getElementsByTagName('parsererror').length) throw new Error('XML parse error');
+        const txt = buildPicksTxt(doc);
+        const nRows = Math.max(0, txt.trim().split('\n').length - 3);
+        downloadText(`picks_${eventId}.txt`, txt);
+        info.textContent = `picks_${eventId}.txt — ${nRows} picks`;
+      } catch (err) {
+        console.error(err);
+        info.textContent = 'Picks error: ' + err.message + ' (opening raw FDSN query)';
+        window.open(url, '_blank');
+      }
+    }
+    window.downloadPicks = downloadPicks;
+
+    $('helpwin').querySelector('.wb').innerHTML = `
+      <p class="hs"><b>Odometer</b> — number of earthquakes inside the current selection. The dropdown
+      (<i>1 h … 25 y</i>) sets the time span downloaded from INGV. The field below searches a single
+      INGV event id: it is fetched on its own and centred on the map (click the star for the links).
+      The <b>i</b> at the left opens this panel.</p>
+      <p class="hs"><b>Time bar</b> (bottom centre) — drag the two white handles to select a sub-window of
+      the downloaded period (double-click resets to the full range).</p>
+      <p class="hs"><b>Top-right buttons</b><br>
+      &middot; <i>Last 1 hour … Last 25 years</i>: download period.<br>
+      &middot; <i>Depth / Month / Mw histogram</i>: chart in the bottom-left corner.<br>
+      &middot; <i>Rate vs depth</i>: events/year per 5 km depth bin; the selector above the chart
+        restricts the count to one INGV tectonic area.<br>
+      &middot; <i>KDE density map</i>: Gaussian kernel density of the epicentres, blue–white–red scale
+        (the bandwidth box sets the kernel width in km).<br>
+      &middot; <i>Area polygons / Area count bars</i>: INGV area statistics.<br>
+      &middot; <i>Hide earthquakes</i>: toggle the epicentre layer.<br>
+      &middot; <i>Draw section line</i>: click-drag on the map to create a cross-section
+        (the width box is ±km). Drag the A/B handles to move it.<br>
+      &middot; <i>Polygon catalog</i>: click the map to add vertices, close on the first vertex or with a
+        double-click. Every earthquake inside the polygon and inside the selected time window is
+        downloaded as a .txt catalog (<code>YYYYMMDD HHMMSS.MS LAT LON DEP M</code>).<br>
+      &middot; <i>Clear sections</i>: remove all sections.<br>
+      &middot; <i>3D popup</i>: 3-D view of the active section (drag = rotate, wheel = zoom, 1:1:1 = equal axes).<br>
+      &middot; <i>Colour</i>: cycles time / magnitude / KDE colouring.<br>
+      &middot; <i>DISS sources</i>: overlay of the DISS 3.3.1 seismogenic sources.<br>
+      &middot; <i>Export JPG</i>: save the map with all overlays and the legend as a JPEG.</p>
+      <p class="hs"><b>Event popup</b> — click an epicentre to download the waveform, get the
+      picks &amp; arrivals as .txt (header <code>#TIMEUTC LAT UNC_LAT …</code> followed by
+      <code>STA NET TIME POL PHA AZIM DIST TKOFANGLE RES</code>) and open the INGV event page.</p>
+      <p class="hs"><b>Section window</b> — cross-section along the drawn line; the event closest to the
+      cursor is shown in the tooltip; the <i>1:1</i> box keeps equal vertical and horizontal scale.</p>`;
+    $('helpBtn').onclick = () => {
+      const w = $('helpwin');
+      if (w.style.display === 'flex') { w.style.display = 'none'; return; }
+      showWin(w, Math.max(10, innerWidth / 2 - 215), 60);
+    };
+    $('helpx').onclick = () => { $('helpwin').style.display = 'none'; };
+
+    async function toggleDISS() {//non funziona o buttare o modificare in qualche modo visualizzando come hypo3d
+      const btn = $('btnDiss');
+      if (dissLayer) {
+        map.removeLayer(dissLayer);
+        dissLayer = null;
+        btn.classList.remove('active');
+        $('info').textContent = 'DISS hidden';
+        return;
+      }
+      $('info').textContent = 'Loading DISS...';
+      const urls = [
+        'https://diss.ingv.it/data/DISS_3.3.1_Seismogenic_Sources.geojson',
+        'https://diss.ingv.it/data/DISS_3.3.1_Individual_Seismogenic_Sources.geojson',
+        'https://diss.ingv.it/diss331/download/DISS_3.3.1_Individual_Seismogenic_Sources.geojson'
+      ];
+      for (const url of urls) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) { console.warn('DISS fetch', url, res.status); continue; }
+          const geojson = await res.json();
+          dissLayer = L.geoJSON(geojson, {
+            style: { color: '#ff00ff', weight: 1.4, opacity: 0.85, fillColor: '#ff00ff', fillOpacity: 0.05, dashArray: '5 4' },
+            onEachFeature: (f, layer) => {
+              const p = f.properties || {};
+              const nm = p.name || p.NAME || p.nome || p.Nome || 'DISS source';
+              const desc = p.description || p.DESCR || p.fault_type || '';
+              layer.bindPopup(`<b>${nm}</b>${desc ? '<br>' + desc : ''}`);
+            }
+          }).addTo(map);
+          dissLayer.bringToBack();
+          btn.classList.add('active');
+          $('info').textContent = 'DISS 3.3.1 loaded (toggle to hide)';
+          return;
+        } catch (e) {
+          console.warn('DISS error', url, e);
+        }
+      }
+      $('info').textContent = 'DISS sources unavailable';
+    }
     async function exportJPG() {
       const btn = $('btnExp'); btn.disabled = true; btn.textContent = 'Exporting...';
       try {
@@ -663,8 +1415,31 @@ const AREAS = [
           c.beginPath(); a.h.forEach((p, i) => { const q = P(p[0], p[1]); i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]); }); c.closePath();
           c.globalAlpha = .35; c.fillStyle = areaColor(a, mxn); c.fill(); c.globalAlpha = 1; c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke();
         });
+        if (dissLayer) {
+          dissLayer.eachLayer(l => {
+            if (l.getLatLngs) {
+              const rings = l.getLatLngs();
+              rings.forEach(ring => {
+                c.beginPath();
+                ring.forEach((ll, i) => { const q = P(ll.lng, ll.lat); i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]); });
+                c.closePath();
+                c.fillStyle = 'rgba(255,0,255,.05)'; c.fill();
+                c.setLineDash([6, 4]); c.strokeStyle = '#ff00ff'; c.lineWidth = 1.5; c.stroke(); c.setLineDash([]);
+              });
+            }
+          });
+        }
+        if (on.kde && kdeCanvas && kdeGrid) {
+          const gr = kdeGrid;
+          const lonMin = gr.lon0 + gr.xmin / gr.kx, lonMax = gr.lon0 + gr.xmax / gr.kx;
+          const latMin = gr.lat0 + gr.ymin / gr.ky, latMax = gr.lat0 + gr.ymax / gr.ky;
+          const p0 = P(lonMin, latMax), p1 = P(lonMax, latMin);
+          c.globalAlpha = 0.85;
+          c.drawImage(kdeCanvas, p0[0], p0[1], p1[0] - p0[0], p1[1] - p0[1]);
+          c.globalAlpha = 1;
+        }
         events.slice().sort((a, b) => a.mag - b.mag).forEach(e => {
-          const q = P(e.lon, e.lat), hi = slabSet.has(e);
+          const q = P(e.lon, e.lat), hi = activeSec && activeSec.slabSet.has(e);
           c.beginPath(); c.arc(q[0], q[1], Math.max(2, e.mag * 2) * S, 0, 6.2832); c.globalAlpha = .8; c.fillStyle = colorOf(e); c.fill(); c.globalAlpha = 1; c.lineWidth = hi ? 2 : .8; c.strokeStyle = hi ? '#fff' : '#000'; c.stroke();
         });
         if (on.bars) AREAS.filter(a => a.n).forEach(a => {
@@ -672,23 +1447,24 @@ const AREAS = [
           c.fillStyle = 'rgba(8,81,156,.85)'; c.fillRect(q[0] - 8 * S, q[1] - h, 16 * S, h); c.strokeStyle = '#000'; c.lineWidth = 1; c.strokeRect(q[0] - 8 * S, q[1] - h, 16 * S, h);
           c.font = 'bold ' + 11 * S + 'px sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#fff'; c.strokeText(a.n, q[0], q[1] - h - 4); c.fillStyle = '#000'; c.fillText(a.n, q[0], q[1] - h - 4);
         });
-        if (sec) {
-          const g = sec.g, hw = g.hw, inv = (X, Y) => P(g.lon0 + X / g.kx, g.lat0 + Y / g.ky);
+        secs.forEach(s => {
+          const g = s.g, hw = g.hw;
+          const inv = (X, Y) => P(g.lon0 + X / g.kx, g.lat0 + Y / g.ky);
           const cs = [[-hw * g.uy, hw * g.ux], [g.L * g.ux - hw * g.uy, g.L * g.uy + hw * g.ux], [g.L * g.ux + hw * g.uy, g.L * g.uy - hw * g.ux], [hw * g.uy, -hw * g.ux]].map(p => inv(p[0], p[1]));
+          const active = s === activeSec;
           c.beginPath(); cs.forEach((q, i) => i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1])); c.closePath();
-          c.fillStyle = 'rgba(0,229,255,.1)'; c.fill(); c.setLineDash([14, 9]); c.strokeStyle = '#00e5ff'; c.lineWidth = 2.5; c.stroke(); c.setLineDash([]);
-          const a = P(sec.A.lng, sec.A.lat), b = P(sec.B.lng, sec.B.lat);
-          c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.lineWidth = 4; c.stroke();
-          c.font = 'bold 28px sans-serif'; c.textAlign = 'center'; c.lineWidth = 5; c.strokeStyle = '#000'; c.fillStyle = '#00e5ff';
-          [['A', a], ['B', b]].forEach(([l, q]) => { c.strokeText(l, q[0], q[1] - 12); c.fillText(l, q[0], q[1] - 12); });
-        }
+          c.fillStyle = 'rgba(0,229,255,.1)'; c.fill();
+          c.setLineDash([14, 9]); c.strokeStyle = active ? '#00e5ff' : '#8090a0'; c.lineWidth = 2.5; c.stroke(); c.setLineDash([]);
+          const a = P(s.A.lng, s.A.lat), b = P(s.B.lng, s.B.lat);
+          c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.lineWidth = active ? 4 : 2; c.strokeStyle = active ? '#00e5ff' : '#8090a0'; c.stroke();
+          c.font = 'bold 28px sans-serif'; c.textAlign = 'center'; c.lineWidth = 5; c.strokeStyle = '#000'; c.fillStyle = active ? '#00e5ff' : '#8090a0';
+          [[s.la || 'A', a], [s.lb || 'B', b]].forEach(([l, q]) => { c.strokeText(l, q[0], q[1] - 12); c.fillText(l, q[0], q[1] - 12); });
+        });
         if (chartMode) { const cc = $('cv'); c.fillStyle = '#fff'; c.fillRect(20, H - cc.height - 40, cc.width + 16, cc.height + 16); c.drawImage(cc, 28, H - cc.height - 32); }
-        //titolo
         const sp = rangeEnd - rangeStart, t0 = rangeStart + sel.a * sp, t1 = rangeStart + sel.b * sp;
         const title = events.length + ' earthquakes', sub = fmtUTC(t0) + ' \u2192 ' + fmtUTC(t1) + ' UTC';
         c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(W / 2 - 330, 24, 660, 92);
         c.fillStyle = '#fff'; c.textAlign = 'center'; c.font = 'bold 44px sans-serif'; c.fillText(title, W / 2, 72); c.font = '24px sans-serif'; c.fillText(sub, W / 2, 104);
-        //CB basso centrale
         const bw = 1100, bh = 34, bx = W / 2 - bw / 2, by = H - 120;
         c.fillStyle = 'rgba(255,255,255,.9)'; c.fillRect(bx - 50, by - 20, bw + 100, 118);
         if (colorMode === 'time') {
@@ -698,8 +1474,13 @@ const AREAS = [
           for (let i = 0; i <= 5; i++) { const x = bx + i / 5 * bw, d = new Date(rangeStart + i / 5 * sp), lab = sp <= 100 * 864e5 ? pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) : fmtUTC(d).slice(0, 10);
             c.fillRect(x - 1, by + bh, 2, 8); c.fillText(lab, x, by + bh + 30); }
           c.fillStyle = 'rgba(255,255,255,.75)'; c.fillRect(bx, by, sel.a * bw, bh); c.fillRect(bx + sel.b * bw, by, (1 - sel.b) * bw, bh);
+        } else if (colorMode === 'kde') {
+          const gr = c.createLinearGradient(bx, 0, bx + bw, 0);
+          KDE_STOPS.forEach((st, i) => gr.addColorStop(i / (KDE_STOPS.length - 1), `rgb(${st[0]},${st[1]},${st[2]})`));
+          c.fillStyle = gr; c.fillRect(bx, by, bw, bh); c.strokeStyle = '#000'; c.lineWidth = 2; c.strokeRect(bx, by, bw, bh);
+          c.fillStyle = '#000'; c.font = '20px sans-serif'; c.textAlign = 'center';
+          c.fillText('0', bx, by + bh + 30); c.fillText('1', bx + bw, by + bh + 30); c.fillText('KDE density (log, bwr)', bx + bw / 2, by + bh + 30);
         } else { c.fillStyle = '#000'; c.font = '22px sans-serif'; c.textAlign = 'center'; c.fillText('colour = magnitude', W / 2, by + 20); }
-        //filtro su area
         c.strokeStyle = '#ff7800'; c.lineWidth = 8; c.strokeRect(4, 4, W - 8, H - 8);
         const d = new Date(), name = d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + '.jpg';
         const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.92));
@@ -709,33 +1490,87 @@ const AREAS = [
       } catch (err) { console.error(err); $('info').textContent = 'Export error'; }
       btn.disabled = false; btn.textContent = 'Export JPG';
     }
+    function mapEvent(f) {
+      return {
+        lon: f.geometry.coordinates[0],
+        lat: f.geometry.coordinates[1],
+        depth: f.geometry.coordinates[2],
+        mag: Number(f.properties.mag) || 0,
+        t: new Date(f.properties.time),
+        ms: Date.parse(f.properties.time),
+        place: f.properties.place,
+        eventId: f.properties.eventId
+      };
+    }
     async function fetchEarthquakes() {
       const id = ++reqId;
       const info = $('info');
       info.textContent = 'Loading...';
       const fmt = d => d.toISOString().slice(0, 19);
       const end = new Date(), start = new Date(end - days * 864e5);
-      const url = `https://webservices.ingv.it/fdsnws/event/1/query?format=geojson&starttime=${fmt(start)}&endtime=${fmt(end)}&minlatitude=35.9&maxlatitude=41&minlongitude=12.2&maxlongitude=19.5&limit=10000&orderby=time`;
+      rangeStart = start.getTime(); rangeEnd = end.getTime();
+      const baseUrl = 'https://webservices.ingv.it/fdsnws/event/1/query?format=geojson' +
+        '&minlatitude=35.8&maxlatitude=41.8&minlongitude=12&maxlongitude=19.5&limit=10000&orderby=time';
       try {
-        const res = await fetch(url);
+        if (days < 1095) {
+          const url = `${baseUrl}&starttime=${fmt(start)}&endtime=${fmt(end)}`;
+          const res = await fetch(url);
+          if (id !== reqId) return;
+          if (res.status === 204) { allEvents = []; limitHit = false; buildBar(); render(); return; }
+          if (!res.ok) { info.textContent = 'Error ' + res.status; return; }
+          const data = await res.json();
+          if (id !== reqId) return;
+          allEvents = data.features.map(mapEvent);
+          limitHit = data.features.length >= 10000;
+        } else {
+          const chunkDays = 180;
+          const cur0 = start.getTime();
+          const endMs = end.getTime();
+          const totalChunks = Math.ceil((endMs - cur0) / (chunkDays * 864e5));
+          let chunkCount = 0;
+          const collected = [];
+          let anyLimit = false;
+          let cur = cur0;
+          while (cur < endMs) {
+            if (id !== reqId) return;
+            const curEnd = Math.min(cur + chunkDays * 864e5, endMs);
+            info.textContent = `Loading chunk ${++chunkCount}/${totalChunks}…`;
+            try {
+              const res = await fetch(`${baseUrl}&starttime=${fmt(new Date(cur))}&endtime=${fmt(new Date(curEnd))}`);
+              if (id !== reqId) return;
+              if (res.ok) {
+                const data = await res.json();
+                if (data.features.length >= 10000) anyLimit = true;
+                collected.push(...data.features.map(mapEvent));
+              }
+            } catch (e) {
+              console.warn('chunk fetch failed', e);
+            }
+            cur = curEnd;
+          }
+          allEvents = collected;
+          limitHit = anyLimit;
+        }
         if (id !== reqId) return;
-        if (res.status === 204) { allEvents = []; limitHit = false; rangeStart = start.getTime(); rangeEnd = end.getTime(); buildBar(); render(); return; }
-        if (!res.ok) { info.textContent = 'Error ' + res.status; return; }
-        const data = await res.json();
-        if (id !== reqId) return;
-        //[lon, lat, depth_km], properties.mag
-        allEvents = data.features.map(f => ({ lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], depth: f.geometry.coordinates[2],
-          mag: Number(f.properties.mag) || 0, t: new Date(f.properties.time), ms: Date.parse(f.properties.time), place: f.properties.place, eventId: f.properties.eventId }));
-        limitHit = data.features.length >= 10000;
-        rangeStart = start.getTime(); rangeEnd = end.getTime();
         buildBar(); render();
       } catch (e) {
         console.error('INGV fetch error:', e);
         info.textContent = 'Fetch error';
       }
     }
+    (function populateRateSelect() {
+      const sel = $('rsel');
+      if (!sel) return;
+      AREAS.forEach(a => {
+        const o = document.createElement('option');
+        o.value = a[0]; o.textContent = a[0];
+        sel.appendChild(o);
+      });
+      sel.onchange = () => { if (chartMode === 'rateDepth') drawChart(); };
+    })();
+
     fetchEarthquakes();
-    setInterval(fetchEarthquakes, 60000);
+    setInterval(() => { if (days <= 30) fetchEarthquakes(); }, 60000);
   </script>
 </body>
 </html>
