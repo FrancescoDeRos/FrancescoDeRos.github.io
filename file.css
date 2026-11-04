@@ -20,3 +20,12 @@ body {
       bottom: 0px;
       right: 0px;
     }
+#main-menu li {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px; 
+}
+#main-menu {
+    position: relative;
+    z-index: 1000; 
+}
