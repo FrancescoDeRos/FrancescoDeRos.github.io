@@ -226,9 +226,56 @@ const AREAS = [
     AREAS.forEach(a => { a.h = a[1].map(p => [p[1], p[0]]); a.ar = polyArea(a.h); a.cy = a[2]; a.cx = a[3]; a.n = 0; });
     const BYSIZE = AREAS.slice().sort((a, b) => a.ar - b.ar);//smallest area
     const map = L.map('map', { preferCanvas: true });
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri'
-    }).addTo(map);
+	const satelliteLayer = L.tileLayer(
+	  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+	  { attribution: 'Tiles &copy; Esri' }
+	);
+	const osmLayer = L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
+	  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+	  maxZoom: 18
+	});
+	let currentBase = satelliteLayer;
+	currentBase.addTo(map);
+	const baseCtl = L.control({ position: 'bottomleft' });
+	baseCtl.onAdd = () => {
+	  const div = L.DomUtil.create('div', 'ctl');
+	  L.DomEvent.disableClickPropagation(div);
+	  L.DomEvent.disableScrollPropagation(div);
+	  const b = L.DomUtil.create('button', '', div);
+	  b.id = 'btnBase';
+	  b.style.width = 'auto';
+	  b.style.padding = '4px 10px';
+	  b.textContent = 'Basemap: satellite';
+	  b.title = 'Switch basemap (satellite / OSM DE)';
+	  b.onclick = () => {
+		map.removeLayer(currentBase);
+		currentBase = (currentBase === satelliteLayer) ? osmLayer : satelliteLayer;
+		currentBase.addTo(map);
+		if (map.getPane('kde'))  map.getPane('kde').style.zIndex = 250;
+		if (map.getPane('areas')) map.getPane('areas').style.zIndex = 350;
+		b.textContent = 'Basemap: ' + (currentBase === satelliteLayer ? 'satellite' : 'OSM DE');
+	  };
+	  return div;
+	};
+	baseCtl.addTo(map);
+
+	//document.getElementById('map').style.backgroundColor = '#ffffff';
+	//Worldwide coastline overlay (Natural Earth 50m)
+	//const coastlinesUrl = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_15m_coastline.geojson';
+	//fetch(coastlinesUrl)
+	//  .then(res => res.json())
+	//  .then(data => {
+	//	L.geoJSON(data, {
+	//	  style: {
+	//	    color: '#000000',   
+	//	    weight: 1,          
+	//	    opacity: 1,
+	//	    fillOpacity: 0       
+	//	  }
+	//	}).addTo(map);
+	//  })
+	//  .catch(err => console.error('Could not load coastlines:', err));
+ 
     const bounds = L.latLngBounds([35.8, 12], [41.8, 19.5]);
     L.rectangle(bounds, {color: "#ff7800", weight: 1, fill: false}).addTo(map);
     map.fitBounds(bounds);
@@ -279,7 +326,7 @@ const AREAS = [
     let colorMode = 'time';                 //time|mag|kde|depth
     let kdeBW = 10;
     const on = { poly: false, bars: false, kde: false, beach: false };
-    let depthMin = 0, depthMax = 200;
+    let depthMin = 0, depthMax = 1000;
     const dsel = { a: 0, b: 1 };            //finestra prof (frazioni depthMin/depthMax)
     let showEvents = true;
     let secs = [], activeSec = null, drawing = false, drawStart = null, drawPreviewSec = null;
@@ -1731,105 +1778,154 @@ const AREAS = [
       }
       $('info').textContent = 'DISS sources unavailable';
     }
-    async function exportJPG() {
-      const btn = $('btnExp'); btn.disabled = true; btn.textContent = 'Exporting...';
-      try {
-        const Z = 9, T = 256, SC = T * Math.pow(2, Z), S = 1.6;
-        const mx = lon => (lon + 180) / 360 * SC;
-        const my = lat => { const r = lat * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * SC; };
-        const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
-        const x0 = mx(sw.lng), x1 = mx(ne.lng), y0 = my(ne.lat), y1 = my(sw.lat);
-        const W = Math.round(x1 - x0), H = Math.round(y1 - y0);
-        const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-        const c = cv.getContext('2d'); c.fillStyle = '#1a1a1a'; c.fillRect(0, 0, W, H);
-        const jobs = [];
-        for (let ty = Math.floor(y0 / T); ty <= Math.floor((y1 - 1) / T); ty++) for (let tx = Math.floor(x0 / T); tx <= Math.floor((x1 - 1) / T); tx++)
-          jobs.push(new Promise(res => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { c.drawImage(im, tx * T - x0, ty * T - y0); res(1); }; im.onerror = () => res(0);
-            im.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${Z}/${ty}/${tx}`; }));
-        const okTiles = (await Promise.all(jobs)).reduce((a, b) => a + b, 0);
-        const P = (lon, lat) => [mx(lon) - x0, my(lat) - y0];
-        const mxn = Math.max(1, ...AREAS.map(a => a.n));
-        if (on.poly) AREAS.slice().sort((a, b) => b.ar - a.ar).forEach(a => {
-          c.beginPath(); a.h.forEach((p, i) => { const q = P(p[0], p[1]); i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]); }); c.closePath();
-          c.globalAlpha = .35; c.fillStyle = areaColor(a, mxn); c.fill(); c.globalAlpha = 1; c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke();
-        });
-        if (dissLayer) {
-          const walk = (a, poly) => {
-            if (!a || !a.length) return;
-            if (a[0].lat === undefined) { a.forEach(x => walk(x, poly)); return; }
-            c.beginPath(); a.forEach((ll, i) => { const q = P(ll.lng, ll.lat); i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]); });
-            if (poly) { c.closePath(); c.fillStyle = 'rgba(255,0,255,.05)'; c.fill(); }
-            c.setLineDash([6, 4]); c.strokeStyle = '#ff00ff'; c.lineWidth = 1.5; c.stroke(); c.setLineDash([]);
-          };
-          dissLayer.eachLayer(l => { if (l.getLatLngs) walk(l.getLatLngs(), l instanceof L.Polygon); });
-        }
-        if (on.kde && kdeCanvas && kdeGrid) {
-          const gr = kdeGrid;
-          const lonMin = gr.lon0 + gr.xmin / gr.kx, lonMax = gr.lon0 + gr.xmax / gr.kx;
-          const latMin = gr.lat0 + gr.ymin / gr.ky, latMax = gr.lat0 + gr.ymax / gr.ky;
-          const p0 = P(lonMin, latMax), p1 = P(lonMax, latMin);
-          c.globalAlpha = 0.85;
-          c.drawImage(kdeCanvas, p0[0], p0[1], p1[0] - p0[0], p1[1] - p0[1]);
-          c.globalAlpha = 1;
-        }
-        events.slice().sort((a, b) => a.mag - b.mag).forEach(e => {
-          const q = P(e.lon, e.lat), hi = activeSec && activeSec.slabSet.has(e);
-          c.beginPath(); c.arc(q[0], q[1], Math.max(2, e.mag * 2) * S, 0, 6.2832); c.globalAlpha = .8; c.fillStyle = colorOf(e); c.fill(); c.globalAlpha = 1; c.lineWidth = hi ? 2 : .8; c.strokeStyle = hi ? '#fff' : '#000'; c.stroke();
-        });
-        if (on.bars) AREAS.filter(a => a.n).forEach(a => {
-          const h = (6 + Math.round(70 * a.n / mxn)) * S, q = P(a.cx, a.cy);
-          c.fillStyle = 'rgba(8,81,156,.85)'; c.fillRect(q[0] - 8 * S, q[1] - h, 16 * S, h); c.strokeStyle = '#000'; c.lineWidth = 1; c.strokeRect(q[0] - 8 * S, q[1] - h, 16 * S, h);
-          c.font = 'bold ' + 11 * S + 'px sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#fff'; c.strokeText(a.n, q[0], q[1] - h - 4); c.fillStyle = '#000'; c.fillText(a.n, q[0], q[1] - h - 4);
-        });
-        secs.forEach(s => {
-          const g = s.g, hw = g.hw;
-          const inv = (X, Y) => P(g.lon0 + X / g.kx, g.lat0 + Y / g.ky);
-          const cs = [[-hw * g.uy, hw * g.ux], [g.L * g.ux - hw * g.uy, g.L * g.uy + hw * g.ux], [g.L * g.ux + hw * g.uy, g.L * g.uy - hw * g.ux], [hw * g.uy, -hw * g.ux]].map(p => inv(p[0], p[1]));
-          const active = s === activeSec;
-          c.beginPath(); cs.forEach((q, i) => i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1])); c.closePath();
-          c.fillStyle = 'rgba(0,229,255,.1)'; c.fill();
-          c.setLineDash([14, 9]); c.strokeStyle = active ? '#00e5ff' : '#8090a0'; c.lineWidth = 2.5; c.stroke(); c.setLineDash([]);
-          const a = P(s.A.lng, s.A.lat), b = P(s.B.lng, s.B.lat);
-          c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.lineWidth = active ? 4 : 2; c.strokeStyle = active ? '#00e5ff' : '#8090a0'; c.stroke();
-          c.font = 'bold 28px sans-serif'; c.textAlign = 'center'; c.lineWidth = 5; c.strokeStyle = '#000'; c.fillStyle = active ? '#00e5ff' : '#8090a0';
-          [[s.la || 'A', a], [s.lb || 'B', b]].forEach(([l, q]) => { c.strokeText(l, q[0], q[1] - 12); c.fillText(l, q[0], q[1] - 12); });
-        });
-        if (chartMode) { const cc = $('cv'); c.fillStyle = '#fff'; c.fillRect(20, H - cc.height - 40, cc.width + 16, cc.height + 16); c.drawImage(cc, 28, H - cc.height - 32); }
-        const sp = rangeEnd - rangeStart, t0 = rangeStart + sel.a * sp, t1 = rangeStart + sel.b * sp;
-        const title = events.length + ' earthquakes', sub = fmtUTC(t0) + ' \u2192 ' + fmtUTC(t1) + ' UTC';
-        c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(W / 2 - 330, 24, 660, 92);
-        c.fillStyle = '#fff'; c.textAlign = 'center'; c.font = 'bold 44px sans-serif'; c.fillText(title, W / 2, 72); c.font = '24px sans-serif'; c.fillText(sub, W / 2, 104);
-        const bw = 1100, bh = 34, bx = W / 2 - bw / 2, by = H - 120;
-        c.fillStyle = 'rgba(255,255,255,.9)'; c.fillRect(bx - 50, by - 20, bw + 100, 118);
-        if (colorMode === 'time') {
-          const gr = c.createLinearGradient(bx, 0, bx + bw, 0); CM.forEach((col, i) => gr.addColorStop(i / (CM.length - 1), col));
-          c.fillStyle = gr; c.fillRect(bx, by, bw, bh); c.strokeStyle = '#000'; c.lineWidth = 2; c.strokeRect(bx, by, bw, bh);
-          c.fillStyle = '#000'; c.font = '20px sans-serif'; c.textAlign = 'center';
-          for (let i = 0; i <= 5; i++) { const x = bx + i / 5 * bw, d = new Date(rangeStart + i / 5 * sp), lab = sp <= 100 * 864e5 ? pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) : fmtUTC(d).slice(0, 10);
-            c.fillRect(x - 1, by + bh, 2, 8); c.fillText(lab, x, by + bh + 30); }
-          c.fillStyle = 'rgba(255,255,255,.75)'; c.fillRect(bx, by, sel.a * bw, bh); c.fillRect(bx + sel.b * bw, by, (1 - sel.b) * bw, bh);
-        } else if (colorMode === 'kde') {
-          const gr = c.createLinearGradient(bx, 0, bx + bw, 0);
-          KDE_STOPS.forEach((st, i) => gr.addColorStop(i / (KDE_STOPS.length - 1), `rgb(${st[0]},${st[1]},${st[2]})`));
-          c.fillStyle = gr; c.fillRect(bx, by, bw, bh); c.strokeStyle = '#000'; c.lineWidth = 2; c.strokeRect(bx, by, bw, bh);
-          c.fillStyle = '#000'; c.font = '20px sans-serif'; c.textAlign = 'center';
-          c.fillText('0', bx, by + bh + 30); c.fillText('1', bx + bw, by + bh + 30); c.fillText('KDE density (log, bwr)', bx + bw / 2, by + bh + 30);
-        } else if (colorMode === 'depth') {
-          const gr = c.createLinearGradient(bx, 0, bx + bw, 0);
-          DEPTH_STOPS.forEach((st, i) => gr.addColorStop(i / (DEPTH_STOPS.length - 1), `rgb(${st[0]},${st[1]},${st[2]})`));
-          c.fillStyle = gr; c.fillRect(bx, by, bw, bh); c.strokeStyle = '#000'; c.lineWidth = 2; c.strokeRect(bx, by, bw, bh);
-          c.fillStyle = '#000'; c.font = '20px sans-serif'; c.textAlign = 'center';
-          c.fillText(depthMin + ' km', bx, by + bh + 30); c.fillText(depthMax + ' km', bx + bw, by + bh + 30); c.fillText('Depth', bx + bw / 2, by + bh + 30);
-        } else { c.fillStyle = '#000'; c.font = '22px sans-serif'; c.textAlign = 'center'; c.fillText('colour = magnitude', W / 2, by + 20); }
-        c.strokeStyle = '#ff7800'; c.lineWidth = 8; c.strokeRect(4, 4, W - 8, H - 8);
-        const d = new Date(), name = d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + '.jpg';
-        const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.92));
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
-        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
-        $('info').textContent = name + (okTiles ? '' : ' (no map tiles)');
-      } catch (err) { console.error(err); $('info').textContent = 'Export error'; }
-      btn.disabled = false; btn.textContent = 'Export JPG';
-    }
+	async function exportJPG() {
+	  const btn = $('btnExp'); btn.disabled = true; btn.textContent = 'Exporting...';
+	  try {
+		const Z = 9, T = 256, SC = T * Math.pow(2, Z), S = 1.6;
+		const mx = lon => (lon + 180) / 360 * SC;
+		const my = lat => { const r = lat * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * SC; };
+		const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
+		const x0 = mx(sw.lng), x1 = mx(ne.lng), y0 = my(ne.lat), y1 = my(sw.lat);
+		const W = Math.round(x1 - x0), H = Math.round(y1 - y0);
+		const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+		const c = cv.getContext('2d'); c.fillStyle = '#1a1a1a'; c.fillRect(0, 0, W, H);
+		const jobs = [];
+		for (let ty = Math.floor(y0 / T); ty <= Math.floor((y1 - 1) / T); ty++) for (let tx = Math.floor(x0 / T); tx <= Math.floor((x1 - 1) / T); tx++)
+		  jobs.push(new Promise(res => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { c.drawImage(im, tx * T - x0, ty * T - y0); res(1); }; im.onerror = () => res(0);
+		    im.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${Z}/${ty}/${tx}`; }));
+		const okTiles = (await Promise.all(jobs)).reduce((a, b) => a + b, 0);
+		const P = (lon, lat) => [mx(lon) - x0, my(lat) - y0];
+		const mxn = Math.max(1, ...AREAS.map(a => a.n));
+		if (on.poly) AREAS.slice().sort((a, b) => b.ar - a.ar).forEach(a => {
+		  c.beginPath(); a.h.forEach((p, i) => { const q = P(p[0], p[1]); i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]); }); c.closePath();
+		  c.globalAlpha = .35; c.fillStyle = areaColor(a, mxn); c.fill(); c.globalAlpha = 1; c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke();
+		});
+		if (dissLayer) {
+		  const walk = (a, poly) => {
+		    if (!a || !a.length) return;
+		    if (a[0].lat === undefined) { a.forEach(x => walk(x, poly)); return; }
+		    c.beginPath(); a.forEach((ll, i) => { const q = P(ll.lng, ll.lat); i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]); });
+		    if (poly) { c.closePath(); c.fillStyle = 'rgba(255,0,255,.05)'; c.fill(); }
+		    c.setLineDash([6, 4]); c.strokeStyle = '#ff00ff'; c.lineWidth = 1.5; c.stroke(); c.setLineDash([]);
+		  };
+		  dissLayer.eachLayer(l => { if (l.getLatLngs) walk(l.getLatLngs(), l instanceof L.Polygon); });
+		}
+		if (on.kde && kdeCanvas && kdeGrid) {
+		  const gr = kdeGrid;
+		  const lonMin = gr.lon0 + gr.xmin / gr.kx, lonMax = gr.lon0 + gr.xmax / gr.kx;
+		  const latMin = gr.lat0 + gr.ymin / gr.ky, latMax = gr.lat0 + gr.ymax / gr.ky;
+		  const p0 = P(lonMin, latMax), p1 = P(lonMax, latMin);
+		  c.globalAlpha = 0.85;
+		  c.drawImage(kdeCanvas, p0[0], p0[1], p1[0] - p0[0], p1[1] - p0[1]);
+		  c.globalAlpha = 1;
+		}
+		events.slice().sort((a, b) => a.mag - b.mag).forEach(e => {
+		  const q = P(e.lon, e.lat), hi = activeSec && activeSec.slabSet.has(e);
+		  c.beginPath(); c.arc(q[0], q[1], Math.max(2, e.mag * 2) * S, 0, 6.2832); c.globalAlpha = .8; c.fillStyle = colorOf(e); c.fill(); c.globalAlpha = 1; c.lineWidth = hi ? 2 : .8; c.strokeStyle = hi ? '#fff' : '#000'; c.stroke();
+		});
+		if (on.bars) AREAS.filter(a => a.n).forEach(a => {
+		  const h = (6 + Math.round(70 * a.n / mxn)) * S, q = P(a.cx, a.cy);
+		  c.fillStyle = 'rgba(8,81,156,.85)'; c.fillRect(q[0] - 8 * S, q[1] - h, 16 * S, h); c.strokeStyle = '#000'; c.lineWidth = 1; c.strokeRect(q[0] - 8 * S, q[1] - h, 16 * S, h);
+		  c.font = 'bold ' + 11 * S + 'px sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#fff'; c.strokeText(a.n, q[0], q[1] - h - 4); c.fillStyle = '#000'; c.fillText(a.n, q[0], q[1] - h - 4);
+		});
+		secs.forEach(s => {
+		  const g = s.g, hw = g.hw;
+		  const inv = (X, Y) => P(g.lon0 + X / g.kx, g.lat0 + Y / g.ky);
+		  const cs = [[-hw * g.uy, hw * g.ux], [g.L * g.ux - hw * g.uy, g.L * g.uy + hw * g.ux], [g.L * g.ux + hw * g.uy, g.L * g.uy - hw * g.ux], [hw * g.uy, -hw * g.ux]].map(p => inv(p[0], p[1]));
+		  const active = s === activeSec;
+		  c.beginPath(); cs.forEach((q, i) => i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1])); c.closePath();
+		  c.fillStyle = 'rgba(0,229,255,.1)'; c.fill();
+		  c.setLineDash([14, 9]); c.strokeStyle = active ? '#00e5ff' : '#8090a0'; c.lineWidth = 2.5; c.stroke(); c.setLineDash([]);
+		  const a = P(s.A.lng, s.A.lat), b = P(s.B.lng, s.B.lat);
+		  c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.lineWidth = active ? 4 : 2; c.strokeStyle = active ? '#00e5ff' : '#8090a0'; c.stroke();
+		  c.font = 'bold 28px sans-serif'; c.textAlign = 'center'; c.lineWidth = 5; c.strokeStyle = '#000'; c.fillStyle = active ? '#00e5ff' : '#8090a0';
+		  [[s.la || 'A', a], [s.lb || 'B', b]].forEach(([l, q]) => { c.strokeText(l, q[0], q[1] - 12); c.fillText(l, q[0], q[1] - 12); });
+		});
+		if (chartMode) { const cc = $('cv'); c.fillStyle = '#fff'; c.fillRect(20, H - cc.height - 40, cc.width + 16, cc.height + 16); c.drawImage(cc, 28, H - cc.height - 32); }
+		const sp = rangeEnd - rangeStart, t0 = rangeStart + sel.a * sp, t1 = rangeStart + sel.b * sp;
+		const d0 = depthMin + dsel.a * (depthMax - depthMin);
+		const d1 = depthMin + dsel.b * (depthMax - depthMin);
+		const title = events.length + ' earthquakes';
+		let sub = fmtUTC(t0) + ' \u2192 ' + fmtUTC(t1) + ' UTC';
+		if (colorMode === 'depth') sub += '  \u00b7  depth ' + d0.toFixed(0) + '\u2013' + d1.toFixed(0) + ' km';
+		c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(W / 2 - 400, 24, 800, 92);
+		c.fillStyle = '#fff'; c.textAlign = 'center';
+		c.font = 'bold 44px sans-serif'; c.fillText(title, W / 2, 72);
+		c.font = '22px sans-serif';        c.fillText(sub,   W / 2, 104);
+		const bw = 1100, bh = 30, bx = W / 2 - bw / 2;
+		const nRows = (colorMode === 'time') ? 1 : 2;            //time mode colorbar in base periodo
+		const rowH = 80, panelH = 36 + nRows * rowH, panelTop = H - 44 - panelH;
+		c.fillStyle = 'rgba(255,255,255,.92)';
+		c.fillRect(bx - 60, panelTop, bw + 120, panelH);
+		c.strokeStyle = '#888'; c.lineWidth = 2;
+		c.strokeRect(bx - 60, panelTop, bw + 120, panelH);
+
+		const barY = i => panelTop + 24 + i * rowH;
+		const legendBar = (y, stops, mA, mB) => {
+		  const gr = c.createLinearGradient(bx, 0, bx + bw, 0);
+		  stops.forEach(([o, col]) => gr.addColorStop(o, col));
+		  c.fillStyle = gr; c.fillRect(bx, y, bw, bh);
+		  c.strokeStyle = '#000'; c.lineWidth = 2; c.strokeRect(bx, y, bw, bh);
+		  if (mA === undefined) return;                          
+		  c.fillStyle = 'rgba(255,255,255,.8)';                  
+		  if (mA > 0.0001) c.fillRect(bx, y, mA * bw, bh);
+		  if (mB < 0.9999) c.fillRect(bx + mB * bw, y, (1 - mB) * bw, bh);
+		  c.fillStyle = '#fff'; c.strokeStyle = '#222'; c.lineWidth = 2;   
+		  [mA, mB].forEach(f => {
+		    const x = bx + f * bw;
+		    c.beginPath(); c.rect(x - 6, y - 5, 12, bh + 10); c.fill(); c.stroke();
+		  });
+		};
+
+		const rowY0 = barY(0);
+		if (colorMode === 'time') {
+		  legendBar(rowY0, CM.map((col, i) => [i / (CM.length - 1), col]), sel.a, sel.b);
+		  c.fillStyle = '#000'; c.font = '18px sans-serif'; c.textAlign = 'center';
+		  for (let i = 0; i <= 5; i++) {
+		    const x = bx + i / 5 * bw, d = new Date(rangeStart + i / 5 * sp);
+		    const lab = sp <= 100 * 864e5
+		      ? pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes())
+		      : fmtUTC(d).slice(0, 10);
+		    c.fillRect(x - 1, rowY0 + bh, 2, 8);
+		    c.fillText(lab, x, rowY0 + bh + 28);
+		  }
+		  c.fillStyle = '#333'; c.font = '16px sans-serif';
+		  c.fillText('selected  ' + fmtUTC(t0) + '  \u2192  ' + fmtUTC(t1) + ' UTC', bx + bw / 2, rowY0 + bh + 54);
+		} else if (colorMode === 'kde') {
+		  legendBar(rowY0, KDE_STOPS.map((st, i) => [i / (KDE_STOPS.length - 1), `rgb(${st.join(',')})`]));
+		  c.fillStyle = '#000'; c.font = '18px sans-serif';
+		  c.textAlign = 'left';   c.fillText('0', bx, rowY0 + bh + 26);
+		  c.textAlign = 'right';  c.fillText('1', bx + bw, rowY0 + bh + 26);
+		  c.textAlign = 'center'; c.fillText('KDE density (log-normalised, bwr)', bx + bw / 2, rowY0 + bh + 26);
+		} else if (colorMode === 'depth') {
+		  legendBar(rowY0, DEPTH_STOPS.map((st, i) => [i / (DEPTH_STOPS.length - 1), `rgb(${st.join(',')})`]), dsel.a, dsel.b);
+		  c.fillStyle = '#000'; c.font = '18px sans-serif';
+		  c.textAlign = 'left';   c.fillText(depthMin + ' km', bx, rowY0 + bh + 26);
+		  c.textAlign = 'right';  c.fillText(depthMax + ' km', bx + bw, rowY0 + bh + 26);
+		  c.textAlign = 'center'; c.fillText('depth \u2014 selected ' + d0.toFixed(0) + '\u2013' + d1.toFixed(0) + ' km', bx + bw / 2, rowY0 + bh + 26);
+		} else {
+		  c.fillStyle = '#000'; c.font = '22px sans-serif'; c.textAlign = 'center';
+		  c.fillText('colour = magnitude', bx + bw / 2, rowY0 + 22);
+		}
+
+		if (colorMode !== 'time') {
+		  const rowY1 = barY(1);
+		  legendBar(rowY1, CM.map((col, i) => [i / (CM.length - 1), col]), sel.a, sel.b);
+		  c.fillStyle = '#000'; c.font = '16px sans-serif';
+		  c.textAlign = 'left';   c.fillText(fmtUTC(rangeStart), bx, rowY1 + bh + 24);
+		  c.textAlign = 'right';  c.fillText(fmtUTC(rangeEnd) + ' UTC', bx + bw, rowY1 + bh + 24);
+		  c.textAlign = 'center'; c.fillText('time window \u2014 selected ' + fmtUTC(t0) + ' \u2192 ' + fmtUTC(t1), bx + bw / 2, rowY1 + bh + 24);
+		}
+
+		c.strokeStyle = '#ff7800'; c.lineWidth = 8; c.strokeRect(4, 4, W - 8, H - 8);
+		const d = new Date(), name = d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + '.jpg';
+		const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.92));
+		const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+		setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+		$('info').textContent = name + (okTiles ? '' : ' (no map tiles)');
+	  } catch (err) { console.error(err); $('info').textContent = 'Export error'; }
+	  btn.disabled = false; btn.textContent = 'Export JPG';
+	}
     function mapEvent(f) {
       return {
         lon: f.geometry.coordinates[0],
