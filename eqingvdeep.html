@@ -431,7 +431,7 @@ const AREAS = [
     }
     function beachIcon(e, m) {
       const size = Math.max(12, Math.min(34, Math.round(8 + e.mag * 4)));
-      const cv = beachballCanvas(m.strike, m.dip, m.rake, size, colorOf(e));
+      const cv = beachballCanvas(m.strike, m.dip, m.rake + 180, size, colorOf(e));//const cv = beachballCanvas(m.strike, m.dip, m.rake, size, colorOf(e));
       if (!cv._dataUrl) cv._dataUrl = cv.toDataURL();
       return L.divIcon({ className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2],
         html: `<img src="${cv._dataUrl}" width="${size}" height="${size}" style="display:block;pointer-events:none">` });
@@ -445,7 +445,7 @@ const AREAS = [
         if (!h) return;
         if (!m) { h.innerHTML = '<div class="bbwait">no MT</div>'; return; }
         h.innerHTML = '';
-        const cv = beachballCanvas(m.strike, m.dip, m.rake, 64, '#000000');
+        const cv = beachballCanvas(m.strike, m.dip, m.rake + 180, 64, '#000000');//const cv = beachballCanvas(m.strike, m.dip, m.rake, 64, '#000000');
         cv.style.width = cv.style.height = '64px';
         h.appendChild(cv);
         const lab = document.createElement('div');
