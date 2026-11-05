@@ -1,5 +1,5 @@
-<!-- FDR v3 earthquake visualizer 20261104 Seismology lab CS --->
 <!DOCTYPE html>
+<!-- FDR v4 earthquake visualizer 20261104 Seismology Lab 20261105 -->
 <html>
 <head>
   <meta charset="utf-8" />
@@ -7,8 +7,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.5">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>html,body,#map{height:100%;margin:0}.leaflet-popup-content{font-size:14px}.leaflet-popup-content a{color:#08519c;text-decoration:none}.leaflet-popup-content a:hover{text-decoration:underline}.ctl{background:#fff;padding:6px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.4);max-height:calc(100vh - 40px);overflow-y:auto}.ctl button{display:block;width:100%;margin:2px 0;padding:4px 8px;cursor:pointer;border:1px solid #999;background:#f4f4f4}.ctl button.active{background:#BD0026;color:#fff;border-color:#800026}.ctl button.feat.active{background:#08519c;border-color:#08306b;color:#fff}.ctl button.act.active{background:#e65100;border-color:#bf360c;color:#fff}.ctl hr{margin:4px 0;border:0;border-top:1px solid #ccc}.ctl .info{font-size:12px;margin-top:4px;text-align:center}#chart{position:absolute;left:10px;bottom:25px;z-index:1000;background:#fff;padding:4px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.4);display:none}#rateAreaBar{display:none;margin-bottom:4px;font:11px sans-serif}#rateAreaBar select{font-size:11px;max-width:240px}.abar{text-align:center;font:bold 10px sans-serif;color:#000}.abar div{margin:0 auto;width:16px;border:1px solid #000;background:#08519c;opacity:.85}.mag-legend{text-align:center;font:11px sans-serif}.mag-legend svg{display:block;margin:4px auto 0}.mag-legend text{font:bold 8px sans-serif;fill:#000;paint-order:stroke;stroke:#fff;stroke-width:2px;stroke-linejoin:round}#kdeLegend{display:none}#counter{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;background:#16181d;border:1px solid #000;border-radius:8px;padding:4px 10px;box-shadow:0 2px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12);color:#ccc;font:11px sans-serif;user-select:none;display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;max-width:94vw}#cmain{display:flex;flex-direction:row;align-items:center;gap:8px;cursor:pointer}#cmain:hover .cl{color:#4fc3f7}#helpBtn{flex:0 0 auto;width:18px;height:18px;padding:0;border-radius:50%;border:1px solid #3a3d45;background:#262930;color:#4fc3f7;font:bold 11px/1 "DejaVu Sans",sans-serif;cursor:pointer}#helpBtn:hover{background:#343a44;border-color:#4fc3f7}#counter .cl{margin-bottom:0;font-size:11px;white-space:nowrap}#counter.collapsed #clabel::after{content:' \25BE';font-size:10px;opacity:.55}#counter:not(.collapsed) #clabel::after{content:' \25B4';font-size:10px;opacity:.55}#cpanel{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;justify-content:center;font:10px sans-serif}#counter.collapsed #cpanel{display:none}#counter.collapsed #eqtip{display:none !important}#cpanel select,#cpanel input,#cpanel button{font:10px/14px sans-serif;padding:2px 6px;border-radius:3px;border:1px solid #3a3d45;background:#262930;color:#ddd;box-sizing:border-box}#cpanel select{max-width:96px;padding:2px 4px}#cpanel input#eqid{width:80px}#cpanel input#dtStart,#cpanel input#dtEnd{width:88px;font-family:"DejaVu Sans Mono",Menlo,Consolas,monospace}#cpanel input:focus{outline:1px solid #4fc3f7}#cpanel button{cursor:pointer}#cpanel button:hover{background:#343a44}#cpanel .csep{width:1px;height:16px;background:#3a3d45;margin:0 2px}#odo{display:flex;gap:2px;justify-content:center}.dg{width:28px;height:42px;overflow:hidden;position:relative;background:#000;border-radius:4px;box-shadow:inset 0 0 6px #000}.dg::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(#000 0,rgba(0,0,0,0) 28%,rgba(0,0,0,0) 72%,#000 100%)}.dg::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,.14);z-index:3}.dg .st{transition:transform .8s cubic-bezier(.25,.9,.3,1)}.dg i{display:block;height:42px;font:normal 600 30px/42px "DejaVu Sans Mono",Menlo,Consolas,monospace;color:#f4f4f4;text-align:center}.dg.z i{color:#4a4d55}#eqtip{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:7px;width:232px;padding:6px 8px;background:#262930;border:1px solid #3a3d45;border-radius:5px;font:11px/1.4 sans-serif;color:#ccc;text-align:left;z-index:1002;box-shadow:0 2px 8px rgba(0,0,0,.6)}#timebar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:min(520px,34vw);z-index:1001;background:rgba(255,255,255,.93);border-radius:6px;padding:5px 30px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);font:11px sans-serif;user-select:none}#depthbar{position:absolute;bottom:96px;left:50%;transform:translateX(-50%);width:min(520px,34vw);z-index:1001;background:rgba(255,255,255,.93);border-radius:6px;padding:5px 30px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);font:11px sans-serif;user-select:none;display:none}#timebar .tbh,#depthbar .tbh{display:flex;justify-content:space-between;gap:8px;margin-bottom:5px;white-space:nowrap}.tbt{position:relative;height:16px;cursor:pointer;touch-action:none}.tbg{position:absolute;inset:0;border:1px solid #000;border-radius:2px}.tbg.gray{filter:grayscale(1)}.tbm{position:absolute;top:0;bottom:0;background:rgba(255,255,255,.75)}.tbk{position:absolute;top:-4px;width:10px;height:24px;margin-left:-5px;background:#fff;border:2px solid #222;border-radius:3px;box-sizing:border-box;cursor:ew-resize}.tbx{position:relative;height:28px;margin-top:3px}.tbx .tk{position:absolute;top:0;height:5px;border-left:1px solid #333}.tbx .tk span{position:absolute;top:6px;left:0;transform:translateX(-50%);white-space:nowrap;font-size:10px;text-align:center;line-height:11px}.bbpop{min-width:64px;text-align:center}.bbwait{font:11px sans-serif;color:#666}.bblab{font:10px sans-serif;color:#333;margin-top:2px}.win{position:absolute;z-index:1100;background:#fff;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.55);display:none;flex-direction:column;resize:both;overflow:hidden;min-width:260px;min-height:190px;font:12px sans-serif}.win .wh{background:#2b2f36;color:#fff;padding:4px 6px;cursor:move;display:flex;justify-content:space-between;align-items:center;gap:8px;user-select:none;touch-action:none}.win .wh button{margin-left:4px;padding:1px 7px;cursor:pointer;border:1px solid #666;background:#444;color:#fff;border-radius:3px;font:11px sans-serif}.win .wh button.active{background:#e65100;border-color:#bf360c}.win .wb{position:relative;flex:1;min-height:0}.win canvas{position:absolute;left:0;top:0;width:100%;height:100%}.win .wf{padding:3px 8px;border-top:1px solid #ccc;display:flex;gap:10px;align-items:center;flex-wrap:wrap}#sectip{position:absolute;display:none;pointer-events:none;background:rgba(20,20,20,.92);color:#fff;padding:4px 6px;border-radius:3px;font:11px/1.35 sans-serif;white-space:nowrap;z-index:5}.hd{width:22px;height:22px;border-radius:50%;background:#00e5ff;border:2px solid #003b44;color:#003b44;font:bold 12px/18px sans-serif;text-align:center;cursor:move;box-sizing:border-box}.smark{width:26px;height:26px;border-radius:50%;background:#00e5ff;border:2px solid #003b44;color:#003b44;font:bold 14px/22px sans-serif;text-align:center;box-sizing:border-box}#helpwin .wb{overflow:auto;padding:9px 11px;font:12px/1.5 sans-serif;color:#222}#helpwin b{color:#08519c}#helpwin .hs{margin:0 0 7px}</style>
-</head>
-
 </head>
 <body>
   <div id="map"></div>
@@ -66,20 +64,34 @@
       <span id="secinfo"></span>
     </div>
   </div>
-
   <div class="win" id="win3d" style="width:340px;height:310px">
     <div class="wh"><span>3D hypocenters</span><span><button id="b3eq">1:1:1</button><button id="x3d">&#10005;</button></span></div>
     <div class="wb"><canvas id="cv3"></canvas></div>
     <div class="wf"><span id="info3"></span></div>
   </div>
-
   <div class="win" id="helpwin" style="width:430px;height:440px">
     <div class="wh"><span>Information</span><span><button id="helpx">&#10005;</button></span></div>
     <div class="wb"></div>
   </div>
+    <div class="win" id="qctablewin" style="width:780px;height:480px">
+    <div class="wh"><span>Quality Check — Table</span><span><button id="qctablex">&#10005;</button></span></div>
+    <div class="wb" style="overflow:auto;padding:0"><table id="qctable" style="border-collapse:collapse;font:11px sans-serif;width:100%"></table></div>
+    <div class="wf"><span id="qctableinfo"></span></div>
+  </div>
+  <div class="win" id="qcsolwin" style="width:660px;height:490px">
+    <div class="wh"><span>Quality Check — Solution</span><span><button id="qcsolx">&#10005;</button></span></div>
+    <div class="wb"><canvas id="qcsolcv"></canvas></div>
+    <div class="wf">
+      <label>Sort by <select id="qcsort" style="font-size:11px"></select></label>
+      <span style="color:#666">b = prev &middot; n = next (in sort order)</span>
+      <span id="qcsolinfo" style="margin-left:auto;color:#666"></span>
+    </div>
+  </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
 const AREAS = [
+
+
 ["Murge",[[41.266,16.481],[41.193,16.644],[41.14,16.861],[40.92,17.361],[40.805,17.551],[40.763,17.551],[40.512,17.199],[40.512,17.145],[41.088,16.089],[41.1191,16.089],[41.245,16.427],[41.261,16.427]],40.774,17.145],
 ["Penisola Salentina",[[40.428,18.269],[40.291,18.445],[40.145,18.485],[39.788,18.363],[39.83,18.201],[39.945,18.025],[40.05,17.944],[40.218,17.93],[40.281,17.862],[40.291,17.686],[40.26,17.673],[40.281,17.51],[40.417,17.267],[40.48,17.253],[40.48,17.185],[40.512,17.185],[40.512,17.199],[40.763,17.551],[40.795,17.551],[40.753,17.714]],40.512,17.619],
 ["Piana del Bradano e del Basento",[[40.363334,16.304998],[40.375009,16.304998],[40.375005,16.305],[40.407,16.305],[40.8539,15.7941],[40.868,15.7966],[40.868,15.804],[41.109,16.062],[41.119,16.0887],[41.119,16.089],[41.088,16.089],[40.512,17.145],[40.501,17.145],[40.386,16.942],[40.103,16.671],[40.103,16.6332],[40.124,16.63],[40.187,16.576],[40.187,16.509],[40.1557,16.4288],[40.365,16.346],[40.3635,16.3104],[40.363552,16.310376]],40.501,16.617],
@@ -151,9 +163,7 @@ const AREAS = [
 ["Sicilia occidentale",[[38.122,12.812],[38.048,12.894],[38.048,13.002],[38.09,13.083],[38.184,13.11],[38.2112,13.3288],[38.205,13.327],[38.132,13.422],[38.132,13.516],[38.017,13.76],[38.0197,13.9234],[37.765,13.936],[37.7629,13.9475],[37.115,13.936],[37.115,13.882],[37.294,13.557],[37.367,13.354],[37.503,13.164],[37.503,13.07],[37.577,12.961],[37.797,12.487],[37.849,12.487],[38.069,12.609],[38.122,12.69]],37.744,13.503],
 ["Piana batiale ionica",[[38.143002,16.508998],[38.143002,16.515104],[38.143,16.515102],[38.143,16.59],[38.268,16.955],[38.625,16.955],[38.761,17.158],[38.771,17.158],[38.782,17.483],[39.495,17.497],[39.495,17.538],[39.7308,18.313],[39.7308,18.3131],[39.736,18.35],[37.01,17.998],[37.0309,15.5052],[37.031,15.507],[37.556,15.344],[37.87,15.561],[37.881,15.561],[37.8876,15.5676],[37.8889,15.583],[37.881,15.593],[37.849,15.601],[37.723,15.832],[37.723,16.238],[37.7438,16.2314],[37.744,16.238],[37.744,16.278],[38.101,16.509],[38.134297,16.509],[38.134294,16.508998]],37.671,17.24],
 ["Ofanto",[[41.109,16.062],[40.868,15.804],[40.868,15.75],[41.046,15.547],[41.088,15.547],[41.361,16.184],[41.287,16.427],[41.245,16.427]],41.046,15.777],
-["Capitanata",[[41.382,16.17],[41.3577,16.1764],[41.088,15.547],[41.078,15.547],[41.078,15.507],[41.245,15.29],[41.612,15.331],[41.654,15.358],[41.686,15.656],[41.444,16.008]],41.382,15.628],
-
-];
+["Capitanata",[[41.382,16.17],[41.3577,16.1764],[41.088,15.547],[41.078,15.547],[41.078,15.507],[41.245,15.29],[41.612,15.331],[41.654,15.358],[41.686,15.656],[41.444,16.008]],41.382,15.628],]; 
     const polyArea = h => Math.abs(h.reduce((s, p, i) => { const q = h[(i+1) % h.length]; return s + p[0]*q[1] - q[0]*p[1]; }, 0)) / 2;
     function inside(h, x, y) {
       let c = false;
@@ -1024,7 +1034,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     let rq = 0, rs = 0;
     function scheduleRender() { if (rq) return; rq = requestAnimationFrame(() => { rq = 0; render(); }); }
     function scheduleSec() { if (rs) return; rs = requestAnimationFrame(() => { rs = 0; updateSlab(); drawSection(); draw3D(); }); }
-
     function eventPopupHTML(e) {
       const isideUrl = `https://iside.rm.ingv.it/iside/standard/result.jsp?eventid=${encodeURIComponent(e.eventId)}`;
       const detailsUrl = `https://terremoti.ingv.it/event/${encodeURIComponent(e.eventId)}`;
@@ -1043,6 +1052,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     layerGroup.on('click', ev => {
       const e = ev.layer && ev.layer.ev;
       if (!e || drawing || drawStart || polyDrawing) return;
+      if (typeof qcWindowOpen === 'function' && qcWindowOpen()) highlightQCEvent(e);
       openEventPopup(e);
     });
     function renderMarkers() {
@@ -1162,6 +1172,9 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       $('info').textContent = events.length + (events.length !== allEvents.length ? ' / ' + allEvents.length : '') + ' events' + (limitHit ? ' (limit hit)' : '');
       $('depthbar').style.display = colorMode === 'depth' ? 'block' : 'none';
       updateBar(); updateDepthBar(); if (on.beach) queueTopMeca(); drawSection(); draw3D();
+      if (qcWindowOpen()) qcEnsureData();
+      if (qctablewin && qctablewin.style.display === 'flex') buildQCTable();
+      if (qcsolwin   && qcsolwin.style.display   === 'flex') { qcNavIndex = -1; drawQCSolution(); }
     }
     function secProj(A, B, width) {
       const lon0 = A.lng, lat0 = A.lat, ky = 110.57, kx = 111.32 * Math.cos(lat0 * Math.PI / 180);
@@ -1919,15 +1932,26 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
 	  btn.disabled = false; btn.textContent = 'Export JPG';
 	}
     function mapEvent(f) {
+      const p = f.properties || {};
+      const n = v => (v != null && v !== '' && isFinite(+v)) ? +v : null;
       return {
         lon: f.geometry.coordinates[0],
         lat: f.geometry.coordinates[1],
         depth: f.geometry.coordinates[2],
-        mag: Number(f.properties.mag) || 0,
-        t: new Date(f.properties.time),
-        ms: Date.parse(f.properties.time),
-        place: f.properties.place,
-        eventId: f.properties.eventId
+        mag: Number(p.mag) || 0,
+        t: new Date(p.time),
+        ms: Date.parse(p.time),
+        place: p.place,
+        eventId: p.eventId,
+        q_errhoriz: n(p.horizontalError ?? p.errhoriz),
+        q_errdep:   n(p.depthError   ?? p.errdep),
+        q_gap:      n(p.gap),
+        q_rms:      n(p.rms),
+        q_azConf:   n(p.azimuthalGap ?? p.azimuthEllipsoid ?? p.ellipsoidAzimuth),
+        q_nphUsed:  n(p.numP != null && p.numS != null ? +p.numP + +p.numS : (p.nphUsed ?? p.nph)),
+        q_nphObs:   n(p.nph ?? p.numPhases),
+        q_magErr:   n(p.magError ?? p.magnitudeError ?? p.unc_magnitude),
+        q_nStaMag:  n(p.nst ?? p.numberOfStations ?? p.numberStationsUsedForMagnitude)
       };
     }
     async function fetchEarthquakes() {
@@ -1998,7 +2022,406 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       });
       sel.onchange = () => { if (chartMode === 'rateDepth') drawChart(); };
     })();
+    const QC_METRICS = [
+      { key: 'q_errhoriz', label: 'errhoriz',      unit: 'km', dec: 2 },
+      { key: 'q_errdep',   label: 'errdep',        unit: 'km', dec: 2 },
+      { key: 'q_gap',      label: 'gap',           unit: '°',  dec: 0 },
+      { key: 'q_rms',      label: 'rms',           unit: 's',  dec: 2 },
+      { key: 'q_azConf',   label: 'az.ell.conf',   unit: '',   dec: 0 },
+      { key: 'q_nphUsed',  label: 'n°ph used',     unit: '',   dec: 0 },
+      { key: 'q_nphObs',   label: 'n°ph obs',      unit: '',   dec: 0 },
+      { key: 'q_magErr',   label: 'unc.mag',       unit: '',   dec: 2 },
+      { key: 'q_nStaMag',  label: 'n°sta mag',     unit: '',   dec: 0 }
+    ];
 
+    const qctablewin = $('qctablewin');
+    const qcsolwin   = $('qcsolwin');
+    let qcSortMetric   = 'q_errhoriz';
+    let qcSelectedEvent = null;
+    let qcNavIndex     = -1;
+    let qcBars         = [];
+    const qcHighlightLayer = L.layerGroup().addTo(map);
+    let qcSortKey = qcSortMetric, qcSortDir = -1;   
+    const qcCache = new Map(), qcCovered = [];
+    let qcBusy = false, qcRerun = false, qcStatus = '';
+
+    function qcOrdered() {
+      const k = qcSortKey, d = qcSortDir;
+      return events.slice().sort((a, b) => {
+        const x = a[k], y = b[k], nx = x == null || !isFinite(x), ny = y == null || !isFinite(y);
+        if (nx || ny) return nx === ny ? a.ms - b.ms : (nx ? 1 : -1);   // missing values always last
+        return (x - y) * d || a.ms - b.ms;
+      });
+    }
+    function qcParseXML(txt) {
+      const doc = new DOMParser().parseFromString(txt, 'application/xml');
+      const kid = (el, nm) => { if (el) for (const c of el.children) if (c.localName === nm) return c; return null; };
+      const val = (el, ...path) => {
+        let x = el; for (const p of path) x = kid(x, p);
+        if (!x) return null; const t = x.textContent.trim();
+        return t !== '' && isFinite(+t) ? +t : null;
+      };
+      const out = [];
+      for (const ev of doc.getElementsByTagNameNS('*', 'event')) {
+        const m = /eventId=(\d+)/.exec(ev.getAttribute('publicID') || '') || /(\d+)\s*$/.exec(ev.getAttribute('publicID') || '');
+        if (!m) continue;
+        const pick = (nm, pid) => { const l = [...ev.children].filter(c => c.localName === nm); return l.find(c => c.getAttribute('publicID') === pid) || l[0] || null; };
+        const o  = pick('origin',    (kid(ev, 'preferredOriginID')    || {}).textContent?.trim());
+        const mg = pick('magnitude', (kid(ev, 'preferredMagnitudeID') || {}).textContent?.trim());
+        const km = v => v == null ? null : v / 1000;      
+        out.push([m[1], {
+          q_errhoriz: km(val(o, 'originUncertainty', 'horizontalUncertainty')),
+          q_errdep:   km(val(o, 'depth', 'uncertainty')),
+          q_gap:      val(o, 'quality', 'azimuthalGap'),
+          q_rms:      val(o, 'quality', 'standardError'),
+          q_azConf:   val(o, 'originUncertainty', 'azimuthMaxHorizontalUncertainty') ?? val(o, 'originUncertainty', 'confidenceEllipsoid', 'majorAxisAzimuth'),
+          q_nphUsed:  val(o, 'quality', 'usedPhaseCount'),
+          q_nphObs:   val(o, 'quality', 'associatedPhaseCount'),
+          q_magErr:   val(mg, 'mag', 'uncertainty'),
+          q_nStaMag:  val(mg, 'stationCount')
+        }]);
+      }
+      return out;
+    }
+    function qcMerge() {
+      allEvents.forEach(e => {
+        const q = qcCache.get(String(e.eventId));
+        if (q) for (const k in q) if (q[k] != null) e[k] = q[k];
+      });
+      if (qcSelectedEvent) qcSelectedEvent = allEvents.find(e => e.eventId === qcSelectedEvent.eventId) || qcSelectedEvent;
+    }
+    async function qcEnsureData() {
+      qcMerge();
+      if (qcBusy) { qcRerun = true; return; }
+      const need = events.filter(e => !qcCovered.some(c => e.ms >= c[0] && e.ms < c[1]));
+      if (!need.length) return;
+      qcBusy = true;
+      const a = Math.min(...need.map(e => e.ms)), b = Math.max(...need.map(e => e.ms)) + 1000, step = 30 * 864e5;
+      const base = 'https://webservices.ingv.it/fdsnws/event/1/query?minlatitude=35.8&maxlatitude=41.8&minlongitude=12&maxlongitude=19.5&limit=10000&orderby=time';
+      try {
+        for (let t = a; t < b; t += step) {
+          const t2 = Math.min(t + step, b);
+          qcStatus = ' · loading uncertainties ' + fmtISO(new Date(t)).slice(0, 10) + '…';
+          qcRefresh();
+          const res = await fetch(base + '&starttime=' + fmtISO(new Date(t)) + '&endtime=' + fmtISO(new Date(t2)));
+          if (res.ok) qcParseXML(await res.text()).forEach(([id, q]) => qcCache.set(id, q));
+          else if (res.status !== 204) throw new Error('HTTP ' + res.status);
+          qcCovered.push([t, t2]);
+          qcMerge();
+        }
+        qcStatus = '';
+      } catch (err) { console.error('QC fetch error:', err); qcStatus = ' · uncertainty download failed'; }
+      qcBusy = false;
+      qcRefresh();
+      if (qcRerun) { qcRerun = false; qcEnsureData(); }
+    }
+
+    function qcRefresh() {
+      if (qctablewin.style.display === 'flex') buildQCTable();
+      drawQCSolution();
+    }
+
+    function qcWindowOpen() {
+      return (qctablewin && qctablewin.style.display === 'flex') ||
+             (qcsolwin   && qcsolwin.style.display   === 'flex');
+    }
+
+    function qcStats(arr) {
+      const v = arr.filter(x => x != null && isFinite(x));
+      if (!v.length) return null;
+      const s = [...v].sort((a, b) => a - b);
+      const n = s.length;
+      const mean = s.reduce((a, b) => a + b, 0) / n;
+      const variance = s.reduce((a, b) => a + (b - mean) ** 2, 0) / n;
+      const pct = p => {
+        const idx = (n - 1) * p / 100;
+        const lo = Math.floor(idx), hi = Math.ceil(idx);
+        return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (idx - lo);
+      };
+      return { mean, std: Math.sqrt(variance), min: s[0],
+               p5: pct(5), p25: pct(25), med: pct(50),
+               p75: pct(75), p95: pct(95), max: s[n - 1] };
+    }
+
+    function fmtQc(v, dec) {
+      if (v == null || !isFinite(v)) return '—';
+      if (dec != null) return v.toFixed(dec);
+      const a = Math.abs(v);
+      if (a >= 1000) return v.toFixed(0);
+      if (a >= 100)  return v.toFixed(1);
+      if (a >= 1)    return v.toFixed(2);
+      return v.toFixed(3);
+    }
+
+    function highlightQCEvent(e) {
+      qcSelectedEvent = e;
+      qcHighlightLayer.clearLayers();
+      if (e) {
+        L.circleMarker([e.lat, e.lon], {
+          radius: Math.max(10, e.mag * 3 + 6),
+          color: '#ffd700', weight: 3,
+          fillColor: 'transparent', fillOpacity: 0, interactive: false
+        }).addTo(qcHighlightLayer);
+        map.panTo([e.lat, e.lon]);
+      }
+      const tbl = $('qctable');
+      if (tbl) tbl.querySelectorAll('tbody tr[data-eid]').forEach(tr => {
+        tr.style.background = (e && tr.dataset.eid === String(e.eventId)) ? '#fff3cd' : 'transparent';
+      });
+      const row = tbl && e && tbl.querySelector('tbody tr[data-eid="' + e.eventId + '"]');
+      if (row) row.scrollIntoView({ block: 'nearest' });
+      drawQCSolution();
+    }
+
+    function highlightQCBin(eventList) {
+      qcSelectedEvent = null;
+      qcHighlightLayer.clearLayers();
+      eventList.forEach(e => {
+        L.circleMarker([e.lat, e.lon], {
+          radius: Math.max(8, e.mag * 2.5 + 5),
+          color: '#ffd700', weight: 2.5,
+          fillColor: 'transparent', fillOpacity: 0, interactive: false
+        }).addTo(qcHighlightLayer);
+      });
+      drawQCSolution();
+    }
+
+    function buildQCTable() {
+      const tbl = $('qctable');
+      if (!tbl) return;
+      const data = qcOrdered();
+      if (!data.length) {
+        tbl.innerHTML = '<tr><td style="padding:20px;text-align:center;color:#666">No events in the current time / depth window</td></tr>';
+        $('qctableinfo').textContent = '0 events';
+        return;
+      }
+      let h = '<thead><tr style="background:#2b2f36;color:#fff;position:sticky;top:0;z-index:2">';
+      h += '<th data-k="ms" style="padding:4px 6px;text-align:left;border:1px solid #444;white-space:nowrap;cursor:pointer">Time (UTC)' + (qcSortKey === 'ms' ? (qcSortDir < 0 ? ' \u25BC' : ' \u25B2') : '') + '</th>';
+      QC_METRICS.forEach(m => {
+        h += `<th data-k="${m.key}" style="padding:4px 6px;text-align:right;border:1px solid #444;font-weight:normal;white-space:nowrap;cursor:pointer">${m.label}${m.unit ? ' <span style="font-size:9px;color:#aaa">(' + m.unit + ')</span>' : ''}${qcSortKey === m.key ? (qcSortDir < 0 ? ' \u25BC' : ' \u25B2') : ''}</th>`;
+      });
+      h += '</tr></thead><tbody>';
+
+      data.forEach(e => {
+        const sel = qcSelectedEvent === e;
+        const d = new Date(e.ms);
+        const ts = d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) +
+                   pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + '.' +
+                   String(d.getUTCMilliseconds()).padStart(3, '0');
+        h += `<tr data-eid="${e.eventId}" style="background:${sel ? '#fff3cd' : 'transparent'};cursor:pointer">`;
+        h += `<td style="padding:3px 6px;border:1px solid #ddd;white-space:nowrap">` +
+             `<a href="https://terremoti.ingv.it/event/${encodeURIComponent(e.eventId)}" target="_blank" rel="noopener" style="color:#08519c;text-decoration:none">${ts}</a></td>`;
+        QC_METRICS.forEach(m => {
+          h += `<td style="padding:3px 6px;border:1px solid #ddd;text-align:right;font-family:monospace">${fmtQc(e[m.key], m.dec)}</td>`;
+        });
+        h += '</tr>';
+      });
+
+      const statLabels = [
+        ['mean', 'Mean'],   ['std', 'STD'],    ['min', 'Min'],
+        ['p5',   '5thPct'], ['p25', '25thPct'],['med', 'Median'],
+        ['p75',  '75thPct'],['p95', '95thPct'],['max', 'Max']
+      ];
+      const colStats = QC_METRICS.map(m => qcStats(data.map(e => e[m.key])));
+      statLabels.forEach(([k, lab]) => {
+        h += `<tr style="background:#eef2f7;font-weight:bold">`;
+        h += `<td style="padding:3px 6px;border:1px solid #ddd;color:#08519c">${lab}</td>`;
+        colStats.forEach((st, i) => {
+          h += `<td style="padding:3px 6px;border:1px solid #ddd;text-align:right;font-family:monospace">` +
+               `${st ? fmtQc(st[k], QC_METRICS[i].dec) : '—'}</td>`;
+        });
+        h += '</tr>';
+      });
+      h += '</tbody>';
+      tbl.innerHTML = h;
+      $('qctableinfo').textContent = data.length + ' events · click a header to sort · stats over valid values only' + qcStatus;
+      tbl.querySelectorAll('thead th[data-k]').forEach(th => th.onclick = () => {
+        const k = th.dataset.k;
+        if (k === qcSortKey) qcSortDir = -qcSortDir; else { qcSortKey = k; qcSortDir = k === 'ms' ? 1 : -1; }
+        if (k !== 'ms') { qcSortMetric = k; const s = $('qcsort'); if (s) s.value = k; }
+        buildQCTable(); drawQCSolution();
+      });
+
+      tbl.querySelectorAll('tbody tr[data-eid]').forEach(tr => {
+        tr.onclick = ev => {
+          if (ev.target.tagName === 'A') return;
+          const e = data.find(x => String(x.eventId) === tr.dataset.eid);
+          if (e) highlightQCEvent(e);
+        };
+      });
+    }
+
+    function drawQCSolution() {
+      if (!qcsolwin || qcsolwin.style.display !== 'flex') return;
+      const [c, W, H] = fitCanvas($('qcsolcv'));
+      c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
+      qcBars = [];
+
+      const data = events;
+      if (!data.length) {
+        c.fillStyle = '#666'; c.font = '13px sans-serif'; c.textAlign = 'center';
+        c.fillText('No events in the current window', W / 2, H / 2);
+        $('qcsolinfo').textContent = '0 events';
+        return;
+      }
+      const m = QC_METRICS.find(x => x.key === qcSortMetric) || QC_METRICS[0];
+      const vals = data.map(e => e[m.key]).filter(v => v != null && isFinite(v));
+      if (!vals.length) {
+        c.fillStyle = '#666'; c.font = '13px sans-serif'; c.textAlign = 'center';
+        c.fillText('No valid data for metric: ' + m.label + (qcBusy ? ' \u2014 loading\u2026' : ''), W / 2, H / 2);
+        $('qcsolinfo').textContent = '0 valid values';
+        return;
+      }
+
+      const vmin = Math.min(...vals), vmax = Math.max(...vals);
+      const nBins = 30;
+      const binW = (vmax - vmin) / nBins || 1;
+      const bins = new Array(nBins).fill(0);
+      const binEvents = Array.from({ length: nBins }, () => []);
+      data.forEach(e => {
+        const v = e[m.key];
+        if (v == null || !isFinite(v)) return;
+        const idx = Math.min(nBins - 1, Math.max(0, Math.floor((v - vmin) / binW)));
+        bins[idx]++;
+        binEvents[idx].push(e);
+      });
+
+      const mx = Math.max(1, ...bins);
+      const ml = 48, mr = 12, mt = 32, mb = 46;
+      const pw = W - ml - mr, ph = H - mt - mb;
+      const bw = pw / nBins;
+
+      c.fillStyle = '#000'; c.font = 'bold 13px sans-serif'; c.textAlign = 'center';
+      c.fillText('Distribution of ' + m.label + (m.unit ? ' (' + m.unit + ')' : ''), W / 2, 16);
+      c.font = '10px sans-serif'; c.fillStyle = '#666';
+      c.fillText('N = ' + vals.length + ' · ' + nBins + ' bins · ' + data.length + ' events in window', W / 2, 28);
+
+      c.textAlign = 'right'; c.font = '10px sans-serif';
+      for (let i = 0; i <= 4; i++) {
+        const v = mx * i / 4, y = mt + ph - ph * i / 4;
+        c.strokeStyle = '#ddd'; c.beginPath(); c.moveTo(ml, y); c.lineTo(W - mr, y); c.stroke();
+        c.fillStyle = '#000'; c.fillText(Math.round(v), ml - 4, y + 3);
+      }
+
+      bins.forEach((n, i) => {
+        const x = ml + i * bw, hh = ph * n / mx, y = mt + ph - hh;
+        const sel = qcSelectedEvent && binEvents[i].includes(qcSelectedEvent);
+        c.fillStyle = sel ? '#e65100' : '#08519c';
+        c.fillRect(x + 1, y, Math.max(1, bw - 2), hh);
+        qcBars.push({ x, y, w: bw, h: hh, events: binEvents[i] });
+      });
+
+      c.fillStyle = '#000'; c.textAlign = 'center'; c.font = '10px sans-serif';
+      const step = Math.ceil(nBins / 8);
+      for (let i = 0; i < nBins; i += step) {
+        c.fillText(fmtQc(vmin + i * binW, m.dec), ml + (i + 0.5) * bw, mt + ph + 14);
+      }
+      c.font = '11px sans-serif';
+      c.fillText(m.label + (m.unit ? ' (' + m.unit + ')' : ''), ml + pw / 2, H - 6);
+
+      if (qcSelectedEvent) {
+        const v = qcSelectedEvent[m.key];
+        if (v != null && isFinite(v)) {
+          const x = ml + (v - vmin) / (vmax - vmin || 1) * pw;
+          c.strokeStyle = '#e65100'; c.lineWidth = 2;
+          c.beginPath(); c.moveTo(x, mt); c.lineTo(x, mt + ph); c.stroke();
+        }
+      }
+      $('qcsolinfo').textContent = 'metric: ' + m.label +
+        (qcSelectedEvent ? ' · selected: ' + qcSelectedEvent.eventId : '') + qcStatus;
+    }
+
+    function qcNavigate(dir) {
+      const s = qcOrdered(); if (!s.length) return;
+      let i = qcSelectedEvent ? s.findIndex(e => e.eventId === qcSelectedEvent.eventId) : -1;
+      i = i < 0 ? (dir > 0 ? 0 : s.length - 1) : Math.max(0, Math.min(s.length - 1, i + dir));
+      qcNavIndex = i;
+      highlightQCEvent(s[i]);
+    }
+
+    function openQCTable() {
+      showWin(qctablewin, 60, 110);
+      buildQCTable();
+      qcEnsureData();
+    }
+    function openQCSolution() {
+      showWin(qcsolwin, 80, 140);
+      drawQCSolution();
+      qcEnsureData();
+    }
+    (function () {
+      const sel = $('qcsort');
+      if (!sel) return;
+      QC_METRICS.forEach(m => {
+        const o = document.createElement('option');
+        o.value = m.key;
+        o.textContent = m.label + (m.unit ? ' (' + m.unit + ')' : '');
+        if (m.key === qcSortMetric) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.onchange = () => { qcSortMetric = qcSortKey = sel.value; qcSortDir = -1; qcRefresh(); };
+    })();
+
+    $('qctablex').onclick = () => { qctablewin.style.display = 'none'; };
+    $('qcsolx').onclick   = () => { qcsolwin.style.display   = 'none'; };
+    [qctablewin, qcsolwin].forEach(win => {
+      const h = win.querySelector('.wh'); let st = null;
+      win.addEventListener('pointerdown', () => { win.style.zIndex = ++zTop; });
+      h.addEventListener('pointerdown', e => {
+        if (e.target.closest('button')) return;
+        st = { dx: e.clientX - win.offsetLeft, dy: e.clientY - win.offsetTop };
+        h.setPointerCapture(e.pointerId);
+      });
+      h.addEventListener('pointermove', e => {
+        if (st) {
+          win.style.left = Math.max(0, e.clientX - st.dx) + 'px';
+          win.style.top  = Math.max(0, e.clientY - st.dy) + 'px';
+        }
+      });
+      h.addEventListener('pointerup', () => { st = null; });
+    });
+
+    new ResizeObserver(() => drawQCSolution()).observe(qcsolwin);
+    $('qcsolcv').addEventListener('click', ev => {
+      const r = $('qcsolcv').getBoundingClientRect();
+      const x = ev.clientX - r.left, y = ev.clientY - r.top;
+      for (const b of qcBars) {
+        if (x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h) {
+          highlightQCBin(b.events);
+          return;
+        }
+      }
+    });
+    document.addEventListener('keydown', ev => {
+      if (!qcsolwin || qcsolwin.style.display !== 'flex') return;
+      if (ev.target.matches('input, select, textarea')) return;
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      if (ev.key === 'n') { qcNavigate(1);  ev.preventDefault(); }
+      else if (ev.key === 'b') { qcNavigate(-1); ev.preventDefault(); }
+    });
+    const qcCtl = L.control({ position: 'topleft' });
+    qcCtl.onAdd = () => {
+      const div = L.DomUtil.create('div', 'ctl');
+      L.DomEvent.disableClickPropagation(div);
+      L.DomEvent.disableScrollPropagation(div);
+      const btn = L.DomUtil.create('button', '', div);
+      btn.textContent = 'Quality Check \u25BE';
+      btn.style.cssText = 'width:auto;padding:4px 10px;font-weight:bold;';
+      const menu = L.DomUtil.create('div', '', div);
+      menu.style.cssText = 'display:none;margin-top:4px;';
+      const optStyle = 'display:block;width:100%;margin:2px 0;padding:4px 8px;text-align:left;border:1px solid #999;background:#f4f4f4;cursor:pointer;font:11px sans-serif;';
+      const tOpt = L.DomUtil.create('button', '', menu);
+      tOpt.textContent = '\u25B8 TABLE';
+      tOpt.style.cssText = optStyle;
+      const sOpt = L.DomUtil.create('button', '', menu);
+      sOpt.textContent = '\u25B8 SOLUTION';
+      sOpt.style.cssText = optStyle;
+      btn.onclick = () => { menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; };
+      tOpt.onclick = () => { menu.style.display = 'none'; openQCTable(); };
+      sOpt.onclick = () => { menu.style.display = 'none'; openQCSolution(); };
+      return div;
+    };
+    qcCtl.addTo(map);
     fetchEarthquakes();
     setInterval(() => { if (!customRange && days <= 30) fetchEarthquakes(); }, 60000);
   </script>
