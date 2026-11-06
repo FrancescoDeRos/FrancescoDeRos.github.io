@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- FDR v4 earthquake visualizer 20261104 Seismology Lab 20261105 -->
+<!-- FDR v4 earthquake visualizer 202611006 -->
 <html>
 <head>
   <meta charset="utf-8" />
@@ -11,7 +11,7 @@
 <body>
   <div id="map"></div>
   <div id="chart">
-    <div id="rateAreaBar">Area: <select id="rsel"><option value="">All areas</option></select></div>
+    <div id="rateAreaBar"><span data-i18n="area">Area:</span> <select id="rsel"><option value="" data-i18n="allAreas">All areas</option></select></div>
     <canvas id="cv" width="440" height="270"></canvas>
   </div>
 <div id="counter" class="collapsed">
@@ -24,12 +24,12 @@
     <select id="csel" title="Time range"></select>
     <span class="csep"></span>
     <input id="eqid" type="text" placeholder="event id" autocomplete="off" title="INGV event id" />
-    <button id="eqgo" title="Find event">&#10132;</button>
+    <button id="eqgo" title="Find event">&#128270;</button>
     <button id="eqinfo" title="About event search">i</button>
     <span class="csep"></span>
     <input id="dtStart" type="text" placeholder="start" autocomplete="off" title="Start date, UTC (YYYYMMDD, YYYY-MM-DD, YYYY/MM/DD, YYYY MM DD)" />
     <input id="dtEnd"   type="text" placeholder="end"   autocomplete="off" title="End date, UTC (YYYYMMDD, YYYY-MM-DD, YYYY/MM/DD, YYYY MM DD)" />
-    <button id="dtGo" title="Apply date range">&#10003;</button>
+    <button id="dtGo" title="Apply date range">&#128270;</button>
   </div>
   <div id="eqtip">Paste an INGV event id (e.g. <b>33456781</b>) and press &#10132;: the event is downloaded on its own and centred on the map. Click the star to get the waveform / picks links.</div>
 </div>
@@ -74,12 +74,12 @@
     <div class="wb"></div>
   </div>
     <div class="win" id="qctablewin" style="width:780px;height:480px">
-    <div class="wh"><span>Quality Check — Table</span><span><button id="qctablex">&#10005;</button></span></div>
+    <div class="wh"><span>Quality check — Table</span><span><button id="qctablex">&#10005;</button></span></div>
     <div class="wb" style="overflow:auto;padding:0"><table id="qctable" style="border-collapse:collapse;font:11px sans-serif;width:100%"></table></div>
     <div class="wf"><span id="qctableinfo"></span></div>
   </div>
   <div class="win" id="qcsolwin" style="width:660px;height:490px">
-    <div class="wh"><span>Quality Check — Solution</span><span><button id="qcsolx">&#10005;</button></span></div>
+    <div class="wh"><span>Quality check — Solution</span><span><button id="qcsolx">&#10005;</button></span></div>
     <div class="wb"><canvas id="qcsolcv"></canvas></div>
     <div class="wf">
       <label>Sort by <select id="qcsort" style="font-size:11px"></select></label>
@@ -89,9 +89,51 @@
   </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+const LANGS={en:'English',it:'Italiano',zh:'简体中文',es:'Español',fr:'Français',de:'Deutsch',pt:'Português',ru:'Русский',ja:'日本語'};
+const KEYS='bm bmSat bmOut last uh ud um uy fDepth fMonth fMag fRate fKde fPoly fBars aHide aShow aDraw aPoly aClear a3d aColor aDiss aExp aBB aCat cTime cMag cDepth on off kBw lMag lKde lDepth cLabel cCustom cSel evts limit refT pPicks pWave pDet wSec w3d wInfo wQC qT qS load area allAreas chDepth chMag chMon'.split(' ');
+const TXA={
+en:['Basemap: {0}','satellite','outdoor','Last','h','d','mo','y','Depth histogram','Month histogram','Mw histogram','Rate vs depth','KDE density map','Area polygons','Area count bars','Hide earthquakes','Show earthquakes','Draw section line','Polygon catalog (.txt)','Clear sections','3D popup','Colour: {0}','DISS sources','Export JPG','Beachballs: {0}','Export catalog (+S/D/R)','time','magnitude','depth','on','off','KDE bandwidth:','Magnitude','KDE density','Depth','earthquakes','custom','selected window','events','limit hit','reference time','Picks & arrivals (.txt)','Download waveforms (EIDA)','Event details (INGV)','Section','3D hypocenters','Information','Quality check','TABLE','SOLUTION','Loading...','Area:','All areas','Depth distribution (5 km bins)','Magnitude distribution (0.2 bins)','Events per month'],
+it:['Mappa base: {0}','satellite','outdoor','Ultimi','h','g','m','a','Istogramma profondità','Istogramma mensile','Istogramma Mw','Tasso vs profondità','Mappa densità KDE','Poligoni aree','Barre conteggio aree','Nascondi terremoti','Mostra terremoti','Disegna linea di sezione','Catalogo poligono (.txt)','Cancella sezioni','Popup 3D','Colore: {0}','Sorgenti DISS','Esporta JPG','Meccanismi focali: {0}','Esporta catalogo (+S/D/R)','tempo','magnitudo','profondità','on','off','Larghezza di banda KDE:','Magnitudo','Densità KDE','Profondità','terremoti','personalizzato','finestra selezionata','eventi','limite raggiunto','tempo di riferimento','Picking e arrivi (.txt)',"Scarica forme d'onda (EIDA)",'Dettagli evento (INGV)','Sezione','Ipocentri 3D','Informazioni','Controllo qualità','TABELLA','SOLUZIONE','Caricamento...','Area:','Tutte le aree','Distribuzione profondità (bin da 5 km)','Distribuzione magnitudo (bin da 0,2)','Eventi per mese'],
+zh:['底图：{0}','卫星','户外','最近','小时','天','个月','年','深度直方图','月度直方图','Mw直方图','速率-深度','KDE密度图','区域多边形','区域计数柱','隐藏地震','显示地震','绘制剖面线','多边形目录 (.txt)','清除剖面','3D弹窗','颜色：{0}','DISS震源','导出JPG','震源球：{0}','导出目录 (+S/D/R)','时间','震级','深度','开','关','KDE带宽：','震级','KDE密度','深度','地震','自定义','所选窗口','事件','已达上限','参考时间','震相拾取与到时 (.txt)','下载波形 (EIDA)','事件详情 (INGV)','剖面','3D震源','信息','质量检查','表格','结果','加载中...','区域：','所有区域','深度分布（5 km分箱）','震级分布（0.2分箱）','每月事件数'],
+es:['Mapa base: {0}','satélite','exterior','Últimas','h','d','m','a','Histograma de profundidad','Histograma mensual','Histograma de Mw','Tasa vs profundidad','Mapa de densidad KDE','Polígonos de áreas','Barras de conteo por área','Ocultar terremotos','Mostrar terremotos','Dibujar línea de sección','Catálogo de polígono (.txt)','Borrar secciones','Ventana 3D','Color: {0}','Fuentes DISS','Exportar JPG','Mecanismos focales: {0}','Exportar catálogo (+S/D/R)','tiempo','magnitud','profundidad','sí','no','Ancho de banda KDE:','Magnitud','Densidad KDE','Profundidad','terremotos','personalizado','ventana seleccionada','eventos','límite alcanzado','tiempo de referencia','Picks y llegadas (.txt)','Descargar formas de onda (EIDA)','Detalles del evento (INGV)','Sección','Hipocentros 3D','Información','Control de calidad','TABLA','SOLUCIÓN','Cargando...','Área:','Todas las áreas','Distribución de profundidad (bins de 5 km)','Distribución de magnitud (bins de 0,2)','Eventos por mes'],
+fr:['Fond de carte : {0}','satellite','plein air','Derniers','h','j','m','a','Histogramme des profondeurs','Histogramme mensuel','Histogramme Mw','Taux vs profondeur','Carte de densité KDE','Polygones de zones','Barres de comptage par zone','Masquer les séismes','Afficher les séismes','Tracer une coupe','Catalogue du polygone (.txt)','Effacer les coupes','Fenêtre 3D','Couleur : {0}','Sources DISS','Exporter en JPG','Mécanismes au foyer : {0}','Exporter le catalogue (+S/D/R)','temps','magnitude','profondeur','activé','désactivé','Largeur de bande KDE :','Magnitude','Densité KDE','Profondeur','séismes','personnalisé','fenêtre sélectionnée','événements','limite atteinte','temps de référence','Pointés et arrivées (.txt)',"Télécharger les formes d'onde (EIDA)","Détails de l'événement (INGV)",'Coupe','Hypocentres 3D','Informations','Contrôle qualité','TABLEAU','SOLUTION','Chargement...','Zone :','Toutes les zones','Distribution des profondeurs (classes de 5 km)','Distribution des magnitudes (classes de 0,2)','Événements par mois'],
+de:['Basiskarte: {0}','Satellit','Outdoor','Letzte','Std','T','Mon','J','Tiefenhistogramm','Monatshistogramm','Mw-Histogramm','Rate vs. Tiefe','KDE-Dichtekarte','Gebietspolygone','Gebietszähl-Balken','Erdbeben ausblenden','Erdbeben anzeigen','Schnittlinie zeichnen','Polygonkatalog (.txt)','Schnitte löschen','3D-Fenster','Farbe: {0}','DISS-Quellen','Als JPG exportieren','Herdflächenlösungen: {0}','Katalog exportieren (+S/D/R)','Zeit','Magnitude','Tiefe','an','aus','KDE-Bandbreite:','Magnitude','KDE-Dichte','Tiefe','Erdbeben','benutzerdefiniert','gewähltes Fenster','Ereignisse','Limit erreicht','Referenzzeit','Picks & Einsätze (.txt)','Wellenformen herunterladen (EIDA)','Ereignisdetails (INGV)','Schnitt','3D-Hypozentren','Information','Qualitätsprüfung','TABELLE','LÖSUNG','Wird geladen...','Gebiet:','Alle Gebiete','Tiefenverteilung (5-km-Klassen)','Magnitudenverteilung (0,2er-Klassen)','Ereignisse pro Monat'],
+pt:['Mapa base: {0}','satélite','ao ar livre','Últimas','h','d','m','a','Histograma de profundidade','Histograma mensal','Histograma de Mw','Taxa vs profundidade','Mapa de densidade KDE','Polígonos de áreas','Barras de contagem por área','Ocultar sismos','Mostrar sismos','Desenhar linha de seção','Catálogo do polígono (.txt)','Limpar seções','Janela 3D','Cor: {0}','Fontes DISS','Exportar JPG','Mecanismos focais: {0}','Exportar catálogo (+S/D/R)','tempo','magnitude','profundidade','ligado','desligado','Largura de banda KDE:','Magnitude','Densidade KDE','Profundidade','sismos','personalizado','janela selecionada','eventos','limite atingido','tempo de referência','Picks e chegadas (.txt)','Baixar formas de onda (EIDA)','Detalhes do evento (INGV)','Seção','Hipocentros 3D','Informações','Controle de qualidade','TABELA','SOLUÇÃO','Carregando...','Área:','Todas as áreas','Distribuição de profundidade (intervalos de 5 km)','Distribuição de magnitude (intervalos de 0,2)','Eventos por mês'],
+ru:['Подложка: {0}','спутник','рельеф','Последние','ч','д','мес','л','Гистограмма глубин','Гистограмма по месяцам','Гистограмма Mw','Скорость vs глубина','Карта плотности KDE','Полигоны областей','Столбцы числа событий','Скрыть землетрясения','Показать землетрясения','Нарисовать линию разреза','Каталог по полигону (.txt)','Очистить разрезы','3D-окно','Цвет: {0}','Источники DISS','Экспорт в JPG','Механизмы очагов: {0}','Экспорт каталога (+S/D/R)','время','магнитуда','глубина','вкл','выкл','Полоса KDE:','Магнитуда','Плотность KDE','Глубина','землетрясения','свой период','выбранное окно','событий','достигнут лимит','опорное время','Пики и вступления (.txt)','Скачать волновые формы (EIDA)','Сведения о событии (INGV)','Разрез','3D-гипоцентры','Информация','Контроль качества','ТАБЛИЦА','РЕШЕНИЕ','Загрузка...','Область:','Все области','Распределение глубин (интервалы 5 км)','Распределение магнитуд (интервалы 0,2)','События по месяцам'],
+ja:['ベースマップ：{0}','衛星','アウトドア','過去','時間','日','か月','年','深さヒストグラム','月別ヒストグラム','Mwヒストグラム','発生率と深さ','KDE密度マップ','エリア多角形','エリア別件数バー','地震を非表示','地震を表示','断面線を描く','多角形カタログ (.txt)','断面を消去','3Dポップアップ','色：{0}','DISS震源','JPGで書き出し','ビーチボール：{0}','カタログを書き出し (+S/D/R)','時間','マグニチュード','深さ','オン','オフ','KDE帯域幅：','マグニチュード','KDE密度','深さ','地震','カスタム','選択範囲','件','上限到達','基準時刻','ピックと到達 (.txt)','波形をダウンロード (EIDA)','イベント詳細 (INGV)','断面','3D震源','情報','品質チェック','表','結果','読み込み中...','エリア：','全エリア','深さ分布（5 km区間）','マグニチュード分布（0.2区間）','月別イベント数']
+};
+const TX={}; for (const l in TXA) { TX[l] = {}; KEYS.forEach((k, i) => TX[l][k] = TXA[l][i]); }
+let LANG = 'en';
+try { LANG = localStorage.getItem('lang') || (navigator.language || 'en').slice(0, 2).toLowerCase(); } catch (e) {}
+if (!TX[LANG]) LANG = 'en';
+const tr = (k, ...a) => { let s = (TX[LANG] && TX[LANG][k]) || TX.en[k] || k; a.forEach((v, i) => s = s.replace('{' + i + '}', v)); return s; };
+const CMN = { time: 'cTime', mag: 'cMag', depth: 'cDepth' };
+const RSPEC = [[1/24,1,'h'],[6/24,6,'h'],[12/24,12,'h'],[1,24,'h'],[3,3,'d'],[5,5,'d'],[7,7,'d'],[15,15,'d'],[30,30,'d'],[90,3,'m'],[182,6,'m'],[273,9,'m'],[365,1,'y'],[730,2,'y'],[1095,3,'y'],[1825,5,'y'],[3650,10,'y'],[5475,15,'y'],[7300,20,'y'],[9125,25,'y']];
+function relabelRanges() {
+  RSPEC.forEach((r, i) => {
+    const n = r[1], s = n + ' ' + tr('u' + r[2]), w = { h: 'hour', d: 'day', m: 'month', y: 'year' }[r[2]];
+    RANGES[i][0] = LANG === 'en' ? 'Last ' + n + ' ' + w + (n > 1 ? 's' : '') : tr('last') + ' ' + s;
+    RANGES[i][2] = s;
+  });
+}
+function applyLang() {
+  const g = id => document.getElementById(id);
+  document.documentElement.lang = LANG; relabelRanges();
+  document.querySelectorAll('[data-i18n]').forEach(e => e.textContent = (e.dataset.pre || '') + tr(e.dataset.i18n) + (e.dataset.suf || ''));
+  document.querySelectorAll('[data-idx]').forEach(e => e.textContent = RANGES[+e.dataset.idx][0]);
+  const cs = g('csel'); if (cs) [...cs.options].forEach((o, i) => { o.textContent = RANGES[i][2]; o.title = RANGES[i][0]; });
+  g('helpBtn').title = tr('wInfo');
+  [['#win3d', tr('w3d')], ['#helpwin', tr('wInfo')], ['#qctablewin', tr('wQC') + ' \u2014 ' + tr('qT')], ['#qcsolwin', tr('wQC') + ' \u2014 ' + tr('qS')]]
+    .forEach(([s, x]) => { const e = document.querySelector(s + ' .wh span'); if (e) e.textContent = x; });
+  g('btnEq').textContent = tr(showEvents ? 'aHide' : 'aShow');
+  g('btnColor').textContent = tr('aColor', colorMode === 'kde' ? 'KDE' : tr(CMN[colorMode]));
+  g('btnBB').textContent = tr('aBB', tr(on.beach ? 'on' : 'off'));
+  baseLabel();
+  const ls = g('langSel'); if (ls) ls.value = LANG;
+  updateSectionUI();
+  if (allEvents.length) render();
+}
 const AREAS = [
-
-
 ["Murge",[[41.266,16.481],[41.193,16.644],[41.14,16.861],[40.92,17.361],[40.805,17.551],[40.763,17.551],[40.512,17.199],[40.512,17.145],[41.088,16.089],[41.1191,16.089],[41.245,16.427],[41.261,16.427]],40.774,17.145],
 ["Penisola Salentina",[[40.428,18.269],[40.291,18.445],[40.145,18.485],[39.788,18.363],[39.83,18.201],[39.945,18.025],[40.05,17.944],[40.218,17.93],[40.281,17.862],[40.291,17.686],[40.26,17.673],[40.281,17.51],[40.417,17.267],[40.48,17.253],[40.48,17.185],[40.512,17.185],[40.512,17.199],[40.763,17.551],[40.795,17.551],[40.753,17.714]],40.512,17.619],
 ["Piana del Bradano e del Basento",[[40.363334,16.304998],[40.375009,16.304998],[40.375005,16.305],[40.407,16.305],[40.8539,15.7941],[40.868,15.7966],[40.868,15.804],[41.109,16.062],[41.119,16.0887],[41.119,16.089],[41.088,16.089],[40.512,17.145],[40.501,17.145],[40.386,16.942],[40.103,16.671],[40.103,16.6332],[40.124,16.63],[40.187,16.576],[40.187,16.509],[40.1557,16.4288],[40.365,16.346],[40.3635,16.3104],[40.363552,16.310376]],40.501,16.617],
@@ -163,7 +205,51 @@ const AREAS = [
 ["Sicilia occidentale",[[38.122,12.812],[38.048,12.894],[38.048,13.002],[38.09,13.083],[38.184,13.11],[38.2112,13.3288],[38.205,13.327],[38.132,13.422],[38.132,13.516],[38.017,13.76],[38.0197,13.9234],[37.765,13.936],[37.7629,13.9475],[37.115,13.936],[37.115,13.882],[37.294,13.557],[37.367,13.354],[37.503,13.164],[37.503,13.07],[37.577,12.961],[37.797,12.487],[37.849,12.487],[38.069,12.609],[38.122,12.69]],37.744,13.503],
 ["Piana batiale ionica",[[38.143002,16.508998],[38.143002,16.515104],[38.143,16.515102],[38.143,16.59],[38.268,16.955],[38.625,16.955],[38.761,17.158],[38.771,17.158],[38.782,17.483],[39.495,17.497],[39.495,17.538],[39.7308,18.313],[39.7308,18.3131],[39.736,18.35],[37.01,17.998],[37.0309,15.5052],[37.031,15.507],[37.556,15.344],[37.87,15.561],[37.881,15.561],[37.8876,15.5676],[37.8889,15.583],[37.881,15.593],[37.849,15.601],[37.723,15.832],[37.723,16.238],[37.7438,16.2314],[37.744,16.238],[37.744,16.278],[38.101,16.509],[38.134297,16.509],[38.134294,16.508998]],37.671,17.24],
 ["Ofanto",[[41.109,16.062],[40.868,15.804],[40.868,15.75],[41.046,15.547],[41.088,15.547],[41.361,16.184],[41.287,16.427],[41.245,16.427]],41.046,15.777],
-["Capitanata",[[41.382,16.17],[41.3577,16.1764],[41.088,15.547],[41.078,15.547],[41.078,15.507],[41.245,15.29],[41.612,15.331],[41.654,15.358],[41.686,15.656],[41.444,16.008]],41.382,15.628],]; 
+["Capitanata",[[41.382,16.17],[41.3577,16.1764],[41.088,15.547],[41.078,15.547],[41.078,15.507],[41.245,15.29],[41.612,15.331],[41.654,15.358],[41.686,15.656],[41.444,16.008]],41.382,15.628],
+]; 
+//coste italiane convertite in maniera precaria, da rivedere
+const coastsRaw = `
+13.9410,41.6880 13.9374,41.6897 13.9277,41.7017 13.9232,41.7089 13.9124,41.7191 13.8976,41.7321 13.8738,41.7294 13.8517,41.7347 13.8243,41.7405 13.8150,41.7528 13.8081,41.7519 13.7901,41.7430 13.7620,41.7517 13.7494,41.7612 13.7493,41.7721 13.7423,41.7807 13.7312,41.7871 13.7293,41.7968 13.7208,41.7976 13.7074,41.7876 13.6906,41.7932 13.6742,41.8072 13.6449,41.8090 13.6373,41.8025 13.6429,41.7929 13.6303,41.7820 13.6134,41.7780 13.6018,41.7694 13.5830,41.7635 13.5773,41.7565 13.5670,41.7562 13.5554,41.7626 13.5339,41.7680 13.5204,41.7730 13.5129,41.7869 13.5069,41.8000 13.4881,41.8034 13.4646,41.8091 13.4455,41.8243 13.4178,41.8343 13.3978,41.8347 13.3917,41.8209 13.3763,41.8210 13.3719,41.8272 13.3668,41.8331 13.3671,41.8604 13.3657,41.8650 13.3701,41.8822 13.3805,41.9081 13.3659,41.9224 13.3548,41.9230 13.3455,41.9222 13.3330,41.9344 13.3239,41.9435 13.2983,41.9543 13.2877,41.9498 13.2733,41.9593 13.2573,41.9684 13.2322,41.9801 13.2093,41.9870 13.1847,41.9930 13.1612,42.0024 13.1378,42.0158 13.1155,42.0218 13.0985,42.0262 13.0966,42.0219 13.0988,42.0147 13.1014,42.0084 13.0899,42.0090 13.0639,42.0130 13.0482,42.0296 13.0266,42.0500 13.0190,42.0740 13.0252,42.0960 13.0327,42.1136 13.0390,42.1174 13.0730,42.1319 13.0871,42.1469 13.0897,42.1557 13.0867,42.1751 13.1318,42.1714 13.1693,42.1515 13.1832,42.1580 13.1983,42.1542 13.2233,42.1433 13.2372,42.1291 13.2565,42.1311 13.2849,42.1343 13.3072,42.1423 13.3210,42.1532 13.3281,42.1553 13.3413,42.1654 13.3535,42.1682 13.3436,42.1759 13.3743,42.1870 13.3415,42.1984 13.3336,42.2113 13.3387,42.2155 13.3308,42.2231 13.3180,42.2299 13.2972,42.2311 13.2745,42.2436 13.2567,42.2648 13.2319,42.2835 13.2281,42.2915 13.2265,42.3193 13.2105,42.3253 13.1938,42.3314 13.1851,42.3363 13.1727,42.3480 13.1533,42.3570 13.1656,42.3671 13.1872,42.3799 13.1892,42.4002 13.1618,42.4107 13.1501,42.4205 13.1305,42.4374 13.1162,42.4439 13.1334,42.4584 13.1563,42.4639 13.1767,42.4801 13.1715,42.4861 13.1774,42.5078 13.1669,42.5155 13.1566,42.5378 13.1735,42.5454 13.1742,42.5652 13.1924,42.5823 13.1914,42.5875 13.2306,42.5786 13.2459,42.5727 13.2533,42.5812 13.2794,42.5833 13.2853,42.5794 13.2933,42.5695 13.3119,42.5740 13.3365,42.5776 13.3739,42.5809 13.3836,42.5828 13.3910,42.5933 13.3892,42.6023 13.3954,42.6180 13.4054,42.6283 13.3824,42.6496 13.3577,42.6634 13.3488,42.6686 13.3578,42.6941 13.3702,42.6935 13.3978,42.6890 13.4212,42.7030 13.4338,42.7004 13.4404,42.7021 13.4380,42.7175 13.4476,42.7318 13.4824,42.7321 13.5039,42.7505 13.5023,42.7709 13.5088,42.7792 13.5236,42.7935 13.5329,42.8071 13.5350,42.8168 13.5510,42.8085 13.5771,42.8016 13.5949,42.8061 13.6187,42.8139 13.6305,42.8055 13.6566,42.8060 13.6838,42.8176 13.6994,42.8228 13.7013,42.8278 13.7109,42.8434 13.7063,42.8454 13.7222,42.8546 13.7607,42.8588 13.7798,42.8610 13.8123,42.8731 13.8176,42.8783 13.8348,42.8817 13.8634,42.8862 13.8908,42.8915 13.9088,42.8948 13.9162,42.8946 13.9205,42.8911 13.9239,42.8734 13.9305,42.8428 13.9404,42.8143 13.9585,42.7751 13.9824,42.7355 14.0118,42.6868 14.0385,42.6545 14.0626,42.6174 14.0895,42.5858 14.1071,42.5656 14.1463,42.5306 14.1773,42.5029 14.2142,42.4735 14.2293,42.4689 14.2405,42.4555 14.2781,42.4301 14.3209,42.4050 14.3729,42.3786 14.3947,42.3682 14.4024,42.3616 14.4206,42.3556 14.4235,42.3512 14.4101,42.3483 14.4243,42.3315 14.4346,42.3189 14.4757,42.2903 14.5025,42.2680 14.5010,42.2609 14.5083,42.2525 14.5397,42.2368 14.5616,42.2246 14.6059,42.2052 14.6428,42.1924 14.6958,42.1756 14.7112,42.1760 14.7192,42.1589 14.7173,42.1493 14.7220,42.1307 14.7181,42.1099 14.7211,42.1022 14.7369,42.0893 14.7608,42.0771 14.7772,42.0684 14.7718,42.0622 14.7623,42.0446 14.7822,42.0351 14.7804,42.0299 14.7472,42.0090 14.7383,42.0072 14.7237,42.0000 14.7027,41.9787 14.6904,41.9672 14.6802,41.9561 14.6729,41.9500 14.6654,41.9406 14.6664,41.9337 14.6526,41.9072 14.6228,41.8942 14.6123,41.8828 14.6018,41.8675 14.5987,41.8622 14.5987,41.8542 14.5964,41.8499 14.5882,41.8455 14.5834,41.8403 14.5770,41.8276 14.5671,41.8183 14.5610,41.8194 14.5497,41.8153 14.5421,41.8073 14.5335,41.7997 14.5336,41.7920 14.5258,41.7861 14.5019,41.7735 14.4965,41.7686 14.4929,41.7637 14.4877,41.7603 14.4775,41.7619 14.4573,41.7621 14.4545,41.7648 14.4599,41.7736 14.4611,41.7842 14.4507,41.8193 14.4416,41.8413 14.4207,41.8553 14.3972,41.8698 14.3930,41.8701 14.3776,41.8681 14.3758,41.8749 14.3753,41.8797 14.3614,41.8765 14.3611,41.8743 14.3637,41.8720 14.3644,41.8686 14.3501,41.8623 14.3430,41.8686 14.3277,41.8859 14.3239,41.8963 14.3151,41.8934 14.3030,41.8939 14.2847,41.9090 14.2553,41.8922 14.2297,41.8771 14.2187,41.8573 14.1950,41.8462 14.1884,41.8419 14.1681,41.8424 14.1514,41.8310 14.1542,41.8162 14.1694,41.7894 14.1806,41.7734 14.2012,41.7649 14.1950,41.7590 14.1936,41.7523 14.1754,41.7536 14.1756,41.7657 14.1617,41.7561 14.1522,41.7462 14.1154,41.7352 14.1191,41.7334 14.1221,41.7310 14.1233,41.7271 14.1087,41.7078 14.0944,41.7379 14.0805,41.7380 14.0696,41.7372 14.0571,41.7232 14.0532,41.7190 14.0534,41.7108 14.0329,41.7019 14.0242,41.6971 14.0185,41.6821 13.9949,41.6932 13.9551,41.6955 13.9490,41.6936 13.9443,41.6896 13.9410,41.6880
+14.4193,41.4351 14.3969,41.4392 14.3779,41.4444 14.3512,41.4505 14.3439,41.4535 14.3275,41.4534 14.3047,41.4664 14.2891,41.4731 14.2890,41.4790 14.2811,41.4841 14.2494,41.4846 14.2433,41.4921 14.2364,41.4976 14.1949,41.4984 14.1751,41.4991 14.1657,41.4823 14.1580,41.4803 14.1370,41.4951 14.1185,41.5051 14.1073,41.4854 14.0824,41.4655 14.0838,41.4571 14.0801,41.4441 14.1050,41.4234 14.1066,41.4156 14.1056,41.4012 14.1137,41.3887 14.0919,41.3949 14.0821,41.4000 14.0491,41.3946 14.0295,41.4102 14.0231,41.4182 14.0121,41.4237 14.0007,41.4309 14.0084,41.4411 14.0079,41.4501 14.0027,41.4538 13.9844,41.4586 13.9808,41.4687 13.9928,41.4821 13.9727,41.4934 13.9751,41.4967 13.9937,41.5119 14.0105,41.5148 14.0265,41.5227 14.0275,41.5241 14.0179,41.5291 14.0053,41.5385 14.0248,41.5536 14.0259,41.5557 14.0238,41.5607 14.0041,41.5666 14.0030,41.5677 14.0042,41.5716 13.9989,41.5745 14.0092,41.5952 14.0102,41.6089 13.9934,41.6403 13.9888,41.6446 13.9873,41.6492 13.9875,41.6507 13.9877,41.6564 13.9757,41.6648 13.9548,41.6799 13.9422,41.6863 13.9410,41.6880 13.9475,41.6928 13.9555,41.6955 13.9905,41.6939 14.0078,41.6872 14.0161,41.6827 14.0192,41.6824 14.0232,41.6915 14.0414,41.7013 14.0532,41.7076 14.0532,41.7193 14.0696,41.7372 14.0867,41.7391 14.0944,41.7379 14.1051,41.7166 14.1107,41.7090 14.1168,41.7149 14.1233,41.7271 14.1221,41.7310 14.1191,41.7334 14.1154,41.7352 14.1522,41.7462 14.1617,41.7561 14.1756,41.7657 14.1754,41.7536 14.1936,41.7523 14.1950,41.7590 14.2012,41.7649 14.1806,41.7734 14.1694,41.7894 14.1542,41.8162 14.1514,41.8310 14.1681,41.8424 14.1884,41.8419 14.1950,41.8462 14.2187,41.8573 14.2297,41.8771 14.2553,41.8922 14.2847,41.9090 14.3030,41.8939 14.3151,41.8934 14.3239,41.8963 14.3277,41.8859 14.3430,41.8686 14.3501,41.8623 14.3644,41.8686 14.3637,41.8720 14.3611,41.8743 14.3614,41.8765 14.3753,41.8797 14.3758,41.8749 14.3776,41.8681 14.3930,41.8701 14.3972,41.8698 14.4207,41.8553 14.4416,41.8413 14.4507,41.8193 14.4611,41.7842 14.4599,41.7736 14.4545,41.7648 14.4573,41.7621 14.4775,41.7619 14.4877,41.7603 14.4929,41.7637 14.4965,41.7686 14.5019,41.7735 14.5258,41.7861 14.5336,41.7920 14.5335,41.7997 14.5421,41.8073 14.5497,41.8153 14.5610,41.8194 14.5671,41.8183 14.5770,41.8276 14.5834,41.8403 14.5882,41.8455 14.5964,41.8499 14.5987,41.8542 14.5987,41.8622 14.6018,41.8675 14.6123,41.8828 14.6228,41.8942 14.6526,41.9072 14.6664,41.9337 14.6654,41.9406 14.6729,41.9500 14.6802,41.9561 14.6904,41.9672 14.7027,41.9787 14.7237,42.0000 14.7383,42.0072 14.7472,42.0090 14.7804,42.0299 14.7822,42.0351 14.7623,42.0446 14.7718,42.0622 14.7772,42.0684 14.7608,42.0771 14.7369,42.0893 14.7211,42.1022 14.7181,42.1099 14.7220,42.1307 14.7173,42.1493 14.7192,42.1589 14.7112,42.1760 14.6958,42.1756 14.6428,42.1924 14.6059,42.2052 14.5616,42.2246 14.5397,42.2368 14.5083,42.2525 14.5010,42.2609 14.5025,42.2680 14.4757,42.2903 14.4346,42.3189 14.4243,42.3315 14.4101,42.3483 14.4235,42.3512 14.4206,42.3556 14.4024,42.3616 14.3947,42.3682 14.3729,42.3786 14.3209,42.4050 14.2781,42.4301 14.2405,42.4555 14.2293,42.4689 14.2142,42.4735 14.1773,42.5029 14.1463,42.5306 14.1071,42.5656 14.0895,42.5858 14.0626,42.6174 14.0385,42.6545 14.0118,42.6868 13.9824,42.7355 13.9585,42.7751 13.9404,42.8143 13.9305,42.8428 13.9239,42.8734 13.9205,42.8911 13.9162,42.8946 13.9088,42.8948 13.8908,42.8915 13.8634,42.8862 13.8348,42.8817 13.8176,42.8783 13.8123,42.8731 13.7798,42.8610 13.7607,42.8588 13.7222,42.8546 13.7063,42.8454 13.7109,42.8434 13.7013,42.8278 13.6994,42.8228 13.6838,42.8176 13.6566,42.8060 13.6305,42.8055 13.6187,42.8139 13.5949,42.8061 13.5771,42.8016 13.5510,42.8085 13.5350,42.8168 13.5329,42.8071 13.5236,42.7935 13.5088,42.7792 13.5023,42.7709 13.5039,42.7505 13.4824,42.7321 13.4476,42.7318 13.4380,42.7175 13.4404,42.7021 13.4338,42.7004 13.4212,42.7030 13.3978,42.6890 13.3702,42.6935 13.3578,42.6941 13.3488,42.6686 13.3577,42.6634 13.3824,42.6496 13.4054,42.6283 13.3954,42.6180 13.3892,42.6023 13.3910,42.5933 13.3836,42.5828 13.3739,42.5809 13.3365,42.5776 13.3119,42.5740 13.2933,42.5695 13.2853,42.5794 13.2794,42.5833 13.2533,42.5812 13.2459,42.5727 13.2306,42.5786 13.1914,42.5875 13.1924,42.5823 13.1742,42.5652 13.1735,42.5454 13.1566,42.5378 13.1669,42.5155 13.1774,42.5078 13.1715,42.4861 13.1767,42.4801 13.1563,42.4639 13.1334,42.4584 13.1162,42.4439 13.1305,42.4374 13.1501,42.4205 13.1618,42.4107 13.1892,42.4002 13.1872,42.3799 13.1656,42.3671 13.1533,42.3570 13.1727,42.3480 13.1851,42.3363 13.1938,42.3314 13.2105,42.3253 13.2265,42.3193 13.2281,42.2915 13.2319,42.2835 13.2567,42.2648 13.2745,42.2436 13.2972,42.2311 13.3180,42.2299 13.3308,42.2231 13.3387,42.2155 13.3336,42.2113 13.3415,42.1984 13.3743,42.1870 13.3436,42.1759 13.3535,42.1682 13.3413,42.1654 13.3281,42.1553 13.3210,42.1532 13.3072,42.1423 13.2849,42.1343 13.2565,42.1311 13.2372,42.1291 13.2233,42.1433 13.1983,42.1542 13.1832,42.1580 13.1693,42.1515 13.1318,42.1714 13.0867,42.1751 13.0897,42.1557 13.0871,42.1469 13.0730,42.1319 13.0390,42.1174 13.0327,42.1136 13.0252,42.0960 13.0190,42.0740 13.0266,42.0500 13.0482,42.0296 13.0639,42.0130 13.0899,42.0090 13.1014,42.0084 13.0988,42.0147 13.0966,42.0219 13.0985,42.0262 13.1155,42.0218 13.1378,42.0158 13.1612,42.0024 13.1847,41.9930 13.2093,41.9870 13.2322,41.9801 13.2573,41.9684 13.2733,41.9593 13.2877,41.9498 13.2983,41.9543 13.3239,41.9435 13.3330,41.9344 13.3455,41.9222 13.3548,41.9230 13.3659,41.9224 13.3805,41.9081 13.3701,41.8822 13.3657,41.8650 13.3671,41.8604 13.3668,41.8331 13.3719,41.8272 13.3763,41.8210 13.3917,41.8209 13.3978,41.8347 13.4178,41.8343 13.4455,41.8243 13.4646,41.8091 13.4881,41.8034 13.5069,41.8000 13.5129,41.7869 13.5204,41.7730 13.5339,41.7680 13.5554,41.7626 13.5670,41.7562 13.5773,41.7565 13.5830,41.7635 13.6018,41.7694 13.6134,41.7780 13.6303,41.7820 13.6429,41.7929 13.6373,41.8025 13.6449,41.8090 13.6742,41.8072 13.6906,41.7932 13.7074,41.7876 13.7208,41.7976 13.7293,41.7968 13.7312,41.7871 13.7423,41.7807 13.7493,41.7721 13.7494,41.7612 13.7620,41.7517 13.7901,41.7430 13.8081,41.7519 13.8150,41.7528 13.8243,41.7405 13.8517,41.7347 13.8738,41.7294 13.8976,41.7321 13.9124,41.7191 13.9232,41.7089 13.9277,41.7017 13.9374,41.6897 13.9410,41.6880
+`;
+
+const coasts = (coastsRaw || '').trim().split(/\n+/)
+  .map(l => l.trim().split(/\s+/).map(p => p.split(',').map(Number)).filter(p => isFinite(p[0]) && isFinite(p[1])))
+  .filter(p => p.length > 1);
+    const demCache = new Map(), demPend = new Set(), demFail = new Set();
+    let demTimer = 0, demLast = 0;
+    const demKey = s => [s.A.lat, s.A.lng, s.B.lat, s.B.lng].map(v => v.toFixed(4)).join(',');
+    function demWant(s) {                      
+      const k = demKey(s);
+      if (demCache.has(k) || demPend.has(k) || demFail.has(k)) return;
+      clearTimeout(demTimer);
+      demTimer = setTimeout(() => fetchDEM(s, k, 0), 600);
+    }
+    async function fetchDEM(s, k, tries) {
+      if (demCache.has(k) || demPend.has(k) || demKey(s) !== k) return;
+      demPend.add(k);
+      const N = 100, locs = [];    //API100punti1 call/s
+      for (let i = 0; i < N; i++) {
+        const f = i / (N - 1);
+        locs.push((s.A.lat + (s.B.lat - s.A.lat) * f).toFixed(5) + ',' + (s.A.lng + (s.B.lng - s.A.lng) * f).toFixed(5));
+      }
+      let out = null;
+      for (const ds of ['gebco2020', 'mapzen']) { 
+        const wait = demLast + 1100 - Date.now();
+        if (wait > 0) await new Promise(r => setTimeout(r, wait));
+        demLast = Date.now();
+        try {
+          const res = await fetch('https://api.opentopodata.org/v1/' + ds + '?locations=' + locs.join('|'));
+          const data = await res.json();
+          if (data.status === 'OK' && data.results && data.results.length === N) { out = data.results.map(r => r.elevation == null ? 0 : r.elevation); break; }
+        } catch (e) { console.warn('DEM fetch failed', ds, e); }
+      }
+      demPend.delete(k);
+      if (out) demCache.set(k, out);
+      else if (tries < 2) setTimeout(() => fetchDEM(s, k, tries + 1), 3000 * (tries + 1));
+      else demFail.add(k);
+      if (activeSec && demKey(activeSec) === k) drawSection();
+    }
     const polyArea = h => Math.abs(h.reduce((s, p, i) => { const q = h[(i+1) % h.length]; return s + p[0]*q[1] - q[0]*p[1]; }, 0)) / 2;
     function inside(h, x, y) {
       let c = false;
@@ -174,38 +260,44 @@ const AREAS = [
     AREAS.forEach(a => { a.h = a[1].map(p => [p[1], p[0]]); a.ar = polyArea(a.h); a.cy = a[2]; a.cx = a[3]; a.n = 0; });
     const BYSIZE = AREAS.slice().sort((a, b) => a.ar - b.ar);//smallest area
     const map = L.map('map', { preferCanvas: true });
-	const satelliteLayer = L.tileLayer(
-	  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-	  { attribution: 'Tiles &copy; Esri' }
-	);
-	const osmLayer = L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
-	  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-	  maxZoom: 18
-	});
-	let currentBase = satelliteLayer;
-	currentBase.addTo(map);
-	const baseCtl = L.control({ position: 'bottomleft' });
-	baseCtl.onAdd = () => {
-	  const div = L.DomUtil.create('div', 'ctl');
-	  L.DomEvent.disableClickPropagation(div);
-	  L.DomEvent.disableScrollPropagation(div);
-	  const b = L.DomUtil.create('button', '', div);
-	  b.id = 'btnBase';
-	  b.style.width = 'auto';
-	  b.style.padding = '4px 10px';
-	  b.textContent = 'Basemap: satellite';
-	  b.title = 'Switch basemap (satellite / OSM DE)';
-	  b.onclick = () => {
-		map.removeLayer(currentBase);
-		currentBase = (currentBase === satelliteLayer) ? osmLayer : satelliteLayer;
-		currentBase.addTo(map);
-		if (map.getPane('kde'))  map.getPane('kde').style.zIndex = 250;
-		if (map.getPane('areas')) map.getPane('areas').style.zIndex = 350;
-		b.textContent = 'Basemap: ' + (currentBase === satelliteLayer ? 'satellite' : 'OSM DE');
-	  };
-	  return div;
-	};
-	baseCtl.addTo(map);
+	const BASES = {
+  sat:   { n: 'bmSat',   l: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri' }) },
+  out:   { n: 'bmOut',   l: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap, SRTM | &copy; OpenTopoMap (CC-BY-SA)', maxNativeZoom: 17, maxZoom: 18 }) }
+};
+const BORDER = ['sat', 'out'];
+let baseId = 'sat', currentBase = null;
+function baseLabel() {
+  const b = document.getElementById('btnBase');
+  if (b) { b.textContent = tr('bm', tr(BASES[baseId].n)); b.title = tr('bm', tr(BASES[baseId].n)); }
+}
+function setBase(id) {
+  if (!BASES[id]) id = 'sat';
+  if (currentBase) map.removeLayer(currentBase);
+  baseId = id; currentBase = BASES[id].l; currentBase.addTo(map);
+  try { localStorage.setItem('base', id); } catch (e) {}
+  if (map.getPane('kde'))   map.getPane('kde').style.zIndex = 250;
+  if (map.getPane('areas')) map.getPane('areas').style.zIndex = 350;
+  baseLabel();
+}
+const baseCtl = L.control({ position: 'bottomleft' });
+baseCtl.onAdd = () => {
+  const div = L.DomUtil.create('div', 'ctl');
+  div.style.cssText = 'display:flex;align-items:center;gap:4px';
+  L.DomEvent.disableClickPropagation(div);
+  L.DomEvent.disableScrollPropagation(div);
+  const b = L.DomUtil.create('button', '', div);
+  b.id = 'btnBase'; b.style.width = 'auto'; b.style.padding = '4px 10px';
+  b.onclick = () => setBase(BORDER[(BORDER.indexOf(baseId) + 1) % BORDER.length]);
+  const ls = L.DomUtil.create('select', '', div);
+  ls.id = 'langSel'; ls.style.cssText = 'font-size:12px;padding:3px';
+  Object.keys(LANGS).forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = LANGS[k]; ls.appendChild(o); });
+  ls.value = LANG;
+  ls.onchange = () => { LANG = ls.value; try { localStorage.setItem('lang', LANG); } catch (e) {} applyLang(); };
+  return div;
+};
+baseCtl.addTo(map);
+let savedBase = 'sat'; try { savedBase = localStorage.getItem('base') || 'sat'; } catch (e) {}
+setBase(savedBase);
     const bounds = L.latLngBounds([35.8, 12], [41.8, 19.5]);
     L.rectangle(bounds, {color: "#ff7800", weight: 1, fill: false}).addTo(map);
     map.fitBounds(bounds);
@@ -224,30 +316,8 @@ const AREAS = [
     const pad = n => String(n).padStart(2, '0');
     const fmtUTC = ms => { const d = new Date(ms); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()); };
     const fmtISO = d => d.toISOString().slice(0, 19);
-    const RANGES = [
-      ['Last 1 hour',    1/24,  '1 h'],
-      ['Last 6 hours',   6/24,  '6 h'],
-      ['Last 12 hours',  12/24, '12 h'],
-      ['Last 24 hours',  1,     '24 h'],
-      ['Last 3 days',    3,     '3 d'],
-      ['Last 5 days',    5,     '5 d'],
-      ['Last 7 days',    7,     '7 d'],
-      ['Last 15 days',   15,    '15 d'],
-      ['Last 30 days',   30,    '30 d'],
-      ['Last 3 months',  90,    '3 mo'],
-      ['Last 6 months',  182,   '6 mo'],
-      ['Last 9 months',  273,   '9 mo'],
-      ['Last 1 year',    365,   '1 y'],
-      ['Last 2 years',   730,   '2 y'],
-      ['Last 3 years',   1095,  '3 y'],
-      ['Last 5 years',   1825,  '5 y'],
-      ['Last 10 years',  3650,  '10 y'],
-      ['Last 15 years',  5475,  '15 y'],
-      ['Last 20 years',  7300,  '20 y'],
-      ['Last 25 years',  9125,  '25 y']
-    ];
-    const FEATS = [['depth', 'Depth histogram'], ['month', 'Month histogram'], ['mag', 'Mw histogram'],
-                   ['rateDepth', 'Rate vs depth'], ['kde', 'KDE density map'],['poly', 'Area polygons'], ['bars', 'Area count bars']];
+    const RANGES = RSPEC.map(r => ['', r[0], '']); relabelRanges();
+    const FEATS = [['depth','fDepth'],['month','fMonth'],['mag','fMag'],['rateDepth','fRate'],['kde','fKde'],['poly','fPoly'],['bars','fBars']];
     let daysIdx = 6, days = RANGES[daysIdx][1];
     let customRange = null;                 //{s,e} ms: START/END manuale, null = 'last N'
     const dtDirty = { start: false, end: false };
@@ -618,7 +688,7 @@ const AREAS = [
       showEvents = !showEvents;
       if (showEvents) layerGroup.addTo(map); else map.removeLayer(layerGroup);
       const b = $('btnEq');
-      if (b) { b.textContent = showEvents ? 'Hide earthquakes' : 'Show earthquakes'; b.classList.toggle('active', !showEvents); }
+      if (b) { b.textContent = tr(showEvents ? 'aHide' : 'aShow'); b.classList.toggle('active', !showEvents); }
     }
     function secLetters(i) {
       return [String.fromCharCode(65 + (2 * i) % 26), String.fromCharCode(65 + (2 * i + 1) % 26)];
@@ -656,7 +726,7 @@ const AREAS = [
       div.appendChild(document.createElement('hr'));
       FEATS.forEach(([k, label]) => {
         const b = L.DomUtil.create('button', 'feat', div);
-        b.textContent = label; b.dataset.k = k;
+        b.textContent = tr(label); b.dataset.k = k; b.dataset.i18n = label;
         b.onclick = () => {
           if (k === 'poly' || k === 'bars' || k === 'kde') on[k] = !on[k];
           else chartMode = chartMode === k ? null : k;
@@ -669,20 +739,20 @@ const AREAS = [
         };
       });
       div.appendChild(document.createElement('hr'));
-      const act = (id, label, fn) => { const b = L.DomUtil.create('button', 'act', div); b.id = id; b.textContent = label; b.onclick = fn; return b; };
-      act('btnEq', 'Hide earthquakes', () => toggleEvents());
-      act('btnDraw', 'Draw section line', () => toggleDraw());
-      act('btnPoly', 'Polygon catalog (.txt)', () => togglePolyDraw());
-      act('btnClear', 'Clear sections', () => clearSection());
-      act('btn3d', '3D popup', () => toggle3D());
-      act('btnColor', 'Colour: time', () => toggleColor());
-      act('btnDiss', 'DISS sources', () => toggleDISS());
-      act('btnExp', 'Export JPG', () => exportJPG());
-      act('btnBB', 'Beachballs: off', () => toggleBeach());
-      act('btnCat', 'Export catalog (+S/D/R)', () => exportCatalogMeca());      
+      const act = (id, label, fn) => { const b = L.DomUtil.create('button', 'act', div); b.id = id; b.textContent = tr(label); b.dataset.i18n = label; b.onclick = fn; return b; };
+      act('btnEq', 'aHide', () => toggleEvents());
+      act('btnDraw', 'aDraw', () => toggleDraw());
+      act('btnPoly', 'aPoly', () => togglePolyDraw());
+      act('btnClear', 'aClear', () => clearSection());
+      act('btn3d', 'a3d', () => toggle3D());
+      act('btnColor', 'aColor', () => toggleColor());
+      act('btnDiss', 'aDiss', () => toggleDISS());
+      act('btnExp', 'aExp', () => exportJPG());
+      act('btnBB', 'aBB', () => toggleBeach());
+      act('btnCat', 'aCat', () => exportCatalogMeca());      
       div.appendChild(document.createElement('hr'));
       const kd = L.DomUtil.create('div', 'info', div);
-      kd.innerHTML = 'KDE bandwidth: <input id="kdeBW" type="number" value="10" min="1" max="200" step="1" style="width:52px"> km';
+      kd.innerHTML = '<span data-i18n="kBw">KDE bandwidth:</span> <input id="kdeBW" type="number" value="10" min="1" max="200" step="1" style="width:52px"> km';
       const kdIn = kd.querySelector('input');
       kdIn.onchange = () => { kdeBW = Math.max(1, +kdIn.value || 10); if (colorMode === 'kde' || on.kde) render(); };
 
@@ -698,7 +768,7 @@ const AREAS = [
 	  const magDiv = L.DomUtil.create('div', '', div);
 	  magDiv.id = 'magLegend';
 	  magDiv.innerHTML =
-		'<b>Magnitude</b>' +
+		'<b data-i18n="lMag">Magnitude</b>' +
 		'<svg width="120" height="120" viewBox="-40 -40 80 80" xmlns="http://www.w3.org/2000/svg">' +
 		  '<circle cx="0" cy="0"        r="10.6"   fill="#800026" fill-opacity="0.10" stroke="#800026" stroke-width="0.9"/>' +
 		  '<circle cx="0" cy="2.8"      r="7.8"    fill="#800026" fill-opacity="0.10" stroke="#800026" stroke-width="0.9"/>' +
@@ -719,7 +789,7 @@ const AREAS = [
 	  kdeDiv.style.marginTop = '8px';
 	  kdeDiv.style.display = 'none';
 	  kdeDiv.innerHTML =
-		'<b>KDE density</b>' +
+		'<b data-i18n="lKde">KDE density</b>' +
 		'<svg width="120" height="18"><defs><linearGradient id="kdeGrad">' + kdeGradientStops() + '</linearGradient></defs>' +
 		'<rect width="120" height="14" fill="url(#kdeGrad)" stroke="#000"/></svg>' +
 		'<div style="font-size:10px;display:flex;justify-content:space-between;width:120px;margin:0 auto;"><span>0</span><span>1</span></div>' +
@@ -729,7 +799,7 @@ const AREAS = [
 	  depDiv.style.marginTop = '8px';
 	  depDiv.style.display = 'none';
 	  depDiv.innerHTML =
-		'<b>Depth</b>' +
+		'<b data-i18n="lDepth">Depth</b>' +
 		'<svg width="120" height="18"><defs><linearGradient id="depGrad">' + depthGradientStops() + '</linearGradient></defs>' +
 		'<rect width="120" height="14" fill="url(#depGrad)" stroke="#000"/></svg>' +
 		'<div style="font-size:10px;display:flex;justify-content:space-between;width:120px;margin:0 auto;"><span>0 km</span><span id="depLegMax">200 km</span></div>';
@@ -795,7 +865,7 @@ const AREAS = [
       const pw = W - m.l - m.r, ph = H - m.t - m.b;
       c.clearRect(0, 0, W, H);
       c.fillStyle = '#000'; c.font = 'bold 12px sans-serif'; c.textAlign = 'center';
-      c.fillText(selArea ? 'Rate vs depth — ' + selArea : 'Rate vs depth — all areas', W / 2, 14);
+      c.fillText(tr('fRate') + ' \u2014 ' + (selArea || tr('allAreas')), W / 2, 14);
       c.font = '10px sans-serif'; c.fillStyle = '#666';
       c.fillText('N=' + evts.length + ' · ' + years.toFixed(years < 1 ? 3 : 1) + ' y · ' + binSize + ' km bins', W / 2, 27);
       c.font = '10px sans-serif'; c.textAlign = 'right';
@@ -824,16 +894,16 @@ const AREAS = [
       box.style.display = chartMode ? 'block' : 'none';
       if (rateBar) rateBar.style.display = chartMode === 'rateDepth' ? 'block' : 'none';
       if (!chartMode) return;
-      if (chartMode === 'depth') { const [l, c] = bin(events.map(e => e.depth), 5, 0); drawHist('Depth distribution (5 km bins)', l, c, 'Depth (km)'); }
-      else if (chartMode === 'mag') { const [l, c] = bin(events.map(e => e.mag), 0.2); drawHist('Magnitude distribution (0.2 bins)', l, c, 'Magnitude (Mw/ML, source INGV)'); }
+      if (chartMode === 'depth') { const [l, c] = bin(events.map(e => e.depth), 5, 0); drawHist(tr('chDepth'), l, c, 'Depth (km)'); }
+      else if (chartMode === 'mag') { const [l, c] = bin(events.map(e => e.mag), 0.2); drawHist(tr('chMag'), l, c, 'Magnitude (Mw/ML, source INGV)'); }
       else if (chartMode === 'rateDepth') { drawRateDepth(); }
       else {
         const keys = events.map(e => e.t.getFullYear() * 12 + e.t.getMonth());
-        if (!keys.length) return drawHist('Events per month', [], [], 'Month');
+        if (!keys.length) return drawHist(tr('chMon'), [], [], 'Month');
         const lo = keys.reduce((a, b) => a < b ? a : b), n = keys.reduce((a, b) => a > b ? a : b) - lo + 1, c = new Array(n).fill(0), l = [];
         keys.forEach(k => c[k - lo]++);
         for (let i = 0; i < n; i++) { const k = lo + i; l.push(Math.floor(k / 12) + '-' + String(k % 12 + 1).padStart(2, '0')); }
-        drawHist('Events per month', l, c, 'Month (local time)');
+        drawHist(tr('chMon'), l, c, 'Month (local time)');
       }
     }
     const ramp = ['#ffffcc', '#ffeda0', '#fd8d3c', '#e31a1c', '#800026'];
@@ -920,7 +990,7 @@ const AREAS = [
     }
 
 function parseYMD(s) {
-  //YYYYMMDD, YYYY-MM-DD, YYYY/MM/DD, YYYY MM DD
+  //YYYYMMDD, YYYY-MM-DD, YYYY/MM/DD, YYYY MM DD formati supportati aggiungere orario? troppo sbatti
   const digits = String(s || '').replace(/\D/g, '');
   if (digits.length !== 8) return NaN;
   const y = +digits.slice(0, 4), m = +digits.slice(4, 6), d = +digits.slice(6, 8);
@@ -983,7 +1053,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       $('tbm0').style.width = sel.a * 100 + '%'; $('tbm1').style.width = (1 - sel.b) * 100 + '%';
       $('tbA').textContent = fmtUTC(rangeStart + sel.a * span);
       $('tbB').textContent = fmtUTC(rangeStart + sel.b * span) + ' UTC';
-      $('tbN').textContent = 'reference time';
+      $('tbN').textContent = tr('refT');
         syncDateInputs();                          
     }
     (function () {
@@ -1035,17 +1105,17 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     function scheduleRender() { if (rq) return; rq = requestAnimationFrame(() => { rq = 0; render(); }); }
     function scheduleSec() { if (rs) return; rs = requestAnimationFrame(() => { rs = 0; updateSlab(); drawSection(); draw3D(); }); }
     function eventPopupHTML(e) {
-      const isideUrl = `https://iside.rm.ingv.it/iside/standard/result.jsp?eventid=${encodeURIComponent(e.eventId)}`;
       const detailsUrl = `https://terremoti.ingv.it/event/${encodeURIComponent(e.eventId)}`;
       return `<div style="display:flex;gap:8px;align-items:flex-start">` +
         `<div id="bbpop-${e.eventId}" class="bbpop"></div>` +
         `<div style="min-width:150px">` +
           `<b>M${e.mag.toFixed(1)}</b> &middot; ${e.place || ''}<br>` +
-          `Depth: ${e.depth} km &middot; ${fmtYMD(e.t)} ${e.t.toISOString().slice(11,19)} UTC<br>` +
+          `${tr('lDepth')}: ${e.depth} km &middot; ${fmtYMD(e.t)} ${e.t.toISOString().slice(11,19)} UTC<br>` +
           `<div style="margin-top:6px;display:flex;flex-direction:column;gap:3px;line-height:1.4">` +
-          `  <a href="#" onclick="downloadPicks('${e.eventId}');return false;">&#11015; Picks &amp; arrivals (.txt)</a>` +
-          `  <a href="${isideUrl}" target="_blank" rel="noopener">&#11015; Download waveform (ISIDE / EIDA)</a>` +
-          `  <a href="${detailsUrl}" target="_blank" rel="noopener">&#9432; Event details (INGV)</a>` +
+          `  <a href="#" onclick="downloadPicks('${e.eventId}');return false;">&#11015; ${tr('pPicks')}</a>` +
+          `  <a href="#" onclick="downloadWaveforms(event, '${e.eventId}', ${e.ms});return false;">&#11015; ${tr('pWave')}</a>` +
+          `  <span id="wvmsg-${e.eventId}" style="font-size:10px;color:#b00020"></span>` +
+          `  <a href="${detailsUrl}" target="_blank" rel="noopener">&#9432; ${tr('pDet')}</a>` +
           `</div>` +
         `</div></div>`;
     }
@@ -1078,7 +1148,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     function toggleBeach() {
       on.beach = !on.beach;
       const b = $('btnBB');
-      if (b) { b.textContent = 'Beachballs: ' + (on.beach ? 'on' : 'off'); b.classList.toggle('active', on.beach); }
+      if (b) { b.textContent = tr('aBB', tr(on.beach ? 'on' : 'off')); b.classList.toggle('active', on.beach); }
       if (on.beach) {
         events.slice().sort((a, b2) => b2.mag - a.mag).slice(0, 400).forEach(e => queueMeca(e.eventId));
       }
@@ -1141,7 +1211,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       else if (colorMode === 'mag') colorMode = 'kde';
       else if (colorMode === 'kde') colorMode = 'depth';
       else colorMode = 'time';
-      $('btnColor').textContent = 'Colour: ' + colorMode;
+      $('btnColor').textContent = tr('aColor', colorMode === 'kde' ? 'KDE' : tr(CMN[colorMode]));
       $('tbg').classList.toggle('gray', colorMode !== 'time');
       $('depthbar').style.display = colorMode === 'depth' ? 'block' : 'none';
       updateLegends();
@@ -1167,9 +1237,9 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       renderMarkers();
       secs.forEach(s => { if (s.layers) { s.layers.poly.bringToFront(); s.layers.line.bringToFront(); s.layers.mA.setZIndexOffset(2000); s.layers.mB.setZIndexOffset(2000); } });
       refresh(); setCount(events.length);
-      const lab = customRange ? 'custom' : RANGES[daysIdx][2].toLowerCase();
-      $('clabel').textContent = 'earthquakes \u00b7 ' + lab + (events.length !== allEvents.length ? ' (selected window)' : '');
-      $('info').textContent = events.length + (events.length !== allEvents.length ? ' / ' + allEvents.length : '') + ' events' + (limitHit ? ' (limit hit)' : '');
+      const lab = customRange ? tr('cCustom') : RANGES[daysIdx][2].toLowerCase();
+      $('clabel').textContent = tr('cLabel') + ' \u00b7 ' + lab + (events.length !== allEvents.length ? ' (' + tr('cSel') + ')' : '');
+      $('info').textContent = events.length + (events.length !== allEvents.length ? ' / ' + allEvents.length : '') + ' ' + tr('evts') + (limitHit ? ' (' + tr('limit') + ')' : '');
       $('depthbar').style.display = colorMode === 'depth' ? 'block' : 'none';
       updateBar(); updateDepthBar(); if (on.beach) queueTopMeca(); drawSection(); draw3D();
       if (qcWindowOpen()) qcEnsureData();
@@ -1260,7 +1330,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     function updateSectionUI() {
       const sel = $('secSel');
       if (!sel) return;
-      sel.innerHTML = secs.map((s, i) => `<option value="${s.id}"${s === activeSec ? ' selected' : ''}>Section ${i+1} (${s.la||'A'}${s.lb||'B'}, ${s.g.L.toFixed(0)} km)</option>`).join('');
+      sel.innerHTML = secs.map((s, i) => `<option value="${s.id}"${s === activeSec ? ' selected' : ''}>${tr('wSec')} ${i+1} (${s.la||'A'}${s.lb||'B'}, ${s.g.L.toFixed(0)} km)</option>`).join('');
       sel.onchange = () => {
         const s = secs.find(x => x.id === sel.value);
         if (s) setActiveSec(s);
@@ -1398,19 +1468,39 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     function drawSection() {
       if (!activeSec || secwin.style.display !== 'flex') return;
       const s = activeSec;
+      const dk = demKey(s), dem = demCache.get(dk);
+      if (!dem) demWant(s);
       const [c, W, H] = fitCanvas(seccv), g = s.g;
       c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
-      const ml = 46, mr = 14, mt = 14, mb = 38; let pw = W - ml - mr, ph = H - mt - mb;
-      const D = slabDepth(); let sx = pw / g.L, sy = ph / D;
-      if ($('sec11').checked) { const sc = Math.min(sx, sy); sx = sy = sc; pw = g.L * sc; ph = D * sc; }
-      const X = t => ml + t * sx, Y = z => mt + z * sy;
+      const top = dem ? Math.ceil(Math.max(0, ...dem) / 500) / 2 : 0;     
+      const ml = 46, mr = 14, mt = 22, mb = 38; let pw = W - ml - mr, ph = H - mt - mb;
+      const D = slabDepth(), R = D + top; let sx = pw / g.L, sy = ph / R;
+      if ($('sec11').checked) { const sc = Math.min(sx, sy); sx = sy = sc; pw = g.L * sc; ph = R * sc; }
+      const X = t => ml + t * sx, Y = z => mt + (z + top) * sy;
       c.font = '10px sans-serif'; c.lineWidth = 1;
-      const st = niceStep(g.L, Math.max(2, pw / 70)), sz = niceStep(D, Math.max(2, ph / 40));
+      const st = niceStep(g.L, Math.max(2, pw / 70)), sz = niceStep(R, Math.max(2, ph / 40));
       c.textAlign = 'center';
       for (let t = 0; t <= g.L + 1e-6; t += st) { const x = X(t); c.strokeStyle = '#e3e3e3'; c.beginPath(); c.moveTo(x, mt); c.lineTo(x, mt + ph); c.stroke(); c.fillStyle = '#000'; c.fillText(+t.toFixed(3), x, mt + ph + 12); }
       c.textAlign = 'right';
-      for (let z = 0; z <= D + 1e-6; z += sz) { const y = Y(z); c.strokeStyle = '#e3e3e3'; c.beginPath(); c.moveTo(ml, y); c.lineTo(ml + pw, y); c.stroke(); c.fillStyle = '#000'; c.fillText(+z.toFixed(3), ml - 4, y + 3); }
-      c.strokeStyle = '#000'; c.strokeRect(ml, mt, pw, ph);
+      for (let z = Math.ceil(-top / sz - 1e-9) * sz; z <= D + 1e-6; z += sz) { const y = Y(z); c.strokeStyle = '#e3e3e3'; c.beginPath(); c.moveTo(ml, y); c.lineTo(ml + pw, y); c.stroke(); c.fillStyle = '#000'; c.fillText(+z.toFixed(3), ml - 4, y + 3); }
+      if (dem) {
+        const n = dem.length, xi = i => X(i / (n - 1) * g.L), y0 = Y(0);
+        c.save(); c.beginPath(); c.rect(ml, mt, pw, ph); c.clip();
+        c.beginPath(); c.moveTo(xi(0), y0);                                // terra
+        for (let i = 0; i < n; i++) c.lineTo(xi(i), Y(-Math.max(dem[i], 0) / 1000));
+        c.lineTo(xi(n - 1), y0); c.closePath(); c.fillStyle = 'rgba(140,140,140,0.45)'; c.fill();
+        c.beginPath(); c.moveTo(xi(0), y0);                                // mare
+        for (let i = 0; i < n; i++) c.lineTo(xi(i), Y(-Math.min(dem[i], 0) / 1000));
+        c.lineTo(xi(n - 1), y0); c.closePath(); c.fillStyle = 'rgba(80,160,230,0.35)'; c.fill();
+        c.beginPath();
+        for (let i = 0; i < n; i++) { const x = xi(i), y = Y(-dem[i] / 1000); i ? c.lineTo(x, y) : c.moveTo(x, y); }
+        c.strokeStyle = '#444'; c.lineWidth = 1.2; c.stroke();
+        c.setLineDash([4, 3]); c.beginPath(); c.moveTo(ml, y0); c.lineTo(ml + pw, y0); c.strokeStyle = '#1565c0'; c.lineWidth = 0.8; c.stroke(); c.setLineDash([]);
+        c.restore();
+      } else {
+        c.fillStyle = '#888'; c.textAlign = 'right'; c.fillText(demFail.has(dk) ? 'DEM n/a' : 'DEM\u2026', ml + pw, mt - 6);
+      }
+      c.strokeStyle = '#000'; c.lineWidth = 1; c.strokeRect(ml, mt, pw, ph);
       c.textAlign = 'center'; c.font = '11px sans-serif'; c.fillStyle = '#000';
       c.fillText('Distance ' + (s.la||'A') + ' ' + (s.lb||'B') + ' (km)', ml + pw / 2, H - 6);
       c.save(); c.translate(11, mt + ph / 2); c.rotate(-Math.PI / 2); c.fillText('Depth (km)', 0, 0); c.restore();
@@ -1422,9 +1512,9 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
         secPts.push({ x, y, r, s: sp });
       });
       const f = p => p.lat.toFixed(3) + ', ' + p.lng.toFixed(3);
-      $('sectitle').textContent = 'Section ' + (secs.indexOf(s) + 1) + ' (' + (s.la||'A') + (s.lb||'B') + ') ' + f(s.A) + '  ' + f(s.B);
-      $('secinfo').textContent = s.slab.length + ' events \u00b7 L = ' + g.L.toFixed(1) + ' km \u00b7 d \u2264 ' + g.hw + ' km';
-    }
+      $('sectitle').textContent = tr('wSec') + ' ' + (secs.indexOf(s) + 1) + ' (' + (s.la||'A') + (s.lb||'B') + ') ' + f(s.A) + '  ' + f(s.B);
+      $('secinfo').textContent = s.slab.length + ' ' + tr('evts') + ' \u00b7 L = ' + g.L.toFixed(1) + ' km \u00b7 d \u2264 ' + g.hw + ' km';
+    }  
     seccv.addEventListener('mousemove', ev => {
       const r = seccv.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top, tip = $('sectip');
       let best = null, bd = 1e9;
@@ -1451,6 +1541,29 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       c.fillStyle = 'rgba(80,160,255,.14)'; c.fill();
       c.strokeStyle = 'rgba(190,205,230,.55)'; c.lineWidth = 1;
       for (let i = 0; i < 8; i++) [1, 2, 4].forEach(b => { if (!(i & b)) { c.beginPath(); c.moveTo(cs[i][0], cs[i][1]); c.lineTo(cs[i | b][0], cs[i | b][1]); c.stroke(); } });
+      const clipSeg = (a, b) => {
+        let u0 = 0, u1 = 1; const dt = b[0] - a[0], dd = b[1] - a[1];
+        for (const [p, q] of [[-dt, a[0]], [dt, g.L - a[0]], [-dd, a[1] + g.hw], [dd, g.hw - a[1]]]) {
+          if (p === 0) { if (q < 0) return null; }
+          else { const r = q / p; if (p < 0) { if (r > u1) return null; if (r > u0) u0 = r; } else { if (r < u0) return null; if (r < u1) u1 = r; } }
+        }
+        return [[a[0] + u0 * dt, a[1] + u0 * dd], [a[0] + u1 * dt, a[1] + u1 * dd]];
+      };
+      c.strokeStyle = '#4a90e2'; c.lineWidth = 1.4; c.globalAlpha = 0.95;
+      coasts.forEach(poly => {
+        const T = poly.map(q => [g.t(q[0], q[1]), g.d(q[0], q[1])]);
+        c.beginPath(); let last = null;
+        for (let i = 1; i < T.length; i++) {
+          const sg = clipSeg(T[i - 1], T[i]);
+          if (!sg) { last = null; continue; }
+          const p0 = P((sg[0][0] - hx) * sx, sg[0][1] * sy, -ez), p1 = P((sg[1][0] - hx) * sx, sg[1][1] * sy, -ez);
+          if (!last || Math.abs(last[0] - p0[0]) > 0.01 || Math.abs(last[1] - p0[1]) > 0.01) c.moveTo(p0[0], p0[1]);
+          c.lineTo(p1[0], p1[1]); last = p1;
+        }
+        c.stroke();
+      });
+      c.globalAlpha = 1;
+      
       const pts = s.slab.map(sp => ({ p: P((sp.t - hx) * sx, sp.d * sy, (sp.e.depth - hz) * sz), s: sp })).sort((a, b) => b.p[2] - a.p[2]);
       pts.forEach(({ p, s: sp }) => {
         const r = Math.max(1.5, sp.e.mag * 1.5) * p[3] * Math.sqrt(v3.zoom);
@@ -1460,7 +1573,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       const pa = P(-ex, 0, -ez), pb = P(ex, 0, -ez); c.fillText(s.la || 'A', pa[0], pa[1] - 6); c.fillText(s.lb || 'B', pb[0], pb[1] - 6);
       c.font = '10px sans-serif'; c.fillStyle = '#aab6c8'; c.textAlign = 'left';
       const p0 = P(-ex, -ey, -ez), p1 = P(-ex, -ey, ez); c.fillText('0 km', p0[0] + 4, p0[1] - 3); c.fillText(D + ' km', p1[0] + 4, p1[1] + 11);
-      $('info3').textContent = s.slab.length + ' events \u00b7 ' + g.L.toFixed(0) + '\u00d7' + s.width + '\u00d7' + D + ' km \u00b7 drag = rotate, wheel = zoom';
+      $('info3').textContent = s.slab.length + ' ' + tr('evts') + ' \u00b7 ' + g.L.toFixed(0) + '\u00d7' + s.width + '\u00d7' + D + ' km \u00b7 drag = rotate, wheel = zoom';
     }
     (function () {
       let st = null;
@@ -1627,7 +1740,12 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       const tx = n => n ? (n.textContent || '').trim() : '';
       const val = (el, name) => { const n = first(el, name); if (!n) return ''; const v = first(n, 'value') || n; return tx(v); };
       const unc = el => el ? tx(first(el, 'uncertainty')) : '';
-
+	const asUTC = s => {
+	  const str = String(s || '').trim();
+	  if (!str) return '';
+	  if (/[zZ]$|[+-]\d{2}:?\d{2}$/.test(str)) return str;
+	  return str.replace(' ', 'T') + 'Z';
+	};
       const ev = first(doc, 'event') || doc.documentElement;
       const org = first(ev, 'origin') || ev;
       const latEl = first(org, 'latitude'), lonEl = first(org, 'longitude'), depEl = first(org, 'depth');
@@ -1669,7 +1787,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
 
       const out = [
         '#TIMEUTC LAT UNC_LAT LONG UNC_LON PROF UNC_PROF M UNC_M',
-        `#${val(org, 'time') || '-'} ${val(org, 'latitude') || '-'} ${unc(latEl) || '0'} ` +
+        `#${asUTCString(val(org, 'time')) || '-'} ${val(org, 'latitude') || '-'} ${unc(latEl) || '0'} ` +
         `${val(org, 'longitude') || '-'} ${unc(lonEl) || '0'} ${val(org, 'depth') || '-'} ${unc(depEl) || '0'} ` +
         `${magV || '-'} ${magEl ? (unc(magEl) || '0') : '0'}`,
         'STA  NET TIME POL PHA AZIM DIST TKOFANGLE RES',
@@ -1699,44 +1817,97 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       }
     }
     window.downloadPicks = downloadPicks;
-
+    function waveformUrl(eventId, ms) {
+      const d = new Date(ms);
+      return 'http://webservices.ingv.it/webservices/ingv_ws_data/data/' +
+        d.getUTCFullYear() + '/' + pad(d.getUTCMonth() + 1) + '/' + pad(d.getUTCDate()) + '/' +
+        encodeURIComponent(eventId) + '/waveforms.tar.gz';
+    }
+    async function downloadWaveforms(ev, eventId, ms) {
+      ev.preventDefault();
+      const url = waveformUrl(eventId, ms);
+      const info = $('info');
+      const msg = document.getElementById('wvmsg-' + eventId);
+      const setMsg = t => { if (msg) msg.textContent = t; info.textContent = t; };
+      setMsg('Fetching waveforms for ' + eventId + '…');
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          if (res.status === 404) {
+            setMsg('Waveforms for event ' + eventId + ' not yet available (404)');
+          } else {
+            setMsg('Waveform request failed (HTTP ' + res.status + ')');
+          }
+          return;
+        }
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = 'waveforms_' + eventId + '.tar.gz';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(blobUrl); a.remove(); }, 2000);
+        setMsg('Downloaded waveforms for ' + eventId);
+      } catch (err) {
+        console.warn('CORS or network error, opening direct link', err);
+        setMsg('Fetch failed (CORS). Opening link (use right-click → Save link as… if it shows text)');
+        window.open(url, '_blank', 'noopener');
+      }
+    }
+    window.downloadWaveforms = downloadWaveforms;
     $('helpwin').querySelector('.wb').innerHTML = `
-      <p class="hs"><b>Odometer</b> — number of earthquakes inside the current selection. The dropdown
-      (<i>1 h … 25 y</i>) sets the time span downloaded from INGV. The field below searches a single
-      INGV event id: it is fetched on its own and centred on the map (click the star for the links).
-      The <b>i</b> at the left opens this panel.</p>
-      <p class="hs"><b>Time bar</b> (bottom centre) — drag the two white handles to select a sub-window of
+      <p class="hs"><b>Important</b> The <b>i</b> you clicked opens this panel. This tool was made to see seismicity
+      and earthquake's hypocenters in Southern Italy in an interactive and easier way for daily users which tamper with such data (orange rectangular box defines view at which you are centered as well as earthquakes being viewed). You cannot move away from this area. All interactive windows can be resized by hovering in the bottom right corner and modifying their sizes as it suits you. All times associated with each 
+      earthquake here are reported in UTC, so a check on your timezone and light savings conventions is necessary.
+      Data and results reported here coming from INGV are distributed under Creative Commons Attribution 4.0 International License. If you want to see it for yourself
+      go to <a href="ingv.eqs">https://terremoti.ingv.it/</a>. Thanks for using this page. Any helpful suggestion
+      is appreciated and welcome. You can write me at derose.fr@gmail.com for suggestions, fixes or anything else you wish. 
+      <p class="hs"><b>Counter</b> number of earthquakes inside the current selection. Click on it to see more options. The dropdown
+      (<i>1 h … 25 y</i>) sets the time span downloaded from INGV. The one you are currently in is the red box in the right panel. The blank field searches a single
+      INGV event id: it is fetched on its own and centred on the map (click the star for the links). If you do not know the eventid just hover on top of INGV hyperlink page when clicking any earthquake's epicenter "Event details (INGV)" and see on the bottom left the number at the end of the link. Memorize it and type it in search box. Voilà. Future versions will add this eventid and identification number in the event page in the box. This goes straight into the never ending to do list.
+      </p>
+      <p class="hs"><b>Time bar</b> (bottom centre) drag the two white handles to select a sub-window of
       the downloaded period (double-click resets to the full range).</p>
-      <p class="hs"><b>Top-right buttons</b><br>
-      &middot; <i>Last 1 hour … Last 25 years</i>: download period. N.B. Be patient when you request a larger time period and
-      do not be surprised if your browser slows down.<br>
-      &middot; <i>Depth / Month / M histogram</i>: chart in the bottom-left corner.<br>
-      &middot; <i>Rate vs depth</i>: events/year per 5 km depth bin; the selector above the chart
-        restricts the count to one INGV tectonic area.<br>
+      <p class="hs"><b>Right panel buttons</b><br>
+      &middot; <i>Last 1 hour up to last 25 years</i>: download period. N.B. Be patient when you request a larger time period and
+      do not be surprised if your browser slows down. Be also patient when downloading tarballs with requested waveforms.<br>
+      &middot; <i>Depth(km)|Month|M histogram</i>: chart in the bottom-left corner.<br>
+      &middot; <i>Rate vs depth(km)</i>: events/year per 5 km depth bin; the selector above the chart
+        restricts the count to an individual INGV epicentral area.<br>
       &middot; <i>KDE density map</i>: Gaussian kernel density of the epicentres, blue–white–red scale
         (the bandwidth box sets the kernel width in km).<br>
-      &middot; <i>Area polygons / Area count bars</i>: INGV area statistics.<br>
-      &middot; <i>Hide earthquakes</i>: toggle the epicentre layer.<br>
+      &middot; <i>Area polygons/Area count bars</i>: Southern Italy epicentral macro areas as well as histograms per area. By clicking on each white area its name and associated events falling within get shown.<br>
+      &middot; <i>Hide earthquakes</i>: toggle epicentre layer ON and OFF.<br>
       &middot; <i>Draw section line</i>: click-drag on the map to create a cross-section
-        (the width box is ±km). Drag the A/B handles to move it.<br>
+        (the width box is ±km). Drag the START/END handles to move it. You can draw multiple section lines and associated 3D boxes. The more earthquakes being viewed in your time or depth window the slower the page will become. Be advised. Mobile version is also tricky here so I suggest you to access from a more friendly PC browser to mess around.<br>
       &middot; <i>Polygon catalog</i>: click the map to add vertices, close on the first vertex or with a
         double-click. Every earthquake inside the polygon AND inside the selected time window is
-        downloaded as a .txt catalog (<code>YYYYMMDD HHMMSS.MS LAT LON DEP M</code>).<br>
+        downloaded as a .txt catalog
+       (header:<code>YYYYMMDD HHMMSS.MS LAT LON DEP M</code>).<br>
       &middot; <i>Clear sections</i>: remove all sections.<br>
       &middot; <i>3D popup</i>: 3-D view of the active section (drag = rotate, wheel = zoom, 1:1:1 = equal axes).<br>
-      &middot; <i>Colour</i>: cycles time / magnitude / KDE / depth colouring (depth mode adds a depth-window bar above the time bar).<br>
+      &middot; <i>Colour</i>: cycles between time|magnitude|KDE|depth colouring (depth mode adds a depth-window bar above the time bar, both interactive).<br>
       &middot; <i>Beachballs</i>: draw epicentres as focal-mechanism beachballs (moment tensors
-      downloaded from INGV; strongest 400 events of the current view).<br>
+      downloaded from INGV, only those with high enough magnitude get computed and published. Refer to other sources if you want to see more of them for ex:
+      &middot;<a href="https://bsi.ingv.it/it/">ingv.bsi</a>
+     &middot; <a href="https://data.ingv.it/dataset/384#additional-metadata">ingv.ICMTD</a>      
+     &middot; <a href="https://rcmt2.bo.ingv.it/">RCMT</a>).<br>
       &middot; <i>Export catalog (+S/D/R)</i>: .txt with
-      <code>YYYYMMDD HHMMSS.MS LAT LON DEP M STRIKE DIP RAKE</code> for the current
-     time window and depth window (active in <i>Colour: depth</i> mode).<br>
-      &middot; <i>DISS sources</i>: overlay of the DISS 3.3.1 seismogenic sources.<br>
+      <code>YYYYMMDD HHMMSS.MS LAT LON DEP M STRIKE DIP RAKE</code> for current time window and depth window (active in <i>Colour: depth</i> mode).<br>
+      &middot; <i>DISS sources</i>: overlay of the DISS 3.3.1 seismogenic sources. TODO better<br>
       &middot; <i>Export JPG</i>: save the map with all overlays and the legend as a JPEG.</p>
-      <p class="hs"><b>Event popup</b> — click an epicentre to download the waveform, get the
-      picks &amp; arrivals as .txt (header <code>#TIMEUTC LAT UNC_LAT …</code> followed by
-      <code>STA NET TIME POL PHA AZIM DIST TKOFANGLE RES</code>) and open the INGV event page.</p>
-      <p class="hs"><b>Section window</b> — cross-section along the drawn line; the event closest to the
-      cursor is shown in the tooltip; the <i>1:1</i> box keeps equal vertical and horizontal scale.</p>`;
+      <p class="hs"><b>Quality check</b><p>
+      &middot;<i>Table</i> containing minimum, 5th percentile, 25th percentile, median, 75th percentile, 95th percentile, maximum as well as time(UTC), error on horizontal plane in km, error on depth in km, gap in degrees, root mean square error in seconds, azimuth of the major axis of the confidence ellipse in degrees, number of phases used, number of stations in which event has been observed, uncertainty on magnitude and number of stations used to compute magnitude. <code> errH errZ GAP RMS azellconf NPHU NPHO DM NPHM</code>. You can sort from highest to lowest or from earliest to latest event by clicking on their header. If you click on one of first column's entries you get sent to INGV evid page (blue hyperlink) while if you click on any other column entry its associated earthquake's epicenter gets highlighted.<p>
+     &middot; <i>Solution</i> Distribution of number of earthquakes binned in terms of all mentioned solution metrics. You can sort by selecting the metric on bottom left button or going forward or backward between each metric by clicking "b" and "n" from your keyboard if you are accessing from a PC. Clicking on each histogram bar will highlight any earthquake that has been binned inside it.</p>      
+      <p class="hs"><b>Event popup</b> click an epicentre to download the waveform, get the
+      phase picks as .txt (header <code>#TIMEUTC LAT UNC_LAT LONG UNC_LON PROF UNC_PROF M UNC_M</code> followed by entries
+      <code>STA NET TIME POL PHA AZIM DIST TKOFANGLE RES</code>) or open directly INGV eventid page.</p>
+      <p class="hs"><b>Section window</b> cross-section along drawn line; the event closest to the
+      cursor is shown in the tooltip; the <i>1:1</i> box keeps equal vertical and horizontal scale. </p>
+      <p class="hs"><b>Basemap and language window</b> Switch between satellite imagery and elevation levels with streetmap 
+      names. More languages will be added in future versions for reproducibility. This goes straight to the never ending to do list as usual.</p>
+      `;
     $('helpBtn').onclick = () => {
       const w = $('helpwin');
       if (w.style.display === 'flex') { w.style.display = 'none'; return; }
@@ -1850,7 +2021,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
 		const sp = rangeEnd - rangeStart, t0 = rangeStart + sel.a * sp, t1 = rangeStart + sel.b * sp;
 		const d0 = depthMin + dsel.a * (depthMax - depthMin);
 		const d1 = depthMin + dsel.b * (depthMax - depthMin);
-		const title = events.length + ' earthquakes';
+		const title = events.length + ' ' + tr('cLabel');
 		let sub = fmtUTC(t0) + '  ' + fmtUTC(t1) + ' UTC';
 		if (colorMode === 'depth') sub += '  \u00b7  depth ' + d0.toFixed(0) + '\u2013' + d1.toFixed(0) + ' km';
 		c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(W / 2 - 400, 24, 800, 92);
@@ -1929,18 +2100,27 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
 		setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
 		$('info').textContent = name + (okTiles ? '' : ' (no map tiles)');
 	  } catch (err) { console.error(err); $('info').textContent = 'Export error'; }
-	  btn.disabled = false; btn.textContent = 'Export JPG';
+	  btn.disabled = false; btn.textContent = tr('aExp');
+	}
+	
+	function asUTCString(s) {
+	  const str = String(s || '').trim();
+	  if (!str) return '';
+	  if (/[zZ]$|[+-]\d{2}:?\d{2}$/.test(str)) return str;
+	  return str.replace(' ', 'T').replace(/(\.\d{3})\d+/, '$1') + 'Z';
 	}
     function mapEvent(f) {
-      const p = f.properties || {};
-      const n = v => (v != null && v !== '' && isFinite(+v)) ? +v : null;
+		const p = f.properties || {};
+		const n = v => (v != null && v !== '' && isFinite(+v)) ? +v : null;
+    const timeStr = asUTCString(p.time);
+    const t = timeStr ? new Date(timeStr) : new Date(NaN);
       return {
         lon: f.geometry.coordinates[0],
         lat: f.geometry.coordinates[1],
         depth: f.geometry.coordinates[2],
         mag: Number(p.mag) || 0,
-        t: new Date(p.time),
-        ms: Date.parse(p.time),
+		t: t,
+		ms: t.getTime(),
         place: p.place,
         eventId: p.eventId,
         q_errhoriz: n(p.horizontalError ?? p.errhoriz),
@@ -1957,7 +2137,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     async function fetchEarthquakes() {
       const id = ++reqId;
       const info = $('info');
-      info.textContent = 'Loading...';
+      info.textContent = tr('load');
       const fmt = d => d.toISOString().slice(0, 19);
       const end = customRange ? new Date(customRange.e) : new Date();
       const start = customRange ? new Date(customRange.s) : new Date(end - days * 864e5);
@@ -2033,7 +2213,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       { key: 'q_magErr',   label: 'unc.mag',       unit: '',   dec: 2 },
       { key: 'q_nStaMag',  label: 'n°sta mag',     unit: '',   dec: 0 }
     ];
-
     const qctablewin = $('qctablewin');
     const qcsolwin   = $('qcsolwin');
     let qcSortMetric   = 'q_errhoriz';
@@ -2049,7 +2228,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       const k = qcSortKey, d = qcSortDir;
       return events.slice().sort((a, b) => {
         const x = a[k], y = b[k], nx = x == null || !isFinite(x), ny = y == null || !isFinite(y);
-        if (nx || ny) return nx === ny ? a.ms - b.ms : (nx ? 1 : -1);   // missing values always last
+        if (nx || ny) return nx === ny ? a.ms - b.ms : (nx ? 1 : -1);   
         return (x - y) * d || a.ms - b.ms;
       });
     }
@@ -2405,16 +2584,16 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       L.DomEvent.disableClickPropagation(div);
       L.DomEvent.disableScrollPropagation(div);
       const btn = L.DomUtil.create('button', '', div);
-      btn.textContent = 'Quality Check \u25BE';
+      btn.textContent = tr('wQC') + ' \u25BE'; btn.dataset.i18n = 'wQC'; btn.dataset.suf = ' \u25BE';
       btn.style.cssText = 'width:auto;padding:4px 10px;font-weight:bold;';
       const menu = L.DomUtil.create('div', '', div);
       menu.style.cssText = 'display:none;margin-top:4px;';
       const optStyle = 'display:block;width:100%;margin:2px 0;padding:4px 8px;text-align:left;border:1px solid #999;background:#f4f4f4;cursor:pointer;font:11px sans-serif;';
       const tOpt = L.DomUtil.create('button', '', menu);
-      tOpt.textContent = '\u25B8 TABLE';
+      tOpt.textContent = '\u25B8 ' + tr('qT'); tOpt.dataset.i18n = 'qT'; tOpt.dataset.pre = '\u25B8 ';
       tOpt.style.cssText = optStyle;
       const sOpt = L.DomUtil.create('button', '', menu);
-      sOpt.textContent = '\u25B8 SOLUTION';
+      sOpt.textContent = '\u25B8 ' + tr('qS'); sOpt.dataset.i18n = 'qS'; sOpt.dataset.pre = '\u25B8 ';
       sOpt.style.cssText = optStyle;
       btn.onclick = () => { menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; };
       tOpt.onclick = () => { menu.style.display = 'none'; openQCTable(); };
@@ -2422,6 +2601,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       return div;
     };
     qcCtl.addTo(map);
+    applyLang();
     fetchEarthquakes();
     setInterval(() => { if (!customRange && days <= 30) fetchEarthquakes(); }, 60000);
   </script>
