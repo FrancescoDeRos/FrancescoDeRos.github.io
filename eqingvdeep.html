@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<!-- FDR v4 earthquake visualizer 202611006 -->
+<!-- FDR v4 earthquake visualizer 20261107 -->
 <html>
 <head>
   <meta charset="utf-8" />
   <title>INGVRTEQS</title>
   <meta name="viewport" content="width=device-width, initial-scale=0.5">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>html,body,#map{height:100%;margin:0}.leaflet-popup-content{font-size:14px}.leaflet-popup-content a{color:#08519c;text-decoration:none}.leaflet-popup-content a:hover{text-decoration:underline}.ctl{background:#fff;padding:6px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.4);max-height:calc(100vh - 40px);overflow-y:auto}.ctl button{display:block;width:100%;margin:2px 0;padding:4px 8px;cursor:pointer;border:1px solid #999;background:#f4f4f4}.ctl button.active{background:#BD0026;color:#fff;border-color:#800026}.ctl button.feat.active{background:#08519c;border-color:#08306b;color:#fff}.ctl button.act.active{background:#e65100;border-color:#bf360c;color:#fff}.ctl hr{margin:4px 0;border:0;border-top:1px solid #ccc}.ctl .info{font-size:12px;margin-top:4px;text-align:center}#chart{position:absolute;left:10px;bottom:25px;z-index:1000;background:#fff;padding:4px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.4);display:none}#rateAreaBar{display:none;margin-bottom:4px;font:11px sans-serif}#rateAreaBar select{font-size:11px;max-width:240px}.abar{text-align:center;font:bold 10px sans-serif;color:#000}.abar div{margin:0 auto;width:16px;border:1px solid #000;background:#08519c;opacity:.85}.mag-legend{text-align:center;font:11px sans-serif}.mag-legend svg{display:block;margin:4px auto 0}.mag-legend text{font:bold 8px sans-serif;fill:#000;paint-order:stroke;stroke:#fff;stroke-width:2px;stroke-linejoin:round}#kdeLegend{display:none}#counter{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;background:#16181d;border:1px solid #000;border-radius:8px;padding:4px 10px;box-shadow:0 2px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12);color:#ccc;font:11px sans-serif;user-select:none;display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;max-width:94vw}#cmain{display:flex;flex-direction:row;align-items:center;gap:8px;cursor:pointer}#cmain:hover .cl{color:#4fc3f7}#helpBtn{flex:0 0 auto;width:18px;height:18px;padding:0;border-radius:50%;border:1px solid #3a3d45;background:#262930;color:#4fc3f7;font:bold 11px/1 "DejaVu Sans",sans-serif;cursor:pointer}#helpBtn:hover{background:#343a44;border-color:#4fc3f7}#counter .cl{margin-bottom:0;font-size:11px;white-space:nowrap}#counter.collapsed #clabel::after{content:' \25BE';font-size:10px;opacity:.55}#counter:not(.collapsed) #clabel::after{content:' \25B4';font-size:10px;opacity:.55}#cpanel{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;justify-content:center;font:10px sans-serif}#counter.collapsed #cpanel{display:none}#counter.collapsed #eqtip{display:none !important}#cpanel select,#cpanel input,#cpanel button{font:10px/14px sans-serif;padding:2px 6px;border-radius:3px;border:1px solid #3a3d45;background:#262930;color:#ddd;box-sizing:border-box}#cpanel select{max-width:96px;padding:2px 4px}#cpanel input#eqid{width:80px}#cpanel input#dtStart,#cpanel input#dtEnd{width:88px;font-family:"DejaVu Sans Mono",Menlo,Consolas,monospace}#cpanel input:focus{outline:1px solid #4fc3f7}#cpanel button{cursor:pointer}#cpanel button:hover{background:#343a44}#cpanel .csep{width:1px;height:16px;background:#3a3d45;margin:0 2px}#odo{display:flex;gap:2px;justify-content:center}.dg{width:28px;height:42px;overflow:hidden;position:relative;background:#000;border-radius:4px;box-shadow:inset 0 0 6px #000}.dg::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(#000 0,rgba(0,0,0,0) 28%,rgba(0,0,0,0) 72%,#000 100%)}.dg::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,.14);z-index:3}.dg .st{transition:transform .8s cubic-bezier(.25,.9,.3,1)}.dg i{display:block;height:42px;font:normal 600 30px/42px "DejaVu Sans Mono",Menlo,Consolas,monospace;color:#f4f4f4;text-align:center}.dg.z i{color:#4a4d55}#eqtip{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:7px;width:232px;padding:6px 8px;background:#262930;border:1px solid #3a3d45;border-radius:5px;font:11px/1.4 sans-serif;color:#ccc;text-align:left;z-index:1002;box-shadow:0 2px 8px rgba(0,0,0,.6)}#timebar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:min(520px,34vw);z-index:1001;background:rgba(255,255,255,.93);border-radius:6px;padding:5px 30px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);font:11px sans-serif;user-select:none}#depthbar{position:absolute;bottom:96px;left:50%;transform:translateX(-50%);width:min(520px,34vw);z-index:1001;background:rgba(255,255,255,.93);border-radius:6px;padding:5px 30px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);font:11px sans-serif;user-select:none;display:none}#timebar .tbh,#depthbar .tbh{display:flex;justify-content:space-between;gap:8px;margin-bottom:5px;white-space:nowrap}.tbt{position:relative;height:16px;cursor:pointer;touch-action:none}.tbg{position:absolute;inset:0;border:1px solid #000;border-radius:2px}.tbg.gray{filter:grayscale(1)}.tbm{position:absolute;top:0;bottom:0;background:rgba(255,255,255,.75)}.tbk{position:absolute;top:-4px;width:10px;height:24px;margin-left:-5px;background:#fff;border:2px solid #222;border-radius:3px;box-sizing:border-box;cursor:ew-resize}.tbx{position:relative;height:28px;margin-top:3px}.tbx .tk{position:absolute;top:0;height:5px;border-left:1px solid #333}.tbx .tk span{position:absolute;top:6px;left:0;transform:translateX(-50%);white-space:nowrap;font-size:10px;text-align:center;line-height:11px}.bbpop{min-width:64px;text-align:center}.bbwait{font:11px sans-serif;color:#666}.bblab{font:10px sans-serif;color:#333;margin-top:2px}.win{position:absolute;z-index:1100;background:#fff;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.55);display:none;flex-direction:column;resize:both;overflow:hidden;min-width:260px;min-height:190px;font:12px sans-serif}.win .wh{background:#2b2f36;color:#fff;padding:4px 6px;cursor:move;display:flex;justify-content:space-between;align-items:center;gap:8px;user-select:none;touch-action:none}.win .wh button{margin-left:4px;padding:1px 7px;cursor:pointer;border:1px solid #666;background:#444;color:#fff;border-radius:3px;font:11px sans-serif}.win .wh button.active{background:#e65100;border-color:#bf360c}.win .wb{position:relative;flex:1;min-height:0}.win canvas{position:absolute;left:0;top:0;width:100%;height:100%}.win .wf{padding:3px 8px;border-top:1px solid #ccc;display:flex;gap:10px;align-items:center;flex-wrap:wrap}#sectip{position:absolute;display:none;pointer-events:none;background:rgba(20,20,20,.92);color:#fff;padding:4px 6px;border-radius:3px;font:11px/1.35 sans-serif;white-space:nowrap;z-index:5}.hd{width:22px;height:22px;border-radius:50%;background:#00e5ff;border:2px solid #003b44;color:#003b44;font:bold 12px/18px sans-serif;text-align:center;cursor:move;box-sizing:border-box}.smark{width:26px;height:26px;border-radius:50%;background:#00e5ff;border:2px solid #003b44;color:#003b44;font:bold 14px/22px sans-serif;text-align:center;box-sizing:border-box}#helpwin .wb{overflow:auto;padding:9px 11px;font:12px/1.5 sans-serif;color:#222}#helpwin b{color:#08519c}#helpwin .hs{margin:0 0 7px}</style>
+<style>html,body,#map{height:100%;margin:0}.leaflet-popup-content{font-size:14px}.leaflet-popup-content a{color:#08519c;text-decoration:none}.leaflet-popup-content a:hover{text-decoration:underline}.ctl{background:#fff;padding:6px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.4);max-height:calc(100vh - 40px);overflow-y:auto}.ctl button{display:block;width:100%;margin:2px 0;padding:4px 8px;cursor:pointer;border:1px solid #999;background:#f4f4f4}.ctl button.active{background:#BD0026;color:#fff;border-color:#800026}.ctl button.feat.active{background:#08519c;border-color:#08306b;color:#fff}.ctl button.act.active{background:#e65100;border-color:#bf360c;color:#fff}.ctl hr{margin:4px 0;border:0;border-top:1px solid #ccc}.ctl .info{font-size:12px;margin-top:4px;text-align:center}#chart{position:absolute;left:10px;bottom:25px;z-index:1000;background:#fff;padding:4px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.4);display:none}#rateAreaBar{display:none;margin-bottom:4px;font:11px sans-serif}#rateAreaBar select{font-size:11px;max-width:240px}.abar{text-align:center;font:bold 10px sans-serif;color:#000}.abar div{margin:0 auto;width:16px;border:1px solid #000;background:#08519c;opacity:.85}.mag-legend{text-align:center;font:11px sans-serif}.mag-legend svg{display:block;margin:4px auto 0}.mag-legend text{font:bold 8px sans-serif;fill:#000;paint-order:stroke;stroke:#fff;stroke-width:2px;stroke-linejoin:round}#kdeLegend{display:none}#counter{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;background:#16181d;border:1px solid #000;border-radius:8px;padding:4px 10px;box-shadow:0 2px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12);color:#ccc;font:11px sans-serif;user-select:none;display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;max-width:94vw}#cmain{display:flex;flex-direction:row;align-items:center;gap:8px;cursor:pointer}#cmain:hover .cl{color:#4fc3f7}#helpBtn{flex:0 0 auto;width:18px;height:18px;padding:0;border-radius:50%;border:1px solid #3a3d45;background:#262930;color:#4fc3f7;font:bold 11px/1 "DejaVu Sans",sans-serif;cursor:pointer}#helpBtn:hover{background:#343a44;border-color:#4fc3f7}#counter .cl{margin-bottom:0;font-size:11px;white-space:nowrap}#counter.collapsed #clabel::after{content:' \25BE';font-size:10px;opacity:.55}#counter:not(.collapsed) #clabel::after{content:' \25B4';font-size:10px;opacity:.55}#cpanel{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;justify-content:center;font:10px sans-serif}#counter.collapsed #cpanel{display:none}#counter.collapsed #eqtip{display:none !important}#cpanel select,#cpanel input,#cpanel button{font:10px/14px sans-serif;padding:2px 6px;border-radius:3px;border:1px solid #3a3d45;background:#262930;color:#ddd;box-sizing:border-box}#cpanel select{max-width:96px;padding:2px 4px}#cpanel input#eqid{width:80px}#cpanel input#dtStart,#cpanel input#dtEnd{width:88px;font-family:"DejaVu Sans Mono",Menlo,Consolas,monospace}#cpanel input:focus{outline:1px solid #4fc3f7}#cpanel button{cursor:pointer}#cpanel button:hover{background:#343a44}#cpanel .csep{width:1px;height:16px;background:#3a3d45;margin:0 2px}#odo{display:flex;gap:2px;justify-content:center}.dg{width:28px;height:42px;overflow:hidden;position:relative;background:#000;border-radius:4px;box-shadow:inset 0 0 6px #000}.dg::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(#000 0,rgba(0,0,0,0) 28%,rgba(0,0,0,0) 72%,#000 100%)}.dg::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,.14);z-index:3}.dg .st{transition:transform .8s cubic-bezier(.25,.9,.3,1)}.dg i{display:block;height:42px;font:normal 600 30px/42px "DejaVu Sans Mono",Menlo,Consolas,monospace;color:#f4f4f4;text-align:center}.dg.z i{color:#4a4d55}#eqtip{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:7px;width:232px;padding:6px 8px;background:#262930;border:1px solid #3a3d45;border-radius:5px;font:11px/1.4 sans-serif;color:#ccc;text-align:left;z-index:1002;box-shadow:0 2px 8px rgba(0,0,0,.6)}#timebar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:min(520px,34vw);z-index:1001;background:rgba(255,255,255,.93);border-radius:6px;padding:5px 30px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);font:11px sans-serif;user-select:none}#depthbar{position:absolute;bottom:96px;left:50%;transform:translateX(-50%);width:min(520px,34vw);z-index:1001;background:rgba(255,255,255,.93);border-radius:6px;padding:5px 30px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);font:11px sans-serif;user-select:none;display:none}#timebar .tbh,#depthbar .tbh{display:flex;justify-content:space-between;gap:8px;margin-bottom:5px;white-space:nowrap}.tbt{position:relative;height:16px;cursor:pointer;touch-action:none}.tbg{position:absolute;inset:0;border:1px solid #000;border-radius:2px}.tbg.gray{filter:grayscale(1)}.tbm{position:absolute;top:0;bottom:0;background:rgba(255,255,255,.75)}.tbk{position:absolute;top:-4px;width:10px;height:24px;margin-left:-5px;background:#fff;border:2px solid #222;border-radius:3px;box-sizing:border-box;cursor:ew-resize}.tbx{position:relative;height:28px;margin-top:3px}.tbx .tk{position:absolute;top:0;height:5px;border-left:1px solid #333}.tbx .tk span{position:absolute;top:6px;left:0;transform:translateX(-50%);white-space:nowrap;font-size:10px;text-align:center;line-height:11px}.bbpop{min-width:64px;text-align:center}.bbwait{font:11px sans-serif;color:#666}.bblab{font:10px sans-serif;color:#333;margin-top:2px}.win{position:absolute;z-index:1100;background:#fff;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.55);display:none;flex-direction:column;resize:both;overflow:hidden;min-width:260px;min-height:190px;font:12px sans-serif}.win .wh{background:#2b2f36;color:#fff;padding:4px 6px;cursor:move;display:flex;justify-content:space-between;align-items:center;gap:8px;user-select:none;touch-action:none}.win .wh button{margin-left:4px;padding:1px 7px;cursor:pointer;border:1px solid #666;background:#444;color:#fff;border-radius:3px;font:11px sans-serif}.win .wh button.active{background:#e65100;border-color:#bf360c}.win .wb{position:relative;flex:1;min-height:0}.win canvas{position:absolute;left:0;top:0;width:100%;height:100%}.win .wf{padding:3px 8px;border-top:1px solid #ccc;display:flex;gap:10px;align-items:center;flex-wrap:wrap}#sectip{position:absolute;display:none;pointer-events:none;background:rgba(20,20,20,.92);color:#fff;padding:4px 6px;border-radius:3px;font:11px/1.35 sans-serif;white-space:nowrap;z-index:5}.hd{width:22px;height:22px;border-radius:50%;background:#00e5ff;border:2px solid #003b44;color:#003b44;font:bold 12px/18px sans-serif;text-align:center;cursor:move;box-sizing:border-box}.smark{width:26px;height:26px;border-radius:50%;background:#00e5ff;border:2px solid #003b44;color:#003b44;font:bold 14px/22px sans-serif;text-align:center;box-sizing:border-box}#helpwin .wb{overflow:auto;padding:9px 11px;font:12px/1.5 sans-serif;color:#222}#helpwin b{color:#08519c}#helpwin .hs{margin:0 0 7px}
+.sta-mark{display:inline-block;padding:1px 4px;border-radius:8px;background:rgba(74,144,226,.25);border:1px solid rgba(74,144,226,.55);color:#00000;font:bold 9px/1.15 helvetica;white-space:nowrap;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.6)}
+</style>
 </head>
 <body>
   <div id="map"></div>
@@ -133,6 +135,78 @@ function applyLang() {
   updateSectionUI();
   if (allEvents.length) render();
 }
+    let stationLayer = null;
+    let showStations = false;
+    let selectedYear = null;          //null time bar o YYYY
+    let stationCache = new Map();     //net|sta|start
+    const STATION_API = 'https://webservices.ingv.it/fdsnws/station/1/query';
+    const STATION_BBOX = 'minlatitude=35.8&maxlatitude=41.8&minlongitude=12&maxlongitude=19.5';
+    function stationsInRange(t0, t1) {
+      const iso0 = new Date(t0).toISOString().slice(0, 19);
+      const iso1 = new Date(t1).toISOString().slice(0, 19);
+      return fetch(`${STATION_API}?format=text&level=station&${STATION_BBOX}` +
+                   `&starttime=${iso0}&endtime=${iso1}`)
+        .then(r => {
+          if (r.status === 204) return [];
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.text();
+        })
+        .then(txt => {
+          if (!txt) return [];
+          const lines = txt.trim().split('\n').filter(l => l && !l.startsWith('#'));
+          return lines.map(l => {
+            const [network, station, lat, lon, elev, site, start, end] = l.split('|');
+            if (!network || !station) return null;
+            const sMs = start ? Date.parse(start) : null;
+            const eMs = end   ? Date.parse(end)   : null;
+            return {
+              network, station, site: site || station,
+              lat: +lat, lon: +lon, elevation: elev ? +elev : null,
+              start: sMs, end: eMs,
+              key: network + '|' + station + '|' + (start || '')
+            };
+          }).filter(Boolean);
+        });
+    }
+    function drawStations() {//futuro aggiungere quelle del network IY
+      if (stationLayer) { map.removeLayer(stationLayer); stationLayer = null; }
+      if (!showStations) return;
+      const sp = rangeEnd - rangeStart;
+      let t0 = rangeStart + sel.a * sp;
+      let t1 = rangeStart + sel.b * sp;
+      if (selectedYear) {
+        t0 = Date.UTC(selectedYear, 0, 1);
+        t1 = Date.UTC(selectedYear, 11, 31, 23, 59, 59, 999);
+      }
+      stationsInRange(t0, t1).then(stations => {
+        if (!stations.length) return;
+        stationLayer = L.layerGroup();
+        stations.forEach(s => {
+          const startStr = s.start ? new Date(s.start).toISOString().slice(0, 19).replace('T', ' ') : '—';
+          const endStr   = s.end   ? new Date(s.end).toISOString().slice(0, 19).replace('T', ' ')   : 'present';
+          const popup = `<div style="font-size:12px; line-height:1.5">
+            <b>${s.network}.${s.station}</b> — ${s.site}<br>
+            <i>Lat:</i> ${s.lat.toFixed(4)} &nbsp; <i>Lon:</i> ${s.lon.toFixed(4)}<br>
+            <i>Elevation:</i> ${s.elevation != null ? s.elevation.toFixed(0) + ' m' : '—'}<br>
+            <i>Operation:</i><br>
+            start&nbsp; ${startStr}<br>
+            end&nbsp;&nbsp;&nbsp; ${endStr}
+          </div>`;
+          const w = s.station.length * 7 + 8;
+          const icon = L.divIcon({
+            className: '',
+            iconSize: [w, 16],
+            iconAnchor: [w / 2, 8],
+            html: `<div class="sta-mark">${s.station}</div>`
+          });
+          L.marker([s.lat, s.lon], { icon })
+            .bindPopup(popup, { maxWidth: 260 })
+            .addTo(stationLayer);
+        });
+        stationLayer.addTo(map);
+        secs.forEach(s => { if (s.layers) { s.layers.poly.bringToFront(); s.layers.line.bringToFront(); } });
+      }).catch(err => console.warn('Station fetch error', err));
+    }
 const AREAS = [
 ["Murge",[[41.266,16.481],[41.193,16.644],[41.14,16.861],[40.92,17.361],[40.805,17.551],[40.763,17.551],[40.512,17.199],[40.512,17.145],[41.088,16.089],[41.1191,16.089],[41.245,16.427],[41.261,16.427]],40.774,17.145],
 ["Penisola Salentina",[[40.428,18.269],[40.291,18.445],[40.145,18.485],[39.788,18.363],[39.83,18.201],[39.945,18.025],[40.05,17.944],[40.218,17.93],[40.281,17.862],[40.291,17.686],[40.26,17.673],[40.281,17.51],[40.417,17.267],[40.48,17.253],[40.48,17.185],[40.512,17.185],[40.512,17.199],[40.763,17.551],[40.795,17.551],[40.753,17.714]],40.512,17.619],
@@ -548,7 +622,6 @@ setBase(savedBase);
       events = allEvents.filter(e => (sel.a <= 0 || e.ms >= t0) && (sel.b >= 1 || e.ms <= t1)
                                    && (!useD || (e.depth >= d0 && e.depth <= d1)));
     }
-        
     function colorOf(e) {
       if (colorMode === 'time') return cmap((e.ms - rangeStart) / Math.max(1, rangeEnd - rangeStart));
       if (colorMode === 'mag') return magColor(e.mag);
@@ -750,6 +823,35 @@ setBase(savedBase);
       act('btnExp', 'aExp', () => exportJPG());
       act('btnBB', 'aBB', () => toggleBeach());
       act('btnCat', 'aCat', () => exportCatalogMeca());      
+      div.appendChild(document.createElement('hr'));
+
+      const yr = L.DomUtil.create('div', 'info', div);
+      yr.innerHTML = '<span style="font-size:11px">Year:</span> ' +
+        '<select id="yearSel" style="font-size:11px;padding:2px 4px;max-width:100px">' +
+        '<option value="">— time bar —</option></select>';
+
+      const yearSel = yr.querySelector('#yearSel');
+      const now = new Date().getFullYear();
+      for (let y = now; y >= 1980; y--) {
+        const opt = document.createElement('option');
+        opt.value = y; opt.textContent = y;
+        if (selectedYear === y) opt.selected = true;
+        yearSel.appendChild(opt);
+      }
+      yearSel.onchange = () => {
+        selectedYear = yearSel.value ? +yearSel.value : null;
+        drawStations();
+      };
+      const stBtn = L.DomUtil.create('button', 'act', div);
+      stBtn.id = 'btnStations';
+      stBtn.textContent = 'Stations: off';
+      stBtn.onclick = () => {
+        showStations = !showStations;
+        stBtn.textContent = 'Stations: ' + (showStations ? 'on' : 'off');
+        stBtn.classList.toggle('active', showStations);
+        if (showStations) drawStations();
+        else if (stationLayer) { map.removeLayer(stationLayer); stationLayer = null; }
+      };      
       div.appendChild(document.createElement('hr'));
       const kd = L.DomUtil.create('div', 'info', div);
       kd.innerHTML = '<span data-i18n="kBw">KDE bandwidth:</span> <input id="kdeBW" type="number" value="10" min="1" max="200" step="1" style="width:52px"> km';
@@ -1068,7 +1170,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       tbt.addEventListener('pointermove', ev => { if (drag) move(frac(ev)); });
       tbt.addEventListener('pointerup', () => { drag = null; });
       tbt.addEventListener('pointercancel', () => { drag = null; });
-      tbt.addEventListener('dblclick', () => { sel.a = 0; sel.b = 1; updateBar(); scheduleRender(); });
+      tbt.addEventListener('dblclick', () => { sel.a = 0; sel.b = 1; updateBar(); scheduleRender(); if (showStations && !selectedYear) drawStations();});
     })();
 
     function buildDepthBar() {
@@ -1098,7 +1200,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       tbt.addEventListener('pointermove', ev => { if (drag) move(frac(ev)); });
       tbt.addEventListener('pointerup', () => { drag = null; });
       tbt.addEventListener('pointercancel', () => { drag = null; });
-      tbt.addEventListener('dblclick', () => { dsel.a = 0; dsel.b = 1; updateDepthBar(); scheduleRender(); });
+      tbt.addEventListener('dblclick', () => { dsel.a = 0; dsel.b = 1; updateDepthBar(); scheduleRender(); if (showStations && !selectedYear) drawStations();});
       buildDepthBar();
     })();
     let rq = 0, rs = 0;
@@ -1109,14 +1211,16 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       return `<div style="display:flex;gap:8px;align-items:flex-start">` +
         `<div id="bbpop-${e.eventId}" class="bbpop"></div>` +
         `<div style="min-width:150px">` +
-          `<b>M${e.mag.toFixed(1)}</b> &middot; ${e.place || ''}<br>` +
+          `<b>M${e.mag.toFixed(1)}</b> &middot; ${e.place || ''}<br>` +`<code style="font:11px monospace;background:#eef2f7;padding:1px 4px;border-radius:3px;user-select:all">${e.eventId}</code><br>` +
           `${tr('lDepth')}: ${e.depth} km &middot; ${fmtYMD(e.t)} ${e.t.toISOString().slice(11,19)} UTC<br>` +
-          `<div style="margin-top:6px;display:flex;flex-direction:column;gap:3px;line-height:1.4">` +
-          `  <a href="#" onclick="downloadPicks('${e.eventId}');return false;">&#11015; ${tr('pPicks')}</a>` +
-          `  <a href="#" onclick="downloadWaveforms(event, '${e.eventId}', ${e.ms});return false;">&#11015; ${tr('pWave')}</a>` +
-          `  <span id="wvmsg-${e.eventId}" style="font-size:10px;color:#b00020"></span>` +
-          `  <a href="${detailsUrl}" target="_blank" rel="noopener">&#9432; ${tr('pDet')}</a>` +
+          `<div style="margin-top:6px;line-height:1.4">` +
+          `  <a href="#" onclick="downloadPicks('${e.eventId}');return false;">picks</a>` +
+          `  <span style="color:#999">|</span> ` +
+          `  <a href="#" onclick="downloadWaveforms(event, '${e.eventId}', ${e.ms});return false;">waveforms</a>` +
+          `  <span style="color:#999">|</span> ` +
+          `  <a href="${detailsUrl}" target="_blank" rel="noopener">details</a>` +
           `</div>` +
+          `<div id="wvmsg-${e.eventId}" style="font-size:10px;color:#b00020;margin-top:2px"></div>` +
         `</div></div>`;
     }
     layerGroup.on('click', ev => {
@@ -1235,6 +1339,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       if (colorMode === 'kde') computeKDE();
       updateSlab();
       renderMarkers();
+      drawStations();
       secs.forEach(s => { if (s.layers) { s.layers.poly.bringToFront(); s.layers.line.bringToFront(); s.layers.mA.setZIndexOffset(2000); s.layers.mB.setZIndexOffset(2000); } });
       refresh(); setCount(events.length);
       const lab = customRange ? tr('cCustom') : RANGES[daysIdx][2].toLowerCase();
@@ -1245,6 +1350,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       if (qcWindowOpen()) qcEnsureData();
       if (qctablewin && qctablewin.style.display === 'flex') buildQCTable();
       if (qcsolwin   && qcsolwin.style.display   === 'flex') { qcNavIndex = -1; drawQCSolution(); }
+      if (showStations) drawStations();
     }
     function secProj(A, B, width) {
       const lon0 = A.lng, lat0 = A.lat, ky = 110.57, kx = 111.32 * Math.cos(lat0 * Math.PI / 180);
@@ -1398,11 +1504,28 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       secs.slice().forEach(s => removeSection(s));
       secs = []; activeSec = null;
       secLayer.clearLayers();
+      if (typeof catPoly !== 'undefined' && catPoly) {
+        map.removeLayer(catPoly);
+        catPoly = null;
+      }    
+      if (typeof qcHighlightLayer !== 'undefined' && qcHighlightLayer) {
+        qcHighlightLayer.clearLayers();
+      }      
+      if (typeof qcSelectedEvent !== 'undefined') {
+        qcSelectedEvent = null;
+      }
+      if (typeof buildQCTable === 'function' && qctablewin && qctablewin.style.display === 'flex') {
+        buildQCTable();
+      }
+      if (typeof drawQCSolution === 'function' && qcsolwin && qcsolwin.style.display === 'flex') {
+        drawQCSolution();
+      }        
       secwin.style.display = 'none';
       win3d.style.display = 'none';
       $('btn3d').classList.remove('active');
       $('b3d').classList.remove('active');
       scheduleRender();
+      if (stationLayer) { map.removeLayer(stationLayer); stationLayer = null; }      
     }
     function updateSlab() {
       secs.forEach(s => {
@@ -1865,10 +1988,13 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       is appreciated and welcome. You can write me at derose.fr@gmail.com for suggestions, fixes or anything else you wish. 
       <p class="hs"><b>Counter</b> number of earthquakes inside the current selection. Click on it to see more options. The dropdown
       (<i>1 h … 25 y</i>) sets the time span downloaded from INGV. The one you are currently in is the red box in the right panel. The blank field searches a single
-      INGV event id: it is fetched on its own and centred on the map (click the star for the links). If you do not know the eventid just hover on top of INGV hyperlink page when clicking any earthquake's epicenter "Event details (INGV)" and see on the bottom left the number at the end of the link. Memorize it and type it in search box. Voilà. Future versions will add this eventid and identification number in the event page in the box. This goes straight into the never ending to do list.
+      INGV event id: it is fetched on its own and centred on the map (click the star for the links). If you do not know the eventid it's indicated in the event box 
+      when you click an earthquake's epicenter.
       </p>
       <p class="hs"><b>Time bar</b> (bottom centre) drag the two white handles to select a sub-window of
-      the downloaded period (double-click resets to the full range).</p>
+      the downloaded period (double-click resets to the full range). The bigger the time window the more
+      cluttered the view will become. Both stations and earthquake's data are sensitive to this time range
+      so be careful.</p>
       <p class="hs"><b>Right panel buttons</b><br>
       &middot; <i>Last 1 hour up to last 25 years</i>: download period. N.B. Be patient when you request a larger time period and
       do not be surprised if your browser slows down. Be also patient when downloading tarballs with requested waveforms.<br>
@@ -1897,6 +2023,11 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       <code>YYYYMMDD HHMMSS.MS LAT LON DEP M STRIKE DIP RAKE</code> for current time window and depth window (active in <i>Colour: depth</i> mode).<br>
       &middot; <i>DISS sources</i>: overlay of the DISS 3.3.1 seismogenic sources. TODO better<br>
       &middot; <i>Export JPG</i>: save the map with all overlays and the legend as a JPEG.</p>
+      <p class="hs"><b>Station in that year</b> Many times stations were not operational in that period of time
+      when you are viewing an earthquake and seeing stations and earthquakes in the catalog can be toggled with the drop down 
+      menu at the end of the right panel. The opacity and size is fixed so it gets easier to see them if you select a bigger
+      time window. They are also linked to the time bar at the bottom center as you slide
+      and select different time periods. </p> 
       <p class="hs"><b>Quality check</b><p>
       &middot;<i>Table</i> containing minimum, 5th percentile, 25th percentile, median, 75th percentile, 95th percentile, maximum as well as time(UTC), error on horizontal plane in km, error on depth in km, gap in degrees, root mean square error in seconds, azimuth of the major axis of the confidence ellipse in degrees, number of phases used, number of stations in which event has been observed, uncertainty on magnitude and number of stations used to compute magnitude. <code> errH errZ GAP RMS azellconf NPHU NPHO DM NPHM</code>. You can sort from highest to lowest or from earliest to latest event by clicking on their header. If you click on one of first column's entries you get sent to INGV evid page (blue hyperlink) while if you click on any other column entry its associated earthquake's epicenter gets highlighted.<p>
      &middot; <i>Solution</i> Distribution of number of earthquakes binned in terms of all mentioned solution metrics. You can sort by selecting the metric on bottom left button or going forward or backward between each metric by clicking "b" and "n" from your keyboard if you are accessing from a PC. Clicking on each histogram bar will highlight any earthquake that has been binned inside it.</p>      
@@ -1904,9 +2035,12 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       phase picks as .txt (header <code>#TIMEUTC LAT UNC_LAT LONG UNC_LON PROF UNC_PROF M UNC_M</code> followed by entries
       <code>STA NET TIME POL PHA AZIM DIST TKOFANGLE RES</code>) or open directly INGV eventid page.</p>
       <p class="hs"><b>Section window</b> cross-section along drawn line; the event closest to the
-      cursor is shown in the tooltip; the <i>1:1</i> box keeps equal vertical and horizontal scale. </p>
+      cursor is shown in the tooltip; the <i>1:1</i> box keeps equal vertical and horizontal scale. </p>     
       <p class="hs"><b>Basemap and language window</b> Switch between satellite imagery and elevation levels with streetmap 
       names. More languages will be added in future versions for reproducibility. This goes straight to the never ending to do list as usual.</p>
+      <p class="hs"><b>Acknowledgment</b> This tool has been aided and been supported by many many tips and suggestions by users which deal daily with 
+      this type of data and my thanks goes to them for pointing me in the right direction. Thanks to Dr. M. Ponte, Dr. A. Gervasi, L. Festa 
+      and Prof. M. La Rocca. </p>      
       `;
     $('helpBtn').onclick = () => {
       const w = $('helpwin');
