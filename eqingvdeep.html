@@ -1,13 +1,15 @@
 <!DOCTYPE html>
-<!-- FDR v4 earthquake visualizer 20261107 -->
+<!-- FDR v5 earthquake visualizer 20261108 -->
 <html>
 <head>
   <meta charset="utf-8" />
   <title>INGVRTEQS</title>
   <meta name="viewport" content="width=device-width, initial-scale=0.5">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>html,body,#map{height:100%;margin:0}.leaflet-popup-content{font-size:14px}.leaflet-popup-content a{color:#08519c;text-decoration:none}.leaflet-popup-content a:hover{text-decoration:underline}.ctl{background:#fff;padding:6px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.4);max-height:calc(100vh - 40px);overflow-y:auto}.ctl button{display:block;width:100%;margin:2px 0;padding:4px 8px;cursor:pointer;border:1px solid #999;background:#f4f4f4}.ctl button.active{background:#BD0026;color:#fff;border-color:#800026}.ctl button.feat.active{background:#08519c;border-color:#08306b;color:#fff}.ctl button.act.active{background:#e65100;border-color:#bf360c;color:#fff}.ctl hr{margin:4px 0;border:0;border-top:1px solid #ccc}.ctl .info{font-size:12px;margin-top:4px;text-align:center}#chart{position:absolute;left:10px;bottom:25px;z-index:1000;background:#fff;padding:4px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.4);display:none}#rateAreaBar{display:none;margin-bottom:4px;font:11px sans-serif}#rateAreaBar select{font-size:11px;max-width:240px}.abar{text-align:center;font:bold 10px sans-serif;color:#000}.abar div{margin:0 auto;width:16px;border:1px solid #000;background:#08519c;opacity:.85}.mag-legend{text-align:center;font:11px sans-serif}.mag-legend svg{display:block;margin:4px auto 0}.mag-legend text{font:bold 8px sans-serif;fill:#000;paint-order:stroke;stroke:#fff;stroke-width:2px;stroke-linejoin:round}#kdeLegend{display:none}#counter{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;background:#16181d;border:1px solid #000;border-radius:8px;padding:4px 10px;box-shadow:0 2px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12);color:#ccc;font:11px sans-serif;user-select:none;display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;max-width:94vw}#cmain{display:flex;flex-direction:row;align-items:center;gap:8px;cursor:pointer}#cmain:hover .cl{color:#4fc3f7}#helpBtn{flex:0 0 auto;width:18px;height:18px;padding:0;border-radius:50%;border:1px solid #3a3d45;background:#262930;color:#4fc3f7;font:bold 11px/1 "DejaVu Sans",sans-serif;cursor:pointer}#helpBtn:hover{background:#343a44;border-color:#4fc3f7}#counter .cl{margin-bottom:0;font-size:11px;white-space:nowrap}#counter.collapsed #clabel::after{content:' \25BE';font-size:10px;opacity:.55}#counter:not(.collapsed) #clabel::after{content:' \25B4';font-size:10px;opacity:.55}#cpanel{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;justify-content:center;font:10px sans-serif}#counter.collapsed #cpanel{display:none}#counter.collapsed #eqtip{display:none !important}#cpanel select,#cpanel input,#cpanel button{font:10px/14px sans-serif;padding:2px 6px;border-radius:3px;border:1px solid #3a3d45;background:#262930;color:#ddd;box-sizing:border-box}#cpanel select{max-width:96px;padding:2px 4px}#cpanel input#eqid{width:80px}#cpanel input#dtStart,#cpanel input#dtEnd{width:88px;font-family:"DejaVu Sans Mono",Menlo,Consolas,monospace}#cpanel input:focus{outline:1px solid #4fc3f7}#cpanel button{cursor:pointer}#cpanel button:hover{background:#343a44}#cpanel .csep{width:1px;height:16px;background:#3a3d45;margin:0 2px}#odo{display:flex;gap:2px;justify-content:center}.dg{width:28px;height:42px;overflow:hidden;position:relative;background:#000;border-radius:4px;box-shadow:inset 0 0 6px #000}.dg::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(#000 0,rgba(0,0,0,0) 28%,rgba(0,0,0,0) 72%,#000 100%)}.dg::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,.14);z-index:3}.dg .st{transition:transform .8s cubic-bezier(.25,.9,.3,1)}.dg i{display:block;height:42px;font:normal 600 30px/42px "DejaVu Sans Mono",Menlo,Consolas,monospace;color:#f4f4f4;text-align:center}.dg.z i{color:#4a4d55}#eqtip{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:7px;width:232px;padding:6px 8px;background:#262930;border:1px solid #3a3d45;border-radius:5px;font:11px/1.4 sans-serif;color:#ccc;text-align:left;z-index:1002;box-shadow:0 2px 8px rgba(0,0,0,.6)}#timebar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:min(520px,34vw);z-index:1001;background:rgba(255,255,255,.93);border-radius:6px;padding:5px 30px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);font:11px sans-serif;user-select:none}#depthbar{position:absolute;bottom:96px;left:50%;transform:translateX(-50%);width:min(520px,34vw);z-index:1001;background:rgba(255,255,255,.93);border-radius:6px;padding:5px 30px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);font:11px sans-serif;user-select:none;display:none}#timebar .tbh,#depthbar .tbh{display:flex;justify-content:space-between;gap:8px;margin-bottom:5px;white-space:nowrap}.tbt{position:relative;height:16px;cursor:pointer;touch-action:none}.tbg{position:absolute;inset:0;border:1px solid #000;border-radius:2px}.tbg.gray{filter:grayscale(1)}.tbm{position:absolute;top:0;bottom:0;background:rgba(255,255,255,.75)}.tbk{position:absolute;top:-4px;width:10px;height:24px;margin-left:-5px;background:#fff;border:2px solid #222;border-radius:3px;box-sizing:border-box;cursor:ew-resize}.tbx{position:relative;height:28px;margin-top:3px}.tbx .tk{position:absolute;top:0;height:5px;border-left:1px solid #333}.tbx .tk span{position:absolute;top:6px;left:0;transform:translateX(-50%);white-space:nowrap;font-size:10px;text-align:center;line-height:11px}.bbpop{min-width:64px;text-align:center}.bbwait{font:11px sans-serif;color:#666}.bblab{font:10px sans-serif;color:#333;margin-top:2px}.win{position:absolute;z-index:1100;background:#fff;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.55);display:none;flex-direction:column;resize:both;overflow:hidden;min-width:260px;min-height:190px;font:12px sans-serif}.win .wh{background:#2b2f36;color:#fff;padding:4px 6px;cursor:move;display:flex;justify-content:space-between;align-items:center;gap:8px;user-select:none;touch-action:none}.win .wh button{margin-left:4px;padding:1px 7px;cursor:pointer;border:1px solid #666;background:#444;color:#fff;border-radius:3px;font:11px sans-serif}.win .wh button.active{background:#e65100;border-color:#bf360c}.win .wb{position:relative;flex:1;min-height:0}.win canvas{position:absolute;left:0;top:0;width:100%;height:100%}.win .wf{padding:3px 8px;border-top:1px solid #ccc;display:flex;gap:10px;align-items:center;flex-wrap:wrap}#sectip{position:absolute;display:none;pointer-events:none;background:rgba(20,20,20,.92);color:#fff;padding:4px 6px;border-radius:3px;font:11px/1.35 sans-serif;white-space:nowrap;z-index:5}.hd{width:22px;height:22px;border-radius:50%;background:#00e5ff;border:2px solid #003b44;color:#003b44;font:bold 12px/18px sans-serif;text-align:center;cursor:move;box-sizing:border-box}.smark{width:26px;height:26px;border-radius:50%;background:#00e5ff;border:2px solid #003b44;color:#003b44;font:bold 14px/22px sans-serif;text-align:center;box-sizing:border-box}#helpwin .wb{overflow:auto;padding:9px 11px;font:12px/1.5 sans-serif;color:#222}#helpwin b{color:#08519c}#helpwin .hs{margin:0 0 7px}
-.sta-mark{display:inline-block;padding:1px 4px;border-radius:8px;background:rgba(74,144,226,.25);border:1px solid rgba(74,144,226,.55);color:#00000;font:bold 9px/1.15 helvetica;white-space:nowrap;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.6)}
+<style>html,body,#map{height:100%;margin:0}.leaflet-popup-content{font-size:14px}.leaflet-popup-content a{color:#08519c;text-decoration:none}.leaflet-popup-content a:hover{text-decoration:underline}.ctl{background:#fff;padding:6px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.4);max-height:calc(100vh - 40px);overflow-y:auto}.ctl button{display:block;width:100%;margin:2px 0;padding:4px 8px;cursor:pointer;border:1px solid #999;background:#f4f4f4}.ctl button.active{background:#BD0026;color:#fff;border-color:#800026}.ctl button.feat.active{background:#08519c;border-color:#08306b;color:#fff}.ctl button.act.active{background:#e65100;border-color:#bf360c;color:#fff}.ctl hr{margin:4px 0;border:0;border-top:1px solid #ccc}.ctl .info{font-size:12px;margin-top:4px;text-align:center}#chart{position:absolute;left:10px;bottom:62px;z-index:1000;background:#fff;padding:4px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.4);display:none}#rateAreaBar{display:none;margin-bottom:4px;font:11px sans-serif}#rateAreaBar select{font-size:11px;max-width:240px}.abar{text-align:center;font:bold 10px sans-serif;color:#000}.abar div{margin:0 auto;width:16px;border:1px solid #000;background:#08519c;opacity:.85}.mag-legend{text-align:center;font:11px sans-serif}.mag-legend svg{display:block;margin:4px auto 0}.mag-legend text{font:bold 8px sans-serif;fill:#000;paint-order:stroke;stroke:#fff;stroke-width:2px;stroke-linejoin:round}#kdeLegend{display:none}#counter{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;background:#16181d;border:1px solid #000;border-radius:8px;padding:4px 10px;box-shadow:0 2px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12);color:#ccc;font:11px sans-serif;user-select:none;display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;max-width:94vw}#cmain{display:flex;flex-direction:row;align-items:center;gap:8px;cursor:pointer}#cmain:hover .cl{color:#4fc3f7}#helpBtn{flex:0 0 auto;width:18px;height:18px;padding:0;border-radius:50%;border:1px solid #3a3d45;background:#262930;color:#4fc3f7;font:bold 11px/1 "DejaVu Sans",sans-serif;cursor:pointer}#helpBtn:hover{background:#343a44;border-color:#4fc3f7}#counter .cl{margin-bottom:0;font-size:11px;white-space:nowrap}#counter.collapsed #clabel::after{content:' \25BE';font-size:10px;opacity:.55}#counter:not(.collapsed) #clabel::after{content:' \25B4';font-size:10px;opacity:.55}#cpanel{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;justify-content:center;font:10px sans-serif}#counter.collapsed #cpanel{display:none}#counter.collapsed #eqtip{display:none !important}#cpanel select,#cpanel input,#cpanel button{font:10px/14px sans-serif;padding:2px 6px;border-radius:3px;border:1px solid #3a3d45;background:#262930;color:#ddd;box-sizing:border-box}#cpanel select{max-width:96px;padding:2px 4px}#cpanel input#eqid{width:80px}#cpanel input#dtStart,#cpanel input#dtEnd{width:88px;font-family:"DejaVu Sans Mono",Menlo,Consolas,monospace}#cpanel input:focus{outline:1px solid #4fc3f7}#cpanel button{cursor:pointer}#cpanel button:hover{background:#343a44}#cpanel .csep{width:1px;height:16px;background:#3a3d45;margin:0 2px}#odo{display:flex;gap:2px;justify-content:center}.dg{width:28px;height:42px;overflow:hidden;position:relative;background:#000;border-radius:4px;box-shadow:inset 0 0 6px #000}.dg::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(#000 0,rgba(0,0,0,0) 28%,rgba(0,0,0,0) 72%,#000 100%)}.dg::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,.14);z-index:3}.dg .st{transition:transform .8s cubic-bezier(.25,.9,.3,1)}.dg i{display:block;height:42px;font:normal 600 30px/42px "DejaVu Sans Mono",Menlo,Consolas,monospace;color:#f4f4f4;text-align:center}.dg.z i{color:#4a4d55}#eqtip{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:7px;width:232px;padding:6px 8px;background:#262930;border:1px solid #3a3d45;border-radius:5px;font:11px/1.4 sans-serif;color:#ccc;text-align:left;z-index:1002;box-shadow:0 2px 8px rgba(0,0,0,.6)}#timebar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:min(520px,34vw);z-index:1001;background:rgba(255,255,255,.93);border-radius:6px;padding:5px 30px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);font:11px sans-serif;user-select:none}#depthbar{position:absolute;bottom:96px;left:50%;transform:translateX(-50%);width:min(520px,34vw);z-index:1001;background:rgba(255,255,255,.93);border-radius:6px;padding:5px 30px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);font:11px sans-serif;user-select:none;display:none}#timebar .tbh,#depthbar .tbh{display:flex;justify-content:space-between;gap:8px;margin-bottom:5px;white-space:nowrap}.tbt{position:relative;height:16px;cursor:pointer;touch-action:none}.tbg{position:absolute;inset:0;border:1px solid #000;border-radius:2px}.tbg.gray{filter:grayscale(1)}.tbm{position:absolute;top:0;bottom:0;background:rgba(255,255,255,.75)}.tbk{position:absolute;top:-4px;width:10px;height:24px;margin-left:-5px;background:#fff;border:2px solid #222;border-radius:3px;box-sizing:border-box;cursor:ew-resize}.tbx{position:relative;height:28px;margin-top:3px}.tbx .tk{position:absolute;top:0;height:5px;border-left:1px solid #333}.tbx .tk span{position:absolute;top:6px;left:0;transform:translateX(-50%);white-space:nowrap;font-size:10px;text-align:center;line-height:11px}.bbpop{min-width:64px;text-align:center}.bbwait{font:11px sans-serif;color:#666}.bblab{font:10px sans-serif;color:#333;margin-top:2px}.win{position:absolute;z-index:1100;background:#fff;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.55);display:none;flex-direction:column;resize:both;overflow:hidden;min-width:260px;min-height:190px;font:12px sans-serif}.win .wh{background:#2b2f36;color:#fff;padding:4px 6px;cursor:move;display:flex;justify-content:space-between;align-items:center;gap:8px;user-select:none;touch-action:none}.win .wh button{margin-left:4px;padding:1px 7px;cursor:pointer;border:1px solid #666;background:#444;color:#fff;border-radius:3px;font:11px sans-serif}.win .wh button.active{background:#e65100;border-color:#bf360c}.win .wb{position:relative;flex:1;min-height:0}.win canvas{position:absolute;left:0;top:0;width:100%;height:100%}.win .wf{padding:3px 8px;border-top:1px solid #ccc;display:flex;gap:10px;align-items:center;flex-wrap:wrap}#sectip{position:absolute;display:none;pointer-events:none;background:rgba(20,20,20,.92);color:#fff;padding:4px 6px;border-radius:3px;font:11px/1.35 sans-serif;white-space:nowrap;z-index:5}.hd{width:22px;height:22px;border-radius:50%;background:#00e5ff;border:2px solid #003b44;color:#003b44;font:bold 12px/18px sans-serif;text-align:center;cursor:move;box-sizing:border-box}.smark{width:26px;height:26px;border-radius:50%;background:#00e5ff;border:2px solid #003b44;color:#003b44;font:bold 14px/22px sans-serif;text-align:center;box-sizing:border-box}#helpwin .wb{overflow:auto;padding:9px 11px;font:12px/1.5 sans-serif;color:#222}#helpwin b{color:#08519c}#helpwin .hs{margin:0 0 7px}
+.sta-mark        { background: rgba(0,0,0,.62); color:#fff; font: 600 11px/16px sans-serif;padding:0 4px; border-radius:3px; white-space:nowrap; text-align:center;border:1px solid rgba(255,255,255,.25); }
+.sta-mark.hl     { background:#ff7800; color:#000; border-color:#fff;box-shadow:0 0 8px #ff7800; }
+.sta-mark.dim    { opacity:.3; }
 </style>
 </head>
 <body>
@@ -24,6 +26,14 @@
   </div>
   <div id="cpanel">
     <select id="csel" title="Time range"></select>
+    <label title="Highlight stations by channel band">Channels:
+      <select id="staChan">
+        <option value="">All channels</option>
+        <option value="EH">EH</option>
+        <option value="HH">HH</option>
+        <option value="BH">BH</option>
+      </select>
+    </label>
     <span class="csep"></span>
     <input id="eqid" type="text" placeholder="event id" autocomplete="off" title="INGV event id" />
     <button id="eqgo" title="Find event">&#128270;</button>
@@ -137,79 +147,223 @@ function applyLang() {
 }
     let stationLayer = null;
     let showStations = false;
-    let selectedYear = null;          //null time bar o YYYY
+    let selectedYear = null;          //null o YYYY
     let stationCache = new Map();     //net|sta|start
     const STATION_API = 'https://webservices.ingv.it/fdsnws/station/1/query';
     const STATION_BBOX = 'minlatitude=35.8&maxlatitude=41.8&minlongitude=12&maxlongitude=19.5';
     function stationsInRange(t0, t1) {
-      const iso0 = new Date(t0).toISOString().slice(0, 19);
-      const iso1 = new Date(t1).toISOString().slice(0, 19);
-      return fetch(`${STATION_API}?format=text&level=station&${STATION_BBOX}` +
-                   `&starttime=${iso0}&endtime=${iso1}`)
-        .then(r => {
-          if (r.status === 204) return [];
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          return r.text();
-        })
-        .then(txt => {
-          if (!txt) return [];
-          const lines = txt.trim().split('\n').filter(l => l && !l.startsWith('#'));
-          return lines.map(l => {
-            const [network, station, lat, lon, elev, site, start, end] = l.split('|');
-            if (!network || !station) return null;
-            const sMs = start ? Date.parse(start) : null;
-            const eMs = end   ? Date.parse(end)   : null;
-            return {
-              network, station, site: site || station,
-              lat: +lat, lon: +lon, elevation: elev ? +elev : null,
-              start: sMs, end: eMs,
-              key: network + '|' + station + '|' + (start || '')
-            };
-          }).filter(Boolean);
+      const DAY = 864e5;
+      const iso0 = new Date(Math.floor(t0 / DAY) * DAY).toISOString().slice(0, 19);
+      const iso1 = new Date(Math.ceil(t1 / DAY) * DAY).toISOString().slice(0, 19);
+      const ck = iso0 + '|' + iso1;
+      if (stationCache.has(ck)) return stationCache.get(ck);
+      const url = lvl => `${STATION_API}?format=text&level=${lvl}&${STATION_BBOX}&starttime=${iso0}&endtime=${iso1}`;
+      const getRows = u => fetch(u).then(r => {
+        if (r.status === 204) return '';
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      }).then(txt => !txt ? [] : txt.trim().split('\n').filter(l => l && !l.startsWith('#')).map(l => l.split('|')));
+      const pSta = getRows(url('station')).then(rows => rows.map(f => {
+        const [network, station, lat, lon, elev, site, start, end] = f;
+        if (!network || !station) return null;
+        return {
+          network, station, site: site || station,
+          lat: +lat, lon: +lon, elevation: elev ? +elev : null,
+          start: start ? Date.parse(start) : null, end: end ? Date.parse(end) : null,
+          key: network + '|' + station + '|' + (start || '')
+        };
+      }).filter(Boolean));
+      const getChan = () => getRows(url('channel')).then(rows => {
+        const m = new Map();
+        rows.forEach(f => {
+          if (!f[3]) return;
+          const k = f[0] + '|' + f[1];
+          if (!m.has(k)) m.set(k, new Set());
+          m.get(k).add(f[3].slice(0, 2).toUpperCase());
         });
+        return m;
+      });
+      const pCha = getChan().catch(() => new Promise(r => setTimeout(r, 1200)).then(getChan))
+                            .catch(err => { console.warn('Channel fetch error', err); return null; });
+      const p = Promise.all([pSta, pCha]).then(([stas, chans]) => {
+        stas.forEach(s => { s.bands = chans ? (chans.get(s.network + '|' + s.station) || new Set()) : null; });
+        if (!chans) stas.chanFailed = true;
+        return stas;
+      });
+      stationCache.set(ck, p);
+      p.then(st => { if (st.chanFailed) stationCache.delete(ck); }, () => stationCache.delete(ck));
+      if (stationCache.size > 20) stationCache.delete(stationCache.keys().next().value);
+      return p;
     }
     let staReqId = 0;
-    function drawStations() {
-      const myId = ++staReqId;
-      if (stationLayer) { map.removeLayer(stationLayer); stationLayer = null; }
-      if (!showStations) return;
-      const sp = rangeEnd - rangeStart;
-      let t0 = rangeStart + sel.a * sp;
-      let t1 = rangeStart + sel.b * sp;
-      if (selectedYear) {
-        t0 = Date.UTC(selectedYear, 0, 1);
-        t1 = Date.UTC(selectedYear, 11, 31, 23, 59, 59, 999);
-      }
-      stationsInRange(t0, t1).then(stations => {
-        if (myId !== staReqId || !showStations) return;
-        if (!stations.length) return;
-        stationLayer = L.layerGroup();
-        stations.forEach(s => {
-          const startStr = s.start ? new Date(s.start).toISOString().slice(0, 19).replace('T', ' ') : '—';
-          const endStr   = s.end   ? new Date(s.end).toISOString().slice(0, 19).replace('T', ' ')   : 'present';
-          const popup = `<div style="font-size:12px; line-height:1.5">
-            <b>${s.network}.${s.station}</b> — ${s.site}<br>
-            <i>Lat:</i> ${s.lat.toFixed(4)} &nbsp; <i>Lon:</i> ${s.lon.toFixed(4)}<br>
-            <i>Elevation:</i> ${s.elevation != null ? s.elevation.toFixed(0) + ' m' : '—'}<br>
-            <i>Operation:</i><br>
-            start&nbsp; ${startStr}<br>
-            end&nbsp;&nbsp;&nbsp; ${endStr}
-          </div>`;
-          const w = s.station.length * 7 + 8;
-          const icon = L.divIcon({
-            className: '',
-            iconSize: [w, 16],
-            iconAnchor: [w / 2, 8],
-            html: `<div class="sta-mark">${s.station}</div>`
-          });
-          L.marker([s.lat, s.lon], { icon })
-            .bindPopup(popup, { maxWidth: 260 })
-            .addTo(stationLayer);
-        });
-        stationLayer.addTo(map);
-        secs.forEach(s => { if (s.layers) { s.layers.poly.bringToFront(); s.layers.line.bringToFront(); } });
-      }).catch(err => console.warn('Station fetch error', err));
+
+let staBand      = '';        // '' tuttuo o HH
+let stationData  = [];        //exportJPG
+const staBandsSeen = new Set();
+const STA_BANDS_DEFAULT = ['BH','EH','HH','HN','LH','SH','VH'];
+function stationBands(s) {
+  const out = new Set();
+  const add = v => {
+    if (v == null) return;
+    if (Array.isArray(v))            { v.forEach(add); return; }
+    if (typeof v === 'object')       { add(v.code || v.channel || v.chan || v.cha || v.name || v.id); return; }
+    String(v).split(/[^A-Za-z0-9]+/).forEach(tok => {
+      if (/^[A-Za-z]{2}/.test(tok)) out.add(tok.slice(0, 2).toUpperCase());
+    });
+  };
+  add(s.channels); add(s.channel); add(s.chan); add(s.cha);
+  add(s.codes);    add(s.code);    add(s.streams); add(s.stream);
+  return out;
+}
+
+function refreshStaChanSelect() {
+  const el = $('staChan');
+  if (!el) return;
+  const cur  = el.value;
+  const list = Array.from(new Set([...STA_BANDS_DEFAULT, ...staBandsSeen])).sort();
+  el.innerHTML = '<option value="">All channels</option>' +
+                 list.map(b => `<option value="${b}">${b}</option>`).join('');
+  el.value = list.includes(cur) ? cur : '';
+  staBand  = el.value;
+}
+
+function initStaChan() {
+  const el = $('staChan');
+  if (!el) return;
+  refreshStaChanSelect();
+  el.addEventListener('change', () => { staBand = el.value; drawStations(); });
+}    
+let staTimer = 0;
+function drawStations() {
+  const myId = ++staReqId;
+  clearTimeout(staTimer);
+  if (!showStations) {
+    if (stationLayer) { map.removeLayer(stationLayer); stationLayer = null; }
+    stationData = [];
+    return;
+  }
+  staTimer = setTimeout(() => {                       
+    const sp = rangeEnd - rangeStart;
+    let t0 = rangeStart + sel.a * sp;
+    let t1 = rangeStart + sel.b * sp;
+    if (selectedYear) {
+      t0 = Date.UTC(selectedYear, 0, 1);
+      t1 = Date.UTC(selectedYear, 11, 31, 23, 59, 59, 999);
     }
+    stationsInRange(t0, t1).then(stations => {
+      if (myId !== staReqId || !showStations) return;
+      if (stationLayer) { map.removeLayer(stationLayer); stationLayer = null; }   
+      stationData = [];
+      if (!stations.length) { refreshStaChanSelect(); return; }
+
+      stationLayer = L.layerGroup();
+      stations.forEach(s => {
+        const chanOK = !!s.bands;
+        const bands = s.bands || new Set();
+        bands.forEach(b => staBandsSeen.add(b));
+        stationData.push({ lat: s.lat, lon: s.lon, station: s.station, bands, chanOK });
+
+        const hl  = !!staBand && bands.has(staBand);
+        const dim = !!staBand && chanOK && !hl;
+
+        const startStr = s.start ? new Date(s.start).toISOString().slice(0,19).replace('T',' ') : '—';
+        const endStr   = s.end   ? new Date(s.end).toISOString().slice(0,19).replace('T',' ')   : 'present';
+        const bandStr  = bands.size ? [...bands].sort().join(', ') : '—';
+
+        const popup = `<div style="font-size:12px; line-height:1.5">
+        <b>${s.network}.${s.station}</b> — ${s.site}<br>
+        <i>Lat:</i> ${s.lat.toFixed(4)} &nbsp; <i>Lon:</i> ${s.lon.toFixed(4)}<br>
+        <i>Elevation:</i> ${s.elevation != null ? s.elevation.toFixed(0) + ' m' : '—'}<br>
+        <i>Channels:</i> ${bandStr}<br>
+        <i>Operation:</i><br>
+        start&nbsp; ${startStr}<br>
+        end&nbsp;&nbsp;&nbsp; ${endStr}
+      </div>`;
+
+        const w = s.station.length * 7 + 8;
+        const icon = L.divIcon({
+          className: '',
+          iconSize: [w, 16],
+          iconAnchor: [w / 2, 8],
+          html: `<div class="sta-mark${hl ? ' hl' : ''}${dim ? ' dim' : ''}">${s.station}</div>`
+        });
+
+        L.marker([s.lat, s.lon], { icon })
+          .bindPopup(popup, { maxWidth: 260 })
+          .addTo(stationLayer);
+      });
+
+      refreshStaChanSelect();
+      const chEl = $('staChan');
+      if (chEl) chEl.title = stations.chanFailed ? 'Channel info could not be downloaded from INGV: selecting a band changes nothing. Change the time range or reselect to retry.' : 'Highlight stations by channel band';
+      if (chEl) chEl.style.outline = (stations.chanFailed && staBand) ? '2px solid #e65100' : '';
+      stationLayer.addTo(map);
+      secs.forEach(s => { if (s.layers) { s.layers.poly.bringToFront(); s.layers.line.bringToFront(); } });
+    }).catch(err => console.warn('Station fetch error', err));
+  }, 250);
+}
+
+function loadDataURL(url) {
+  return new Promise(res => {
+    const im = new Image();
+    im.onload  = () => res(im);
+    im.onerror = () => res(null);
+    im.src = url;
+  });
+}
+
+function collectMarkers(lg, out) {
+  if (!lg || typeof lg.eachLayer !== 'function') return out;
+  lg.eachLayer(l => {
+    if (l.getLatLng && l._icon) out.push(l);
+    else if (typeof l.eachLayer === 'function') collectMarkers(l, out);
+  });
+  return out;
+}
+
+async function drawMarkerIcons(c, lg, P, S) {
+  const marks = collectMarkers(lg, []);
+  let drawn = 0;
+  for (const m of marks) {
+    const el = m._icon;
+    if (!el || !el.parentNode) continue;
+    const ll = m.getLatLng();
+    const q  = P(ll.lng, ll.lat);
+    const io = (m.options && m.options.icon && m.options.icon.options) || {};
+    const r  = el.getBoundingClientRect();
+    const w  = r.width  || (io.iconSize ? io.iconSize[0] : 16);
+    const h  = r.height || (io.iconSize ? io.iconSize[1] : 16);
+    const ax = io.iconAnchor ? io.iconAnchor[0] : w / 2;
+    const ay = io.iconAnchor ? io.iconAnchor[1] : h / 2;
+    const x  = q[0] - ax, y = q[1] - ay;
+
+    const cv = el.querySelector('canvas');
+    if (cv) { c.drawImage(cv, x, y, w, h); drawn++; continue; }
+
+    const svg = el.querySelector('svg');
+    if (svg) {
+      const str = new XMLSerializer().serializeToString(svg);
+      const im  = await loadDataURL('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(str));
+      if (im) { c.drawImage(im, x, y, w, h); drawn++; }
+      continue;
+    }
+
+    const txt = (el.textContent || '').trim();
+    if (txt) {
+      c.font = 'bold ' + Math.round(12 * S) + 'px sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      const tw = c.measureText(txt).width + 10 * S, th = 17 * S;
+      c.fillStyle = 'rgba(0,0,0,.62)';
+      c.fillRect(q[0] - tw / 2, q[1] - th / 2, tw, th);
+      c.fillStyle = '#fff';
+      c.fillText(txt, q[0], q[1]);
+      c.textBaseline = 'alphabetic';
+      drawn++;
+    }
+  }
+  return drawn;
+}
+
 const AREAS = [
 ["Murge",[[41.266,16.481],[41.193,16.644],[41.14,16.861],[40.92,17.361],[40.805,17.551],[40.763,17.551],[40.512,17.199],[40.512,17.145],[41.088,16.089],[41.1191,16.089],[41.245,16.427],[41.261,16.427]],40.774,17.145],
 ["Penisola Salentina",[[40.428,18.269],[40.291,18.445],[40.145,18.485],[39.788,18.363],[39.83,18.201],[39.945,18.025],[40.05,17.944],[40.218,17.93],[40.281,17.862],[40.291,17.686],[40.26,17.673],[40.281,17.51],[40.417,17.267],[40.48,17.253],[40.48,17.185],[40.512,17.185],[40.512,17.199],[40.763,17.551],[40.795,17.551],[40.753,17.714]],40.512,17.619],
@@ -543,7 +697,7 @@ setBase(savedBase);
       for (let i = 0; i < evs.length; i++) {
         const ev = evs[i];
         const pid = ev.getAttribute('publicID') || '';
-        const mm = pid.match(/eventid=(\d+)/) || pid.match(/(\d+)\s*$/);
+        const mm = pid.match(/eventid=(\d+)/i) || pid.match(/(\d+)\s*$/);
         if (!mm) continue;
         const fm = ev.getElementsByTagNameNS('*', 'focalMechanism')[0];
         out.set(mm[1], fm ? parseMecaEl(fm) : null);
@@ -596,7 +750,7 @@ setBase(savedBase);
     function fillPopupMeca(e) {
       const holder = document.getElementById('bbpop-' + e.eventId);
       if (!holder) return;
-      holder.innerHTML = '<div class="bbwait">loading…</div>';
+      holder.innerHTML = '<div class="bbwait">loading...</div>';
       fetchMeca(e.eventId).then(m => {
         const h = document.getElementById('bbpop-' + e.eventId);
         if (!h) return;
@@ -1106,12 +1260,10 @@ function parseYMD(s) {
   if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return NaN;
   return dt.getTime();
 }
-
 function fmtYMD(ms) {
   const d = new Date(ms);
   return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate());
 }
-
 function syncDateInputs() {
   const s = $('dtStart'), e = $('dtEnd');
   if (!s || !e) return;
@@ -1123,7 +1275,6 @@ function syncDateInputs() {
     e.value = fmtYMD(Math.max(rangeStart, endMs - 1));
   }
 }
-
 function applyDateRange() {
   const info = $('info');
   const sVal = $('dtStart').value, eVal = $('dtEnd').value;
@@ -1145,7 +1296,6 @@ function applyDateRange() {
   dtDirty.start = false; dtDirty.end = false;
   fetchEarthquakes();     
 }
-
 ['dtStart', 'dtEnd'].forEach(id => {
   const el = $(id);
   if (!el) return;
@@ -1154,7 +1304,6 @@ function applyDateRange() {
   el.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); applyDateRange(); } });
 });
 if ($('dtGo')) $('dtGo').onclick = applyDateRange;
-
     function updateBar() {
       const span = rangeEnd - rangeStart;
       $('k0').style.left = sel.a * 100 + '%'; $('k1').style.left = sel.b * 100 + '%';
@@ -1176,9 +1325,8 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       tbt.addEventListener('pointermove', ev => { if (drag) move(frac(ev)); });
       tbt.addEventListener('pointerup', () => { drag = null; });
       tbt.addEventListener('pointercancel', () => { drag = null; });
-      tbt.addEventListener('dblclick', () => { sel.a = 0; sel.b = 1; updateBar(); scheduleRender(); if (showStations && !selectedYear) drawStations();});
+      tbt.addEventListener('dblclick', () => { sel.a = 0; sel.b = 1; updateBar(); scheduleRender(); });
     })();
-
     function buildDepthBar() {
       const stops = DEPTH_STOPS.map((s, i) => `rgb(${s.join(',')}) ${(i / (DEPTH_STOPS.length - 1) * 100).toFixed(1)}%`).join(',');
       $('dbg').style.background = 'linear-gradient(90deg,' + stops + ')';
@@ -1206,7 +1354,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       tbt.addEventListener('pointermove', ev => { if (drag) move(frac(ev)); });
       tbt.addEventListener('pointerup', () => { drag = null; });
       tbt.addEventListener('pointercancel', () => { drag = null; });
-      tbt.addEventListener('dblclick', () => { dsel.a = 0; dsel.b = 1; updateDepthBar(); scheduleRender(); if (showStations && !selectedYear) drawStations();});
+      tbt.addEventListener('dblclick', () => { dsel.a = 0; dsel.b = 1; updateDepthBar(); scheduleRender(); });
       buildDepthBar();
     })();
     let rq = 0, rs = 0;
@@ -1264,15 +1412,13 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       }
       renderMarkers();
     }
-
     async function bulkMeca(t0, t1, onProgress) {
       const CHUNK = 120 * 864e5;
       const n = Math.max(1, Math.ceil((t1 - t0) / CHUNK));
       for (let i = 0; i < n; i++) {
         const a = t0 + i * CHUNK, b = Math.min(t0 + (i + 1) * CHUNK, t1);
         if (onProgress) onProgress(i + 1, n);
-        const url = 'https://webservices.ingv.it/fdsnws/event/1/query?format=xml&includemomenttensor=true' +
-          '&minlatitude=35.8&maxlatitude=41.8&minlongitude=12&maxlongitude=19.5&limit=10000&orderby=time' +
+        const url = 'https://webservices.ingv.it/fdsnws/event/1/query?format=xml&includemomenttensor=true' +'&minlatitude=35.8&maxlatitude=41.8&minlongitude=12&maxlongitude=19.5&limit=10000&orderby=time' +
           `&starttime=${fmtISO(new Date(a))}&endtime=${fmtISO(new Date(b))}`;
         try {
           const res = await fetch(url);
@@ -1282,7 +1428,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
         } catch (e) { console.warn('bulkMeca', e); }
       }
     }
-
     async function exportCatalogMeca() {
       const info = $('info');
       const list = events.slice().sort((a, b) => a.ms - b.ms);
@@ -1290,15 +1435,15 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       const sp = rangeEnd - rangeStart, t0 = rangeStart + sel.a * sp, t1 = rangeStart + sel.b * sp;
       const ids = [...new Set(list.map(e => String(e.eventId)))];
       if (ids.some(id => !mecaCache.has(id))) {
-        info.textContent = 'Focal mechanisms: querying…';
-        await bulkMeca(t0, t1, (i, n) => { info.textContent = `Focal mechanisms: chunk ${i}/${n}…`; });
+        info.textContent = 'Focal mechanisms: querying...';
+        await bulkMeca(t0, t1, (i, n) => { info.textContent = `Focal mechanisms: chunk ${i}/${n}...`; });
         const still = ids.filter(id => !mecaCache.has(id));
         const cap = Math.min(still.length, 120);
         let done = 0;
         for (let i = 0; i < cap; i += 6) {
           await Promise.all(still.slice(i, i + 6).map(id => fetchMeca(id)));
           done += Math.min(6, cap - i);
-          info.textContent = `Focal mechanisms: ${done}/${cap}…`;
+          info.textContent = `Focal mechanisms: ${done}/${cap}...`;
         }
       }
       const head = '#YYYYMMDD HHMMSS.MS LAT LON DEP M STRIKE DIP RAKE\n';
@@ -1356,7 +1501,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       if (qcWindowOpen()) qcEnsureData();
       if (qctablewin && qctablewin.style.display === 'flex') buildQCTable();
       if (qcsolwin   && qcsolwin.style.display   === 'flex') { qcNavIndex = -1; drawQCSolution(); }
-      if (showStations) drawStations();
     }
     function secProj(A, B, width) {
       const lon0 = A.lng, lat0 = A.lat, ky = 110.57, kx = 111.32 * Math.cos(lat0 * Math.PI / 180);
@@ -1463,7 +1607,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       m.on('click', ev => { L.DomEvent.stopPropagation(ev); setActiveSec(s); });
       return m;
     }
-
     function toggleDraw(force) {
       drawing = force !== undefined ? force : !drawing;
       if (drawing) cancelPolyDraw();
@@ -1531,7 +1674,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       $('btn3d').classList.remove('active');
       $('b3d').classList.remove('active');
       scheduleRender();
-      if (stationLayer) { map.removeLayer(stationLayer); stationLayer = null; }      
     }
     function updateSlab() {
       secs.forEach(s => {
@@ -1631,7 +1773,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       }
       c.strokeStyle = '#000'; c.lineWidth = 1; c.strokeRect(ml, mt, pw, ph);
       c.textAlign = 'center'; c.font = '11px sans-serif'; c.fillStyle = '#000';
-      c.fillText('Distance ' + (s.la||'A') + ' ' + (s.lb||'B') + ' (km)', ml + pw / 2, H - 6);
+      c.fillText('Distance ' + (s.la||'A') + ' \u2192 ' + (s.lb||'B') + ' (km)', ml + pw / 2, H - 6);
       c.save(); c.translate(11, mt + ph / 2); c.rotate(-Math.PI / 2); c.fillText('Depth (km)', 0, 0); c.restore();
       c.font = 'bold 12px sans-serif'; c.fillStyle = '#006978'; c.textAlign = 'left'; c.fillText(s.la || 'A', ml + 4, mt + 13); c.textAlign = 'right'; c.fillText(s.lb || 'B', ml + pw - 4, mt + 13);
       secPts = [];
@@ -1641,7 +1783,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
         secPts.push({ x, y, r, s: sp });
       });
       const f = p => p.lat.toFixed(3) + ', ' + p.lng.toFixed(3);
-      $('sectitle').textContent = tr('wSec') + ' ' + (secs.indexOf(s) + 1) + ' (' + (s.la||'A') + (s.lb||'B') + ') ' + f(s.A) + '  ' + f(s.B);
+      $('sectitle').textContent = tr('wSec') + ' ' + (secs.indexOf(s) + 1) + ' (' + (s.la||'A') + (s.lb||'B') + ') ' + f(s.A) + ' \u2192 ' + f(s.B);
       $('secinfo').textContent = s.slab.length + ' ' + tr('evts') + ' \u00b7 L = ' + g.L.toFixed(1) + ' km \u00b7 d \u2264 ' + g.hw + ' km';
     }  
     seccv.addEventListener('mousemove', ev => {
@@ -1714,7 +1856,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     })();
     let polyDrawing = false, polyPts = [], hoverPt = null, catPoly = null;
     const polyPrev = L.layerGroup().addTo(map);
-
     function startPolyDraw() {
       if (drawing) toggleDraw(false);
       polyDrawing = true;
@@ -1723,7 +1864,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       map.doubleClickZoom.disable();
       map.getContainer().style.cursor = 'crosshair';
       $('btnPoly').classList.add('active');
-      $('info').textContent = 'Polygon: click to add vertices, double-click (or click the first point) to close';
+      $('info').textContent = 'Polygon: click to add vertices, double-click (or click the first point) to close.';
     }
     function cancelPolyDraw() {
       if (!polyDrawing) return;
@@ -1735,7 +1876,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       $('btnPoly').classList.remove('active');
     }
     function togglePolyDraw() {
-      if (polyDrawing) { cancelPolyDraw(); $('info').textContent = 'Polygon cancelled'; return; }
+      if (polyDrawing) { cancelPolyDraw(); $('info').textContent = 'Polygon cancelled.'; return; }
       if (catPoly) { map.removeLayer(catPoly); catPoly = null; }
       startPolyDraw();
     }
@@ -1757,7 +1898,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       cancelPolyDraw();
       const pts = [];
       raw.forEach(p => { if (!pts.length || pts[pts.length - 1].distanceTo(p) > 3) pts.push(p); });
-      if (pts.length < 3) { $('info').textContent = 'Polygon cancelled (at least 3 points needed)'; return; }
+      if (pts.length < 3) { $('info').textContent = 'Polygon cancelled (at least 3 points needed).'; return; }
       if (catPoly) { map.removeLayer(catPoly); catPoly = null; }
       catPoly = L.polygon(pts, { color: '#ffd54f', weight: 2, dashArray: '6 4', fillColor: '#ffd54f', fillOpacity: .06, interactive: false }).addTo(map);
       await exportCatalog(pts);
@@ -1784,15 +1925,14 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       const minlat = Math.min(...lats), maxlat = Math.max(...lats);
       const minlon = Math.min(...lons), maxlon = Math.max(...lons);
       const polyH = pts.map(p => [p.lng, p.lat]);
-      const base = 'https://webservices.ingv.it/fdsnws/event/1/query?format=geojson&orderby=time&limit=10000' +
-        `&minlatitude=${minlat.toFixed(3)}&maxlatitude=${maxlat.toFixed(3)}` +
+      const base = 'https://webservices.ingv.it/fdsnws/event/1/query?format=geojson&orderby=time&limit=10000' +`&minlatitude=${minlat.toFixed(3)}&maxlatitude=${maxlat.toFixed(3)}` +
         `&minlongitude=${minlon.toFixed(3)}&maxlongitude=${maxlon.toFixed(3)}`;
       const CHUNK = 180 * 864e5;
       const n = Math.max(1, Math.ceil((t1 - t0) / CHUNK));
       const found = [], seen = new Set();
       for (let i = 0; i < n; i++) {
         const a = t0 + i * CHUNK, b = Math.min(t0 + (i + 1) * CHUNK, t1);
-        info.textContent = `Polygon catalog: request ${i + 1}/${n}…`;
+        info.textContent = `Polygon catalog: request ${i + 1}/${n}...`;
         try {
           const res = await fetch(`${base}&starttime=${fmtISO(new Date(a))}&endtime=${fmtISO(new Date(b))}`);
           if (res.status === 204) continue;
@@ -1812,7 +1952,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       const d = new Date();
       const name = `catalog_${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}_${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}.txt`;
       downloadText(name, txt);
-      info.textContent = `${name} — ${found.length} events (${fmtUTC(t0)} → ${fmtUTC(t1)} UTC)`;
+      info.textContent = `${name} — ${found.length} events (${fmtUTC(t0)} ${fmtUTC(t1)} UTC)`;
     }
     map.on('click', e => {
       if (!polyDrawing || drawing) return;
@@ -1840,7 +1980,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       const id = (raw || '').trim();
       const info = $('info');
       if (!id) { info.textContent = 'Enter an event id'; return; }
-      info.textContent = 'Searching event ' + id + '…';
+      info.textContent = 'Searching event ' + id + '...';
       try {
         const res = await fetch('https://webservices.ingv.it/fdsnws/event/1/query?format=geojson&eventid=' + encodeURIComponent(id));
         if (res.status === 204) { info.textContent = 'Event ' + id + ' not found'; return; }
@@ -1926,9 +2066,8 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     }
     async function downloadPicks(eventId) {
       const info = $('info');
-      info.textContent = 'Fetching picks for ' + eventId + '…';
-      const url = `https://webservices.ingv.it/fdsnws/event/1/query?eventid=${encodeURIComponent(eventId)}` +
-                  '&format=xml&includearrivals=true&includepicks=true';
+      info.textContent = 'Fetching picks for ' + eventId + '...';
+      const url = `https://webservices.ingv.it/fdsnws/event/1/query?eventid=${encodeURIComponent(eventId)}` +'&format=xml&includearrivals=true&includepicks=true';
       try {
         const res = await fetch(url);
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -1948,7 +2087,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     window.downloadPicks = downloadPicks;
     function waveformUrl(eventId, ms) {
       const d = new Date(ms);
-      return 'http://webservices.ingv.it/webservices/ingv_ws_data/data/' +
+      return 'https://webservices.ingv.it/webservices/ingv_ws_data/data/' +
         d.getUTCFullYear() + '/' + pad(d.getUTCMonth() + 1) + '/' + pad(d.getUTCDate()) + '/' +
         encodeURIComponent(eventId) + '/waveforms.tar.gz';
     }
@@ -1958,14 +2097,14 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       const info = $('info');
       const msg = document.getElementById('wvmsg-' + eventId);
       const setMsg = t => { if (msg) msg.textContent = t; info.textContent = t; };
-      setMsg('Fetching waveforms for ' + eventId + '…');
+      setMsg('Fetching waveforms for ' + eventId + '...');
       try {
         const res = await fetch(url);
         if (!res.ok) {
           if (res.status === 404) {
-            setMsg('Waveforms for event ' + eventId + ' not yet available (404)');
+            setMsg('Waveforms for event ' + eventId + ' not yet available (404).');
           } else {
-            setMsg('Waveform request failed (HTTP ' + res.status + ')');
+            setMsg('Waveform request failed (HTTP ' + res.status + ').');
           }
           return;
         }
@@ -1980,20 +2119,20 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
         setMsg('Downloaded waveforms for ' + eventId);
       } catch (err) {
         console.warn('CORS or network error, opening direct link', err);
-        setMsg('Fetch failed (CORS). Opening link (use right-click → Save link as… if it shows text)');
+        setMsg('Fetch failed (CORS). Opening link (use right-click Save link as... if it shows text).');
         window.open(url, '_blank', 'noopener');
       }
     }
     window.downloadWaveforms = downloadWaveforms;
     $('helpwin').querySelector('.wb').innerHTML = `
       <p class="hs"><b>Important</b> The <b>i</b> you clicked opens this panel. This tool was made to see seismicity
-      and earthquake's hypocenters in Southern Italy in an interactive and easier way for daily users which tamper with such data (orange rectangular box defines view at which you are centered as well as earthquakes being viewed). You cannot move away from this area. All interactive windows can be resized by hovering in the bottom right corner and modifying their sizes as it suits you. All times associated with each 
+      and earthquake's hypocenters in Southern Italy in an interactive and easier way for daily users which deal with such data (orange rectangular box defines view at which you are centered as well as earthquakes being viewed, you cannot move away from this area and look at other regions). Thanks for using this page. I wanna stress that <br>it's made from an user for the users <br> and if you have any kind of helpful suggestions you can contact me at derose.fr@gmail.com.        
+       All interactive windows can be resized by hovering in the bottom right corner and modifying their sizes as it suits you. All times associated with each 
       earthquake here are reported in UTC, so a check on your timezone and light savings conventions is necessary.
       Data and results reported here coming from INGV are distributed under Creative Commons Attribution 4.0 International License. If you want to see it for yourself
-      go to <a href="ingv.eqs">https://terremoti.ingv.it/</a>. Thanks for using this page. Any helpful suggestion
-      is appreciated and welcome. You can write me at derose.fr@gmail.com for suggestions, fixes or anything else you wish. 
+      go to <a href="https://terremoti.ingv.it/" target="_blank" rel="noopener">https://terremoti.ingv.it/</a>.  
       <p class="hs"><b>Counter</b> number of earthquakes inside the current selection. Click on it to see more options. The dropdown
-      (<i>1 h … 25 y</i>) sets the time span downloaded from INGV. The one you are currently in is the red box in the right panel. The blank field searches a single
+      (<i>1 h ... 25 y</i>) sets the time span downloaded from INGV. The one you are currently in is the red box in the right panel. The blank field searches a single
       INGV event id: it is fetched on its own and centred on the map (click the star for the links). If you do not know the eventid it's indicated in the event box 
       when you click an earthquake's epicenter.
       </p>
@@ -2021,10 +2160,64 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       &middot; <i>3D popup</i>: 3-D view of the active section (drag = rotate, wheel = zoom, 1:1:1 = equal axes).<br>
       &middot; <i>Colour</i>: cycles between time|magnitude|KDE|depth colouring (depth mode adds a depth-window bar above the time bar, both interactive).<br>
       &middot; <i>Beachballs</i>: draw epicentres as focal-mechanism beachballs (moment tensors
-      downloaded from INGV, only those with high enough magnitude get computed and published. Refer to other sources if you want to see more of them for ex:
-      &middot;<a href="https://bsi.ingv.it/it/">ingv.bsi</a>
-     &middot; <a href="https://data.ingv.it/dataset/384#additional-metadata">ingv.ICMTD</a>      
-     &middot; <a href="https://rcmt2.bo.ingv.it/">RCMT</a>).<br>
+      downloaded from INGV). Refer to other sources for more: 
+      <a href="https://bsi.ingv.it/it/">INGV BSI</a>, <a href="https://data.ingv.it/dataset/384#additional-metadata">INGV ICMTD</a>, <a href="https://rcmt2.bo.ingv.it/">RCMT</a>.<br>
+      <div style="margin: 8px 0; padding: 8px; background: #fff; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; line-height:1.4;">
+        <div style="font-weight: bold; margin-bottom: 8px; font-size: 12px; text-align: center;">Moment Tensor General Orientation (Thrust: T axis at the center.
+		Normal: P axis at the center.
+		Strike-slip: two vertical nodal planes.
+		Oblique: asymmetric pattern given by one vertical and one dipping nodal plane).</div>
+		<div style="display: flex; justify-content: space-between; text-align: center; margin-bottom: 10px; padding: 0 10px;">
+		  <!-- Thrust -->
+		  <div>
+		    <svg width="34" height="34" viewBox="0 0 40 40">
+		      <circle cx="20" cy="20" r="19" fill="#f44336"/>
+		      <path d="M20,1 A10.3,19 0 0,1 20,39 A10.3,19 0 0,1 20,1 Z" fill="#fff" stroke="#000" stroke-width="1"/>
+		      <circle cx="20" cy="20" r="19" fill="none" stroke="#000" stroke-width="1.5"/>
+		    </svg><br>Thrust
+		  </div>
+		  <!-- Normal -->
+		  <div>
+		    <svg width="34" height="34" viewBox="0 0 40 40">
+		      <circle cx="20" cy="20" r="19" fill="#fff"/>
+		      <path d="M20,1 A10.3,19 0 0,1 20,39 A10.3,19 0 0,1 20,1 Z" fill="#2196f3" stroke="#000" stroke-width="1"/>
+		      <circle cx="20" cy="20" r="19" fill="none" stroke="#000" stroke-width="1.5"/>
+		    </svg><br>Normal
+		  </div>
+		  <!-- Strike-slip -->
+		  <div>
+		    <svg width="34" height="34" viewBox="0 0 40 40">
+		      <circle cx="20" cy="20" r="19" fill="#fff"/>
+		      <path d="M20,20 L1,20 A19,19 0 0,1 20,1 Z" fill="#4caf50"/>
+		      <path d="M20,20 L39,20 A19,19 0 0,1 20,39 Z" fill="#4caf50"/>
+		      <line x1="1" y1="20" x2="39" y2="20" stroke="#000" stroke-width="1"/>
+		      <line x1="20" y1="1" x2="20" y2="39" stroke="#000" stroke-width="1"/>
+		      <circle cx="20" cy="20" r="19" fill="none" stroke="#000" stroke-width="1.5"/>
+		    </svg><br>Strike-slip
+		  </div>
+		  <!-- Oblique -->
+		  <div>
+		    <svg width="34" height="34" viewBox="0 0 40 40">
+		      <circle cx="20" cy="20" r="19" fill="#fff"/>
+		      <path d="M20,1 L20,30.3 A19,10.3 0 0,1 1,20 A19,19 0 0,1 20,1 Z" fill="#757575"/>
+		      <path d="M20,30.3 A19,10.3 0 0,0 39,20 A19,19 0 0,1 20,39 Z" fill="#757575"/>
+		      <line x1="20" y1="1" x2="20" y2="39" stroke="#000" stroke-width="1"/>
+		      <path d="M1,20 A19,10.3 0 0,0 39,20" fill="none" stroke="#000" stroke-width="1"/>
+		      <circle cx="20" cy="20" r="19" fill="none" stroke="#000" stroke-width="1.5"/>
+		    </svg><br>Oblique
+		  </div>
+		</div>
+        <b>Moment</b>: Energy radiated by the earthquake in dyne-cm (an absolute measure of energy release, not a magnitude).<br><br>
+        <b>Plane 1 / Plane 2</b>: The two equivalent fault planes (Strike, dip, slip). Motion on either produces an identical energy radiation pattern. Use other data to decide the true fault plane.<br><br>
+        &middot; <b>Strike2Dip</b>: Orientation of the fault plane.<br>
+        &middot; <b>Slip (Rake)</b>: Motion of the hanging wall relative to the footwall. Angle from horizontal in the fault plane.<br>
+        <div style="margin-top: 6px; color: #555; background: #f4f4f4; padding: 4px 6px; border-radius: 3px;">
+          <i>Example (strike=60°, dip=45°):</i><br>
+          - Slip 0°  Hanging wall moves N60E<br>
+          - Slip 90° Hanging wall moves N30W<br>
+          - Slip 180° Hanging wall moves S60W
+        </div>
+      </div>
       &middot; <i>Export catalog (+S/D/R)</i>: .txt with
       <code>YYYYMMDD HHMMSS.MS LAT LON DEP M STRIKE DIP RAKE</code> for current time window and depth window (active in <i>Colour: depth</i> mode).<br>
       &middot; <i>DISS sources</i>: overlay of the DISS 3.3.1 seismogenic sources. TODO better<br>
@@ -2033,9 +2226,9 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       when you are viewing an earthquake and seeing stations and earthquakes in the catalog can be toggled with the drop down 
       menu at the end of the right panel. The opacity and size is fixed so it gets easier to see them if you select a bigger
       time window. They are also linked to the time bar at the bottom center as you slide
-      and select different time periods. </p> 
-      <p class="hs"><b>Quality check</b><p>
-      &middot;<i>Table</i> containing minimum, 5th percentile, 25th percentile, median, 75th percentile, 95th percentile, maximum as well as time(UTC), error on horizontal plane in km, error on depth in km, gap in degrees, root mean square error in seconds, azimuth of the major axis of the confidence ellipse in degrees, number of phases used, number of stations in which event has been observed, uncertainty on magnitude and number of stations used to compute magnitude. <code> errH errZ GAP RMS azellconf NPHU NPHO DM NPHM</code>. You can sort from highest to lowest or from earliest to latest event by clicking on their header. If you click on one of first column's entries you get sent to INGV evid page (blue hyperlink) while if you click on any other column entry its associated earthquake's epicenter gets highlighted.<p>
+      and select different time periods. In the top center counter you can also select each channel the station is/was currently equipped with. </p> 
+      <p class="hs"><b>Quality check</b><br>
+      &middot;<i>Table</i> containing minimum, 5th percentile, 25th percentile, median, 75th percentile, 95th percentile, maximum as well as time(UTC), error on horizontal plane in km, error on depth in km, gap in degrees, root mean square error in seconds, azimuth of the major axis of the confidence ellipse in degrees, number of phases used, number of stations in which event has been observed, uncertainty on magnitude and number of stations used to compute magnitude. <code> errH errZ GAP RMS azellconf NPHU NPHO DM NPHM</code>. You can sort from highest to lowest or from earliest to latest event by clicking on their header. If you click on one of first column's entries you get sent to INGV evid page (blue hyperlink) while if you click on any other column entry its associated earthquake's epicenter gets highlighted.<br>
      &middot; <i>Solution</i> Distribution of number of earthquakes binned in terms of all mentioned solution metrics. You can sort by selecting the metric on bottom left button or going forward or backward between each metric by clicking "b" and "n" from your keyboard if you are accessing from a PC. Clicking on each histogram bar will highlight any earthquake that has been binned inside it.</p>      
       <p class="hs"><b>Event popup</b> click an epicentre to download the waveform, get the
       phase picks as .txt (header <code>#TIMEUTC LAT UNC_LAT LONG UNC_LON PROF UNC_PROF M UNC_M</code> followed by entries
@@ -2094,7 +2287,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       }
       $('info').textContent = 'DISS sources unavailable';
     }
-	async function exportJPG() {
+	async function exportJPG() {//prossima versione aggiungere box con indicatore per tipo di stazioni evidenziate
 	  const btn = $('btnExp'); btn.disabled = true; btn.textContent = 'Exporting...';
 	  try {
 		const Z = 9, T = 256, SC = T * Math.pow(2, Z), S = 1.6;
@@ -2137,6 +2330,13 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
 		}
 		events.slice().sort((a, b) => a.mag - b.mag).forEach(e => {
 		  const q = P(e.lon, e.lat), hi = activeSec && activeSec.slabSet.has(e);
+		  const mm = on.beach ? mecaCache.get(String(e.eventId)) : null;
+		  if (mm) {
+		    const bs = Math.max(12, Math.min(34, Math.round(8 + e.mag * 4))) * S;
+		    c.drawImage(beachballCanvas(mm.strike, mm.dip, mm.rake + 180, Math.round(bs / S), colorOf(e)), q[0] - bs / 2, q[1] - bs / 2, bs, bs);
+		    if (hi) { c.beginPath(); c.arc(q[0], q[1], bs / 2, 0, 6.2832); c.lineWidth = 2; c.strokeStyle = '#fff'; c.stroke(); }
+		    return;
+		  }
 		  c.beginPath(); c.arc(q[0], q[1], Math.max(2, e.mag * 2) * S, 0, 6.2832); c.globalAlpha = .8; c.fillStyle = colorOf(e); c.fill(); c.globalAlpha = 1; c.lineWidth = hi ? 2 : .8; c.strokeStyle = hi ? '#fff' : '#000'; c.stroke();
 		});
 		if (on.bars) AREAS.filter(a => a.n).forEach(a => {
@@ -2144,6 +2344,43 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
 		  c.fillStyle = 'rgba(8,81,156,.85)'; c.fillRect(q[0] - 8 * S, q[1] - h, 16 * S, h); c.strokeStyle = '#000'; c.lineWidth = 1; c.strokeRect(q[0] - 8 * S, q[1] - h, 16 * S, h);
 		  c.font = 'bold ' + 11 * S + 'px sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#fff'; c.strokeText(a.n, q[0], q[1] - h - 4); c.fillStyle = '#000'; c.fillText(a.n, q[0], q[1] - h - 4);
 		});
+        const bbLayers = [];
+        try { if (typeof beachLayer  !== 'undefined' && beachLayer)  bbLayers.push(beachLayer);  } catch (e) {}
+        try { if (typeof bbLayer     !== 'undefined' && bbLayer)     bbLayers.push(bbLayer);     } catch (e) {}
+        try { if (typeof beachballs  !== 'undefined' && beachballs)  bbLayers.push(beachballs);  } catch (e) {}
+        for (const lg of bbLayers) {
+          if (map.hasLayer(lg)) await drawMarkerIcons(c, lg, P, S);
+        }
+        if (showStations && stationData.length) {
+          c.font = 'bold ' + Math.round(12 * S) + 'px sans-serif';
+          c.textAlign = 'center';
+          c.textBaseline = 'middle';
+          const hgt  = 17 * S, padX = 5 * S, rad = 3 * S;
+          stationData.forEach(st => {
+            const hl  = !!staBand && st.bands.has(staBand);
+            const dim = !!staBand && st.chanOK && !hl;
+            const q  = P(st.lon, st.lat);
+            const tw = c.measureText(st.station).width + padX * 2;
+            const x  = q[0] - tw / 2, y = q[1] - hgt / 2;
+            c.globalAlpha = dim ? 0.35 : 1;
+            c.beginPath();
+            c.moveTo(x + rad, y);
+            c.lineTo(x + tw - rad, y); c.quadraticCurveTo(x + tw, y, x + tw, y + rad);
+            c.lineTo(x + tw, y + hgt - rad); c.quadraticCurveTo(x + tw, y + hgt, x + tw - rad, y + hgt);
+            c.lineTo(x + rad, y + hgt); c.quadraticCurveTo(x, y + hgt, x, y + hgt - rad);
+            c.lineTo(x, y + rad); c.quadraticCurveTo(x, y, x + rad, y);
+            c.closePath();
+            c.fillStyle   = hl ? '#ff7800' : 'rgba(0,0,0,.62)';
+            c.fill();
+            c.lineWidth   = 1.5 * S;
+            c.strokeStyle = hl ? '#ffffff' : 'rgba(255,255,255,.35)';
+            c.stroke();
+            c.fillStyle = hl ? '#000' : '#fff';
+            c.fillText(st.station, q[0], q[1]);
+            c.globalAlpha = 1;
+          });
+          c.textBaseline = 'alphabetic';
+        }
 		secs.forEach(s => {
 		  const g = s.g, hw = g.hw;
 		  const inv = (X, Y) => P(g.lon0 + X / g.kx, g.lat0 + Y / g.ky);
@@ -2162,7 +2399,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
 		const d0 = depthMin + dsel.a * (depthMax - depthMin);
 		const d1 = depthMin + dsel.b * (depthMax - depthMin);
 		const title = events.length + ' ' + tr('cLabel');
-		let sub = fmtUTC(t0) + '  ' + fmtUTC(t1) + ' UTC';
+		let sub = fmtUTC(t0) + ' \u2192 ' + fmtUTC(t1) + ' UTC';
 		if (colorMode === 'depth') sub += '  \u00b7  depth ' + d0.toFixed(0) + '\u2013' + d1.toFixed(0) + ' km';
 		c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(W / 2 - 400, 24, 800, 92);
 		c.fillStyle = '#fff'; c.textAlign = 'center';
@@ -2192,7 +2429,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
 		    c.beginPath(); c.rect(x - 6, y - 5, 12, bh + 10); c.fill(); c.stroke();
 		  });
 		};
-
 		const rowY0 = barY(0);
 		if (colorMode === 'time') {
 		  legendBar(rowY0, CM.map((col, i) => [i / (CM.length - 1), col]), sel.a, sel.b);
@@ -2206,7 +2442,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
 		    c.fillText(lab, x, rowY0 + bh + 28);
 		  }
 		  c.fillStyle = '#333'; c.font = '16px sans-serif';
-		  c.fillText('selected  ' + fmtUTC(t0) + '    ' + fmtUTC(t1) + ' UTC', bx + bw / 2, rowY0 + bh + 54);
+		  c.fillText('selected  ' + fmtUTC(t0) + ' \u2192 ' + fmtUTC(t1) + ' UTC', bx + bw / 2, rowY0 + bh + 54);
 		} else if (colorMode === 'kde') {
 		  legendBar(rowY0, KDE_STOPS.map((st, i) => [i / (KDE_STOPS.length - 1), `rgb(${st.join(',')})`]));
 		  c.fillStyle = '#000'; c.font = '18px sans-serif';
@@ -2230,7 +2466,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
 		  c.fillStyle = '#000'; c.font = '16px sans-serif';
 		  c.textAlign = 'left';   c.fillText(fmtUTC(rangeStart), bx, rowY1 + bh + 24);
 		  c.textAlign = 'right';  c.fillText(fmtUTC(rangeEnd) + ' UTC', bx + bw, rowY1 + bh + 24);
-		  c.textAlign = 'center'; c.fillText('time window \u2014 selected ' + fmtUTC(t0) + fmtUTC(t1), bx + bw / 2, rowY1 + bh + 24);
+		  c.textAlign = 'center'; c.fillText('time window \u2014 selected ' + fmtUTC(t0) + ' \u2192 ' + fmtUTC(t1), bx + bw / 2, rowY1 + bh + 24);
 		}
 
 		c.strokeStyle = '#ff7800'; c.lineWidth = 8; c.strokeRect(4, 4, W - 8, H - 8);
@@ -2308,7 +2544,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
           while (cur < endMs) {
             if (id !== reqId) return;
             const curEnd = Math.min(cur + chunkDays * 864e5, endMs);
-            info.textContent = `Loading chunk ${++chunkCount}/${totalChunks}…`;
+            info.textContent = `Loading chunk ${++chunkCount}/${totalChunks}...`;
             try {
               const res = await fetch(`${baseUrl}&starttime=${fmt(new Date(cur))}&endtime=${fmt(new Date(curEnd))}`);
               if (id !== reqId) return;
@@ -2420,7 +2656,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       try {
         for (let t = a; t < b; t += step) {
           const t2 = Math.min(t + step, b);
-          qcStatus = ' · loading uncertainties ' + fmtISO(new Date(t)).slice(0, 10) + '…';
+          qcStatus = ' · loading uncertainties ' + fmtISO(new Date(t)).slice(0, 10) + '...';
           qcRefresh();
           const res = await fetch(base + '&starttime=' + fmtISO(new Date(t)) + '&endtime=' + fmtISO(new Date(t2)));
           if (res.ok) qcParseXML(await res.text()).forEach(([id, q]) => qcCache.set(id, q));
@@ -2434,17 +2670,14 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       qcRefresh();
       if (qcRerun) { qcRerun = false; qcEnsureData(); }
     }
-
     function qcRefresh() {
       if (qctablewin.style.display === 'flex') buildQCTable();
       drawQCSolution();
     }
-
     function qcWindowOpen() {
       return (qctablewin && qctablewin.style.display === 'flex') ||
              (qcsolwin   && qcsolwin.style.display   === 'flex');
     }
-
     function qcStats(arr) {
       const v = arr.filter(x => x != null && isFinite(x));
       if (!v.length) return null;
@@ -2461,7 +2694,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
                p5: pct(5), p25: pct(25), med: pct(50),
                p75: pct(75), p95: pct(95), max: s[n - 1] };
     }
-
     function fmtQc(v, dec) {
       if (v == null || !isFinite(v)) return '—';
       if (dec != null) return v.toFixed(dec);
@@ -2471,7 +2703,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       if (a >= 1)    return v.toFixed(2);
       return v.toFixed(3);
     }
-
     function highlightQCEvent(e) {
       qcSelectedEvent = e;
       qcHighlightLayer.clearLayers();
@@ -2491,7 +2722,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       if (row) row.scrollIntoView({ block: 'nearest' });
       drawQCSolution();
     }
-
     function highlightQCBin(eventList) {
       qcSelectedEvent = null;
       qcHighlightLayer.clearLayers();
@@ -2504,7 +2734,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       });
       drawQCSolution();
     }
-
     function buildQCTable() {
       const tbl = $('qctable');
       if (!tbl) return;
@@ -2569,13 +2798,11 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
         };
       });
     }
-
     function drawQCSolution() {
       if (!qcsolwin || qcsolwin.style.display !== 'flex') return;
       const [c, W, H] = fitCanvas($('qcsolcv'));
       c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
       qcBars = [];
-
       const data = events;
       if (!data.length) {
         c.fillStyle = '#666'; c.font = '13px sans-serif'; c.textAlign = 'center';
@@ -2591,7 +2818,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
         $('qcsolinfo').textContent = '0 valid values';
         return;
       }
-
       const vmin = Math.min(...vals), vmax = Math.max(...vals);
       const nBins = 30;
       const binW = (vmax - vmin) / nBins || 1;
@@ -2604,12 +2830,10 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
         bins[idx]++;
         binEvents[idx].push(e);
       });
-
       const mx = Math.max(1, ...bins);
       const ml = 48, mr = 12, mt = 32, mb = 46;
       const pw = W - ml - mr, ph = H - mt - mb;
       const bw = pw / nBins;
-
       c.fillStyle = '#000'; c.font = 'bold 13px sans-serif'; c.textAlign = 'center';
       c.fillText('Distribution of ' + m.label + (m.unit ? ' (' + m.unit + ')' : ''), W / 2, 16);
       c.font = '10px sans-serif'; c.fillStyle = '#666';
@@ -2637,7 +2861,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       }
       c.font = '11px sans-serif';
       c.fillText(m.label + (m.unit ? ' (' + m.unit + ')' : ''), ml + pw / 2, H - 6);
-
       if (qcSelectedEvent) {
         const v = qcSelectedEvent[m.key];
         if (v != null && isFinite(v)) {
@@ -2649,7 +2872,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       $('qcsolinfo').textContent = 'metric: ' + m.label +
         (qcSelectedEvent ? ' · selected: ' + qcSelectedEvent.eventId : '') + qcStatus;
     }
-
     function qcNavigate(dir) {
       const s = qcOrdered(); if (!s.length) return;
       let i = qcSelectedEvent ? s.findIndex(e => e.eventId === qcSelectedEvent.eventId) : -1;
@@ -2657,7 +2879,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       qcNavIndex = i;
       highlightQCEvent(s[i]);
     }
-
     function openQCTable() {
       showWin(qctablewin, 60, 110);
       buildQCTable();
@@ -2699,7 +2920,6 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       });
       h.addEventListener('pointerup', () => { st = null; });
     });
-
     new ResizeObserver(() => drawQCSolution()).observe(qcsolwin);
     $('qcsolcv').addEventListener('click', ev => {
       const r = $('qcsolcv').getBoundingClientRect();
@@ -2741,6 +2961,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       return div;
     };
     qcCtl.addTo(map);
+    initStaChan();
     applyLang();
     fetchEarthquakes();
     setInterval(() => { if (!customRange && days <= 30) fetchEarthquakes(); }, 60000);
