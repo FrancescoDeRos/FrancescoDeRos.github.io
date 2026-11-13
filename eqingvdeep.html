@@ -1,29 +1,87 @@
 <!DOCTYPE html>
-<!-- FDR v5 earthquake visualizer 20261108 -->
+<!-- FDR v6 earthquake visualizer 20261113 -->
 <html>
 <head>
   <meta charset="utf-8" />
   <title>INGVRTEQS</title>
-  <meta name="viewport" content="width=device-width, initial-scale=0.5">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>html,body,#map{height:100%;margin:0}.leaflet-popup-content{font-size:14px}.leaflet-popup-content a{color:#08519c;text-decoration:none}.leaflet-popup-content a:hover{text-decoration:underline}.ctl{background:#fff;padding:6px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.4);max-height:calc(100vh - 40px);overflow-y:auto}.ctl button{display:block;width:100%;margin:2px 0;padding:4px 8px;cursor:pointer;border:1px solid #999;background:#f4f4f4}.ctl button.active{background:#BD0026;color:#fff;border-color:#800026}.ctl button.feat.active{background:#08519c;border-color:#08306b;color:#fff}.ctl button.act.active{background:#e65100;border-color:#bf360c;color:#fff}.ctl hr{margin:4px 0;border:0;border-top:1px solid #ccc}.ctl .info{font-size:12px;margin-top:4px;text-align:center}#chart{position:absolute;left:10px;bottom:62px;z-index:1000;background:#fff;padding:4px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.4);display:none}#rateAreaBar{display:none;margin-bottom:4px;font:11px sans-serif}#rateAreaBar select{font-size:11px;max-width:240px}.abar{text-align:center;font:bold 10px sans-serif;color:#000}.abar div{margin:0 auto;width:16px;border:1px solid #000;background:#08519c;opacity:.85}.mag-legend{text-align:center;font:11px sans-serif}.mag-legend svg{display:block;margin:4px auto 0}.mag-legend text{font:bold 8px sans-serif;fill:#000;paint-order:stroke;stroke:#fff;stroke-width:2px;stroke-linejoin:round}#kdeLegend{display:none}#counter{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;background:#16181d;border:1px solid #000;border-radius:8px;padding:4px 10px;box-shadow:0 2px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12);color:#ccc;font:11px sans-serif;user-select:none;display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;max-width:94vw}#cmain{display:flex;flex-direction:row;align-items:center;gap:8px;cursor:pointer}#cmain:hover .cl{color:#4fc3f7}#helpBtn{flex:0 0 auto;width:18px;height:18px;padding:0;border-radius:50%;border:1px solid #3a3d45;background:#262930;color:#4fc3f7;font:bold 11px/1 "DejaVu Sans",sans-serif;cursor:pointer}#helpBtn:hover{background:#343a44;border-color:#4fc3f7}#counter .cl{margin-bottom:0;font-size:11px;white-space:nowrap}#counter.collapsed #clabel::after{content:' \25BE';font-size:10px;opacity:.55}#counter:not(.collapsed) #clabel::after{content:' \25B4';font-size:10px;opacity:.55}#cpanel{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;justify-content:center;font:10px sans-serif}#counter.collapsed #cpanel{display:none}#counter.collapsed #eqtip{display:none !important}#cpanel select,#cpanel input,#cpanel button{font:10px/14px sans-serif;padding:2px 6px;border-radius:3px;border:1px solid #3a3d45;background:#262930;color:#ddd;box-sizing:border-box}#cpanel select{max-width:96px;padding:2px 4px}#cpanel input#eqid{width:80px}#cpanel input#dtStart,#cpanel input#dtEnd{width:88px;font-family:"DejaVu Sans Mono",Menlo,Consolas,monospace}#cpanel input:focus{outline:1px solid #4fc3f7}#cpanel button{cursor:pointer}#cpanel button:hover{background:#343a44}#cpanel .csep{width:1px;height:16px;background:#3a3d45;margin:0 2px}#odo{display:flex;gap:2px;justify-content:center}.dg{width:28px;height:42px;overflow:hidden;position:relative;background:#000;border-radius:4px;box-shadow:inset 0 0 6px #000}.dg::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(#000 0,rgba(0,0,0,0) 28%,rgba(0,0,0,0) 72%,#000 100%)}.dg::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,.14);z-index:3}.dg .st{transition:transform .8s cubic-bezier(.25,.9,.3,1)}.dg i{display:block;height:42px;font:normal 600 30px/42px "DejaVu Sans Mono",Menlo,Consolas,monospace;color:#f4f4f4;text-align:center}.dg.z i{color:#4a4d55}#eqtip{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:7px;width:232px;padding:6px 8px;background:#262930;border:1px solid #3a3d45;border-radius:5px;font:11px/1.4 sans-serif;color:#ccc;text-align:left;z-index:1002;box-shadow:0 2px 8px rgba(0,0,0,.6)}#timebar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:min(520px,34vw);z-index:1001;background:rgba(255,255,255,.93);border-radius:6px;padding:5px 30px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);font:11px sans-serif;user-select:none}#depthbar{position:absolute;bottom:96px;left:50%;transform:translateX(-50%);width:min(520px,34vw);z-index:1001;background:rgba(255,255,255,.93);border-radius:6px;padding:5px 30px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);font:11px sans-serif;user-select:none;display:none}#timebar .tbh,#depthbar .tbh{display:flex;justify-content:space-between;gap:8px;margin-bottom:5px;white-space:nowrap}.tbt{position:relative;height:16px;cursor:pointer;touch-action:none}.tbg{position:absolute;inset:0;border:1px solid #000;border-radius:2px}.tbg.gray{filter:grayscale(1)}.tbm{position:absolute;top:0;bottom:0;background:rgba(255,255,255,.75)}.tbk{position:absolute;top:-4px;width:10px;height:24px;margin-left:-5px;background:#fff;border:2px solid #222;border-radius:3px;box-sizing:border-box;cursor:ew-resize}.tbx{position:relative;height:28px;margin-top:3px}.tbx .tk{position:absolute;top:0;height:5px;border-left:1px solid #333}.tbx .tk span{position:absolute;top:6px;left:0;transform:translateX(-50%);white-space:nowrap;font-size:10px;text-align:center;line-height:11px}.bbpop{min-width:64px;text-align:center}.bbwait{font:11px sans-serif;color:#666}.bblab{font:10px sans-serif;color:#333;margin-top:2px}.win{position:absolute;z-index:1100;background:#fff;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.55);display:none;flex-direction:column;resize:both;overflow:hidden;min-width:260px;min-height:190px;font:12px sans-serif}.win .wh{background:#2b2f36;color:#fff;padding:4px 6px;cursor:move;display:flex;justify-content:space-between;align-items:center;gap:8px;user-select:none;touch-action:none}.win .wh button{margin-left:4px;padding:1px 7px;cursor:pointer;border:1px solid #666;background:#444;color:#fff;border-radius:3px;font:11px sans-serif}.win .wh button.active{background:#e65100;border-color:#bf360c}.win .wb{position:relative;flex:1;min-height:0}.win canvas{position:absolute;left:0;top:0;width:100%;height:100%}.win .wf{padding:3px 8px;border-top:1px solid #ccc;display:flex;gap:10px;align-items:center;flex-wrap:wrap}#sectip{position:absolute;display:none;pointer-events:none;background:rgba(20,20,20,.92);color:#fff;padding:4px 6px;border-radius:3px;font:11px/1.35 sans-serif;white-space:nowrap;z-index:5}.hd{width:22px;height:22px;border-radius:50%;background:#00e5ff;border:2px solid #003b44;color:#003b44;font:bold 12px/18px sans-serif;text-align:center;cursor:move;box-sizing:border-box}.smark{width:26px;height:26px;border-radius:50%;background:#00e5ff;border:2px solid #003b44;color:#003b44;font:bold 14px/22px sans-serif;text-align:center;box-sizing:border-box}#helpwin .wb{overflow:auto;padding:9px 11px;font:12px/1.5 sans-serif;color:#222}#helpwin b{color:#08519c}#helpwin .hs{margin:0 0 7px}
 .sta-mark        { background: rgba(0,0,0,.62); color:#fff; font: 600 11px/16px sans-serif;padding:0 4px; border-radius:3px; white-space:nowrap; text-align:center;border:1px solid rgba(255,255,255,.25); }
 .sta-mark.hl     { background:#ff7800; color:#000; border-color:#fff;box-shadow:0 0 8px #ff7800; }
 .sta-mark.dim    { opacity:.3; }
+
+html,body{overflow:hidden;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+.leaflet-container.drawmode{touch-action:none !important}
+.rpanel{width:112px;padding:4px;box-sizing:content-box;font-size:11px;max-height:calc(100vh - 40px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;transition:transform .22s ease}
+.rpanel button{font:11px/1.15 sans-serif;padding:6px 3px;min-height:28px;touch-action:manipulation}
+.rpanel select,.rpanel input{font-size:11px;max-width:100%;box-sizing:border-box}
+.rpanel.rp-closed{transform:translateX(calc(100% + 24px))}
+#rpTab{position:fixed;top:10px;right:0;z-index:1200;width:26px;height:44px;display:flex;align-items:center;justify-content:center;background:#fff;color:#333;font-size:14px;border-radius:8px 0 0 8px;box-shadow:0 1px 5px rgba(0,0,0,.45);cursor:pointer;user-select:none;transition:right .22s ease;touch-action:manipulation}
+#rpTab:hover{background:#f0f0f0}
+#btnFill .fo,#btnFill .ff{font-size:15px;line-height:1;margin:0 2px}
+#btnFill .off{opacity:.28}
+#counter .lnk{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:#262930;border:1px solid #3a3d45;text-decoration:none}
+#counter .lnk:hover{background:#343a44;border-color:#4fc3f7}
+#counter .lnk svg{display:block}
+.meas a.mbtn{display:flex;align-items:center;justify-content:center;color:#222;cursor:pointer}
+.meas a.mbtn svg{width:18px;height:18px}
+.meas a.mbtn.active{background:#e65100;color:#fff}
+.mvw{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.mvtx{width:13px;height:13px;border-radius:50%;background:#fff;border:3px solid #ff5722;box-sizing:border-box;box-shadow:0 0 3px rgba(0,0,0,.7)}
+.mlab{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;font:bold 11px/1.25 sans-serif;color:#000;background:rgba(255,255,255,.88);border:1px solid #444;border-radius:4px;padding:1px 5px;text-align:center}
+.mlab.tot{transform:translate(-50%,-165%);background:#fff59d}
+.mlab.tot2{background:#ffe0b2}
+.mlab small{font-weight:600}
+#mbar{display:none;position:fixed;left:50%;top:72px;transform:translateX(-50%);z-index:1300;align-items:center;gap:6px;background:rgba(22,24,29,.95);color:#fff;border-radius:22px;padding:5px 8px 5px 14px;font:12px sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.6);max-width:96vw}
+#mbar button{min-width:36px;height:34px;border-radius:17px;border:1px solid #555;background:#333;color:#fff;font-size:16px;cursor:pointer;touch-action:manipulation}
+#mbar #mbDone{background:#2e7d32;border-color:#1b5e20}
+#toast{display:none;position:fixed;left:50%;top:72px;transform:translateX(-50%);z-index:2000;background:rgba(0,0,0,.85);color:#fff;padding:7px 12px;border-radius:8px;font:12px sans-serif;max-width:90vw;pointer-events:none;text-align:center}
+.mag-legend{padding:3px 5px !important}
+@media (pointer:coarse){
+  .hd{width:32px;height:32px;font:bold 15px/28px sans-serif}
+  .tbk{width:20px;margin-left:-10px;height:32px;top:-8px}
+  .tbt{height:18px}
+  .win .wh{padding:9px 8px}
+  .win .wh button{padding:6px 10px}
+}
+@media (max-width:760px){
+  #counter{left:48px;right:44px;transform:none;max-width:none;width:auto;padding:3px 6px;gap:4px 6px}
+  #counter .cl{font-size:10px}
+  .dg{width:20px}.dg i{font-size:27px}
+  #cpanel select,#cpanel input,#cpanel button{font-size:13px;padding:5px 6px}
+  #cpanel select{max-width:120px}
+  #eqtip{width:min(232px,80vw)}
+  .leaflet-top.leaflet-right{top:56px}
+  #rpTab{top:56px}
+  .rpanel{max-height:calc(100vh - 56px - 150px)}
+  #timebar,#depthbar{width:calc(100vw - 110px);min-width:220px;padding:5px 24px 3px}
+  #timebar{bottom:56px}
+  #depthbar{bottom:146px}
+  #chart{left:6px;max-width:calc(100vw - 12px);bottom:150px}
+  #chart canvas{max-width:100%;height:auto}
+  .win{max-width:calc(100vw - 8px);max-height:calc(100vh - 90px);min-width:0}
+  #mbar{top:auto;bottom:150px}
+  #toast{top:auto;bottom:200px}
+}
 </style>
 </head>
 <body>
   <div id="map"></div>
+  <div id="mbar"><span id="mbHint"></span><button id="mbUndo" title="Undo last point">&#8630;</button><button id="mbDone" title="Finish">&#10003;</button><button id="mbCancel" title="Cancel">&#10005;</button></div>
+  <div id="toast"></div>
   <div id="chart">
-    <div id="rateAreaBar"><span data-i18n="area">Area:</span> <select id="rsel"><option value="" data-i18n="allAreas">All areas</option></select></div>
+    <div id="rateAreaBar"><span data-i18n="area">Area</span> <select id="rsel"><option value="" data-i18n="allAreas">All areas</option></select></div>
     <canvas id="cv" width="440" height="270"></canvas>
   </div>
 <div id="counter" class="collapsed">
   <button id="helpBtn" title="Information">i</button>
   <div id="cmain" title="Click to expand / collapse options">
-    <div class="cl" id="clabel">earthquakes</div>
+    <div class="cl" id="clabel">eqs</div>
     <div id="odo"></div>
   </div>
+  <a class="lnk" href="http://www.sismocal.org/" target="_blank" rel="noopener" title="SismoCal (sismocal.org)"><svg viewBox="0 0 28 28" width="22" height="22"><path d="M16.0 1.0L15.8 1.4L15.7 1.8L16.0 2.8L15.2 3.7L14.7 4.7L14.8 5.4L15.1 5.7L14.9 6.0L15.2 6.4L15.9 6.8L17.4 7.0L17.7 7.2L18.0 7.7L18.5 7.9L19.0 8.3L19.5 8.4L20.2 9.2L20.9 9.4L20.5 10.2L20.4 11.0L20.7 11.7L20.5 13.1L20.8 13.7L21.3 13.9L21.0 14.1L21.0 14.7L20.6 15.0L20.4 15.4L20.3 15.2L20.0 15.1L19.6 15.3L19.4 15.0L19.0 14.9L17.9 15.2L16.9 15.6L15.5 16.7L15.1 17.8L15.2 17.8L15.5 19.8L15.4 21.1L14.5 21.9L13.3 22.5L11.7 24.3L11.3 26.0L11.0 26.6L10.8 26.8L10.2 27.0L9.7 26.8L7.7 26.9L7.1 26.4L6.8 25.9L6.8 25.7L7.0 25.5L6.7 25.0L6.9 24.3L6.8 23.4L7.0 23.2L8.2 22.8L8.5 22.4L8.6 21.9L9.3 20.4L9.4 19.5L9.3 19.2L8.7 18.6L8.7 18.4L8.9 18.1L10.2 17.5L11.4 17.5L11.8 17.2L12.0 16.8L12.2 15.9L12.2 15.2L11.9 14.9L11.6 14.7L11.0 13.3L10.6 10.5L10.2 9.0L9.6 8.1L9.0 7.5L8.7 6.5L8.4 6.0L8.2 4.6L8.1 4.4L8.1 3.7Z" fill="rgba(255,183,77,.25)" stroke="#ffb74d" stroke-width="1.3" stroke-linejoin="round"/></svg></a>
+  <a class="lnk" href="https://terremoti.ingv.it/" target="_blank" rel="noopener" title="INGV homepage (terremoti.ingv.it)"><svg viewBox="0 0 28 28" width="22" height="22"><path d="M3.7 3.9L4.0 4.0L4.7 3.7L5.2 3.9L5.7 3.4L5.7 3.0L6.3 2.6L6.3 3.1L6.7 3.4L7.0 3.5L7.0 3.7L7.2 3.8L7.2 4.1L7.4 4.2L7.5 4.0L7.4 3.8L7.4 3.6L7.8 3.1L7.9 2.5L8.2 2.5L8.2 2.8L8.4 3.0L9.1 2.8L9.4 3.2L9.5 3.0L9.4 2.9L9.5 2.7L9.3 2.6L9.3 2.4L9.6 2.1L9.8 2.3L10.1 2.4L10.1 2.1L9.9 2.0L10.1 1.6L11.1 1.8L11.4 1.3L12.0 1.2L12.5 1.3L13.3 1.0L13.2 1.4L13.5 1.5L13.5 1.7L13.7 2.0L16.1 2.4L16.1 2.6L15.5 3.0L15.6 3.2L16.0 3.3L15.7 3.7L16.0 3.8L15.9 4.1L16.3 4.3L16.5 4.6L16.4 4.7L16.1 4.7L16.3 4.7L15.9 4.2L15.6 4.5L15.5 4.3L15.0 4.3L15.0 4.5L15.1 4.4L15.0 4.6L13.7 5.1L14.0 4.8L13.7 4.9L13.7 5.0L13.5 5.0L13.3 5.4L13.2 5.4L13.4 5.7L13.5 5.6L13.5 6.0L13.6 6.2L13.6 6.0L13.9 6.3L13.8 6.6L13.7 6.5L13.7 6.7L13.5 6.6L13.5 7.5L13.7 8.1L14.2 8.7L16.0 9.8L16.8 12.2L17.7 13.1L18.0 13.2L18.0 13.5L18.8 13.9L20.6 13.9L20.7 14.2L20.2 14.6L20.3 15.0L21.5 15.7L22.3 16.0L23.1 16.6L24.1 17.0L24.2 17.3L24.5 17.5L25.1 18.3L24.7 19.2L24.2 18.9L23.8 18.0L23.0 17.8L22.6 17.6L22.8 17.4L22.3 17.4L22.1 17.6L21.5 18.5L21.6 18.7L21.3 19.2L21.4 19.5L21.8 19.6L22.5 20.1L22.5 20.9L22.6 21.1L22.4 21.4L21.9 21.4L21.4 21.7L21.4 22.6L20.7 23.3L20.5 23.8L19.9 23.8L19.7 23.6L19.7 23.1L20.0 22.9L20.2 22.4L20.1 22.0L20.7 21.8L20.8 21.4L20.5 21.0L20.4 20.3L20.1 19.7L20.0 18.9L19.7 18.5L19.3 18.7L19.0 18.6L18.8 18.2L18.4 18.1L18.5 17.7L18.1 17.0L17.3 17.2L17.6 16.8L17.2 16.6L17.1 16.7L16.8 16.6L16.8 16.7L16.7 16.4L16.2 15.5L15.8 15.7L15.3 15.4L14.9 15.6L14.6 15.2L14.1 15.1L13.8 14.6L13.4 14.3L13.3 14.0L13.0 13.7L12.6 13.6L12.3 13.0L11.8 12.7L11.3 12.7L11.3 12.6L11.5 12.5L11.4 12.3L11.0 11.8L10.6 11.7L10.6 11.4L10.2 11.3L10.2 10.6L9.8 10.0L9.7 9.1L9.4 8.6L9.0 8.4L8.9 8.6L7.8 7.8L7.8 7.9L7.6 7.8L6.9 7.6L6.4 7.9L5.7 8.9L5.0 9.2L4.6 9.2L4.6 9.0L5.0 8.5L4.9 8.3L4.3 8.4L3.6 8.1L3.4 7.8L3.5 7.6L3.4 7.4L3.6 7.0L3.8 7.0L3.7 6.6L3.2 6.4L3.2 6.2L2.9 5.9L3.2 5.8L3.4 5.9L3.9 5.6L4.0 5.2L3.6 4.9L3.6 4.6L3.3 4.5L3.3 4.3ZM19.5 22.9L19.7 23.0L18.9 24.2L18.7 24.9L18.7 25.3L19.0 25.5L18.9 25.6L19.1 26.1L18.8 26.3L18.7 27.0L17.6 26.7L17.2 26.0L16.1 25.7L15.1 24.9L14.8 24.9L14.7 24.7L14.2 24.7L13.7 24.2L13.9 23.6L14.3 23.4L14.3 23.2L14.6 23.6L14.9 23.4L15.0 23.2L15.4 23.1L15.5 23.4L15.8 23.4L16.0 23.6L16.3 23.7L16.7 23.5L17.6 23.5L18.4 23.2L18.7 23.3L19.0 23.0L19.1 23.1ZM8.9 17.3L8.9 17.5L8.6 18.0L8.8 18.5L8.4 20.8L8.4 20.9L7.9 20.6L7.7 20.7L7.4 20.5L7.5 20.6L7.4 21.2L7.1 21.5L6.9 21.3L6.7 21.5L6.6 21.0L6.2 20.6L6.3 20.4L6.2 20.2L6.4 19.7L6.4 19.3L6.6 19.4L6.5 19.4L6.6 19.0L6.4 18.9L6.3 19.0L6.3 18.9L6.2 18.6L6.4 18.4L6.2 17.5L6.1 17.2L5.9 17.2L5.9 17.1L5.8 17.2L5.9 16.3L6.1 16.5L6.5 16.6L7.1 16.3L7.8 15.5L7.9 15.7L8.2 15.7L8.2 15.9L8.3 15.8L8.4 15.9L8.3 16.1L8.6 16.2L8.3 16.4L8.6 16.4L8.5 16.4L8.7 16.6L8.6 16.7Z" fill="rgba(79,195,247,.22)" stroke="#4fc3f7" stroke-width="1.3" stroke-linejoin="round"/></svg></a>
   <div id="cpanel">
     <select id="csel" title="Time range"></select>
     <label title="Highlight stations by channel band">Channels:
@@ -86,12 +144,12 @@
     <div class="wb"></div>
   </div>
     <div class="win" id="qctablewin" style="width:780px;height:480px">
-    <div class="wh"><span>Quality check — Table</span><span><button id="qctablex">&#10005;</button></span></div>
+    <div class="wh"><span>Quality check. Table</span><span><button id="qctablex">&#10005;</button></span></div>
     <div class="wb" style="overflow:auto;padding:0"><table id="qctable" style="border-collapse:collapse;font:11px sans-serif;width:100%"></table></div>
     <div class="wf"><span id="qctableinfo"></span></div>
   </div>
   <div class="win" id="qcsolwin" style="width:660px;height:490px">
-    <div class="wh"><span>Quality check — Solution</span><span><button id="qcsolx">&#10005;</button></span></div>
+    <div class="wh"><span>Quality check. Solution</span><span><button id="qcsolx">&#10005;</button></span></div>
     <div class="wb"><canvas id="qcsolcv"></canvas></div>
     <div class="wf">
       <label>Sort by <select id="qcsort" style="font-size:11px"></select></label>
@@ -139,7 +197,7 @@ function applyLang() {
     .forEach(([s, x]) => { const e = document.querySelector(s + ' .wh span'); if (e) e.textContent = x; });
   g('btnEq').textContent = tr(showEvents ? 'aHide' : 'aShow');
   g('btnColor').textContent = tr('aColor', colorMode === 'kde' ? 'KDE' : tr(CMN[colorMode]));
-  g('btnBB').textContent = tr('aBB', tr(on.beach ? 'on' : 'off'));
+  bbLabel(); fillBtnLabel();
   baseLabel();
   const ls = g('langSel'); if (ls) ls.value = LANG;
   updateSectionUI();
@@ -489,11 +547,20 @@ const coasts = (coastsRaw || '').trim().split(/\n+/)
       return c;
     }
     AREAS.forEach(a => { a.h = a[1].map(p => [p[1], p[0]]); a.ar = polyArea(a.h); a.cy = a[2]; a.cx = a[3]; a.n = 0; });
-    const BYSIZE = AREAS.slice().sort((a, b) => a.ar - b.ar);//smallest area
-    const map = L.map('map', { preferCanvas: true });
+    const BYSIZE = AREAS.slice().sort((a, b) => a.ar - b.ar);
+    const TOUCH = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || innerWidth < 700;
+    const DOT_K = TOUCH ? 1.5 : 1;                       //punti gross cellul
+    const HS = TOUCH ? 32 : 22;                          //per touch test 4
+    let dotFill = true; try { dotFill = localStorage.getItem('dotFill') !== '0'; } catch (e) {}
+    const map = L.map('map', {
+      preferCanvas: true,
+      renderer: L.canvas({ tolerance: TOUCH ? 12 : 4 }),  //più area per touch
+      zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 100,
+      bounceAtZoomLimits: false, tapTolerance: 18, inertiaDeceleration: 2600
+    });
 	const BASES = {
-  sat:   { n: 'bmSat',   l: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri' }) },
-  out:   { n: 'bmOut',   l: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap, SRTM | &copy; OpenTopoMap (CC-BY-SA)', maxNativeZoom: 17, maxZoom: 18 }) }
+  sat:   { n: 'bmSat',   l: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri', bounds: L.latLngBounds([35.8, 12], [41.8, 19.5]) }) },
+  out:   { n: 'bmOut',   l: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap, SRTM | &copy; OpenTopoMap (CC-BY-SA)', maxNativeZoom: 17, maxZoom: 18, bounds: L.latLngBounds([35.8, 12], [41.8, 19.5]) }) }
 };
 const BORDER = ['sat', 'out'];
 let baseId = 'sat', currentBase = null;
@@ -530,12 +597,18 @@ baseCtl.addTo(map);
 let savedBase = 'sat'; try { savedBase = localStorage.getItem('base') || 'sat'; } catch (e) {}
 setBase(savedBase);
     const bounds = L.latLngBounds([35.8, 12], [41.8, 19.5]);
-    L.rectangle(bounds, {color: "#ff7800", weight: 1, fill: false}).addTo(map);
+    L.rectangle(bounds, {color: "#ff7800", weight: 1.5, fill: false, interactive: false}).addTo(map);
     map.fitBounds(bounds);
     map.setMinZoom(map.getBoundsZoom(bounds));
-    map.setMaxBounds(bounds.pad(0.2));
-    map.options.maxBoundsViscosity = -0.3;
-    window.addEventListener('resize', () => { map.setMinZoom(map.getBoundsZoom(bounds)); map.fitBounds(bounds); });
+    map.setMaxBounds(bounds);
+    map.options.maxBoundsViscosity = 1.0;
+    const onResize = () => {
+      map.invalidateSize();
+      const mz = map.getBoundsZoom(bounds); map.setMinZoom(mz);
+      if (map.getZoom() < mz) map.fitBounds(bounds);       //niente reset
+    };
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', () => setTimeout(() => { onResize(); map.fitBounds(bounds); }, 250));
     map.createPane('areas').style.zIndex = 350;
     map.createPane('kde').style.zIndex = 250;
     const areaRenderer = L.canvas({ pane: 'areas' });
@@ -550,7 +623,7 @@ setBase(savedBase);
     const RANGES = RSPEC.map(r => ['', r[0], '']); relabelRanges();
     const FEATS = [['depth','fDepth'],['month','fMonth'],['mag','fMag'],['rateDepth','fRate'],['kde','fKde'],['poly','fPoly'],['bars','fBars']];
     let daysIdx = 6, days = RANGES[daysIdx][1];
-    let customRange = null;                 //{s,e} ms: START/END manuale, null = 'last N'
+    let customRange = null;                 //{s,e}msSTART/END manuale null = 'last N'
     const dtDirty = { start: false, end: false };
     let reqId = 0, allEvents = [], events = [], chartMode = null, limitHit = false;
     let rangeStart = Date.now() - days * 864e5, rangeEnd = Date.now();
@@ -558,6 +631,8 @@ setBase(savedBase);
     let colorMode = 'time';                 //time|mag|kde|depth
     let kdeBW = 10;
     const on = { poly: false, bars: false, kde: false, beach: false };
+    let bbMode = 0, bbOnly = false;                     //0 beachballsOFF 1 beachballsON 2 mostra beachball in base pagina INGV
+    const BB_LAB = ['beachballsOFF', 'beachballsON', 'Show beachballs'];
     let depthMin = 0, depthMax = 1000;
     const dsel = { a: 0, b: 1 };            //finestra prof (frazioni depthMin/depthMax)
     let showEvents = true;
@@ -617,8 +692,7 @@ setBase(savedBase);
       const m = c.match(/\d+/g);
       return m ? [+m[0], +m[1], +m[2]] : [0, 0, 0];
     }
-    //strike, dip, rake x=N y=E z=Down
-    function mecaTensor(strike, dip, rake) {
+    function mecaTensor(strike, dip, rake) {    //strike, dip, rake x=N y=E z=Down
       const p = strike*Math.PI/180, d = dip*Math.PI/180, l = rake*Math.PI/180;
       const sp = Math.sin(p), cp = Math.cos(p), sd = Math.sin(d), cd = Math.cos(d), sl = Math.sin(l), cl = Math.cos(l);
       const s = [cp, sp, 0];                            // strike dir
@@ -741,7 +815,7 @@ setBase(savedBase);
       }
     }
     function beachIcon(e, m) {
-      const size = Math.max(12, Math.min(34, Math.round(8 + e.mag * 4)));
+      const size = TOUCH ? Math.max(22, Math.min(46, Math.round(14 + e.mag * 5))) : Math.max(12, Math.min(34, Math.round(8 + e.mag * 4)));
       const cv = beachballCanvas(m.strike, m.dip, m.rake + 180, size, colorOf(e));//const cv = beachballCanvas(m.strike, m.dip, m.rake, size, colorOf(e));
       if (!cv._dataUrl) cv._dataUrl = cv.toDataURL();
       return L.divIcon({ className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2],
@@ -777,7 +851,8 @@ setBase(savedBase);
       const d1 = depthMin + dsel.b * (depthMax - depthMin);
       const useD = colorMode === 'depth';
       events = allEvents.filter(e => (sel.a <= 0 || e.ms >= t0) && (sel.b >= 1 || e.ms <= t1)
-                                   && (!useD || (e.depth >= d0 && e.depth <= d1)));
+                                   && (!useD || (e.depth >= d0 && e.depth <= d1))
+                                   && (!bbOnly || !!mecaCache.get(String(e.eventId))));
     }
     function colorOf(e) {
       if (colorMode === 'time') return cmap((e.ms - rangeStart) / Math.max(1, rangeEnd - rangeStart));
@@ -928,8 +1003,8 @@ setBase(savedBase);
         const [a, b] = secLetters(i);
         s.la = a; s.lb = b;
         if (s.layers) {
-          s.layers.mA.setIcon(L.divIcon({ className: '', iconSize: [22, 22], iconAnchor: [11, 11], html: `<div class="hd">${a}</div>` }));
-          s.layers.mB.setIcon(L.divIcon({ className: '', iconSize: [22, 22], iconAnchor: [11, 11], html: `<div class="hd">${b}</div>` }));
+          s.layers.mA.setIcon(L.divIcon({ className: '', iconSize: [HS, HS], iconAnchor: [HS / 2, HS / 2], html: `<div class="hd">${a}</div>` }));
+          s.layers.mB.setIcon(L.divIcon({ className: '', iconSize: [HS, HS], iconAnchor: [HS / 2, HS / 2], html: `<div class="hd">${b}</div>` }));
         }
       });
     }
@@ -944,7 +1019,7 @@ setBase(savedBase);
     }
     const ctl = L.control({position: 'topright'});
     ctl.onAdd = () => {
-      const div = L.DomUtil.create('div', 'ctl');
+      const div = L.DomUtil.create('div', 'ctl rpanel');
       L.DomEvent.disableClickPropagation(div);
       L.DomEvent.disableScrollPropagation(div);
       RANGES.forEach(([label, d, short], idx) => {
@@ -976,6 +1051,7 @@ setBase(savedBase);
       act('btnClear', 'aClear', () => clearSection());
       act('btn3d', 'a3d', () => toggle3D());
       act('btnColor', 'aColor', () => toggleColor());
+      { const fb = L.DomUtil.create('button', 'act', div); fb.id = 'btnFill'; fb.onclick = () => toggleFill(); fillBtnLabel(fb); }
       act('btnDiss', 'aDiss', () => toggleDISS());
       act('btnExp', 'aExp', () => exportJPG());
       act('btnBB', 'aBB', () => toggleBeach());
@@ -1023,29 +1099,219 @@ setBase(savedBase);
       return div;
     };
     ctl.addTo(map);
+
+    function dotRadius(m) { return Math.max(TOUCH ? 5 : 2, m * 2 * DOT_K); }
+    function fillBtnLabel(b) {
+      b = b || $('btnFill'); if (!b) return;
+      b.innerHTML = 'Dots <span class="fo' + (dotFill ? ' off' : '') + '">\u25CB</span><span class="ff' + (dotFill ? '' : ' off') + '">\u25CF</span>';
+      b.title = dotFill ? 'Filled dots (tap for unfilled circles)' : 'Unfilled circles (tap for filled circles)';
+    }
+    function drawMagLegend() {
+      const h = $('magSvgHolder'); if (!h) return;
+      const mags = [2, 4, 6], rs = mags.map(dotRadius), R = rs[2], W = Math.ceil(2 * R + 14), H = Math.ceil(2 * R + 2);
+      let g = '';
+      mags.forEach((m, i) => {
+        const r = rs[i], cy = H - 1 - r, c = magColor(m);
+        g += `<circle cx="${R + 1}" cy="${cy}" r="${r}" fill="${dotFill ? c : 'none'}" fill-opacity="${dotFill ? .75 : 0}" stroke="${dotFill ? '#000' : c}" stroke-width="${dotFill ? .6 : 1.8}"/>`;
+        g += `<text x="${2 * R + 4}" y="${H - 2 * r + 4}">${m}</text>`;
+      });
+      h.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:2px auto 0">${g}</svg>`;
+      if (typeof updateLegends === 'function') updateLegends();
+    }
+    function toggleFill() {
+      dotFill = !dotFill;
+      try { localStorage.setItem('dotFill', dotFill ? '1' : '0'); } catch (e) {}
+      fillBtnLabel(); drawMagLegend(); renderMarkers();
+    }
+
+    function toast(msg, ms) {
+      const t = $('toast'); t.textContent = msg; t.style.display = 'block';
+      clearTimeout(toast._t); toast._t = setTimeout(() => { t.style.display = 'none'; }, ms || 3500);
+    }
+    (function () {
+      const info = $('info'); if (!info) return;
+      new MutationObserver(() => {
+        const t = info.textContent || '';
+        if (/catalog|Focal|olygon|ection|Search|not found|error|cancel/i.test(t) && document.body.classList.contains('rp-closed')) toast(t, 4200);
+      }).observe(info, { childList: true, characterData: true, subtree: true });
+    })();
+
+    (function () {
+      const pc = ctl.getContainer();
+      const tab = document.createElement('div'); tab.id = 'rpTab'; document.body.appendChild(tab);
+      L.DomEvent.disableClickPropagation(tab);
+      function sync() {
+        const closed = document.body.classList.contains('rp-closed');
+        pc.classList.toggle('rp-closed', closed);
+        tab.textContent = closed ? '\u25C0' : '\u25B6';
+        tab.title = closed ? 'Show panel' : 'Hide panel';
+        tab.style.right = closed ? '0px' : (pc.offsetWidth + 10) + 'px';
+      }
+      tab.addEventListener('click', () => { document.body.classList.toggle('rp-closed'); sync(); });
+      if (TOUCH || innerWidth < 760) document.body.classList.add('rp-closed');
+      sync(); setTimeout(sync, 300); window.addEventListener('resize', sync);
+    })();
+    let measureMode = null, mCur = null;
+    const measureLayer = L.layerGroup().addTo(map);
+    const mItems = [];
+    const fmtDist = d => d < 1000 ? Math.round(d) + ' m' : (d / 1000).toFixed(d < 10000 ? 2 : 1) + ' km';
+    const fmtArea = a => a < 1e6 ? Math.round(a) + ' m\u00b2' : (a / 1e6).toFixed(a < 1e7 ? 2 : a < 1e9 ? 1 : 0) + ' km\u00b2';
+    function ringArea(P) {                       //area (m2)
+      const R = 6371008.8, r = Math.PI / 180; let t = 0;
+      for (let i = 0; i < P.length; i++) {
+        const p1 = P[i], p2 = P[(i + 1) % P.length];
+        t += (p2.lng - p1.lng) * r * (2 + Math.sin(p1.lat * r) + Math.sin(p2.lat * r));
+      }
+      return Math.abs(t * R * R / 2);
+    }
+    function bearing(a, b) {
+      const r = Math.PI / 180, dl = (b.lng - a.lng) * r;
+      const y = Math.sin(dl) * Math.cos(b.lat * r), x = Math.cos(a.lat * r) * Math.sin(b.lat * r) - Math.sin(a.lat * r) * Math.cos(b.lat * r) * Math.cos(dl);
+      return (Math.atan2(y, x) / r + 360) % 360;
+    }
+    const MV_SZ = TOUCH ? 34 : 24;
+    const MV_ICON = L.divIcon({ className: '', iconSize: [MV_SZ, MV_SZ], iconAnchor: [MV_SZ / 2, MV_SZ / 2], html: '<div class="mvw"><div class="mvtx"></div></div>' });
+    function mLabel(it, ll, html, cls) {
+      const m = L.marker(ll, { interactive: false, keyboard: false, icon: L.divIcon({ className: '', iconSize: [0, 0], iconAnchor: [0, 0], html: '<div class="mlab ' + (cls || '') + '">' + html + '</div>' }) }).addTo(measureLayer);
+      it.labels.push(m);
+    }
+    function redrawItem(it) {
+      if (it.line) { measureLayer.removeLayer(it.line); it.line = null; }
+      it.labels.forEach(l => measureLayer.removeLayer(l)); it.labels = [];
+      const P = it.pts; if (P.length < 2) return;
+      if (it.kind === 'ruler') {
+        it.line = L.polyline(P, { color: '#ffeb3b', weight: 3, dashArray: '8 5', interactive: false }).addTo(measureLayer);
+        let tot = 0;
+        for (let i = 1; i < P.length; i++) {
+          const d = P[i - 1].distanceTo(P[i]); tot += d;
+          if (P.length > 2) mLabel(it, L.latLng((P[i - 1].lat + P[i].lat) / 2, (P[i - 1].lng + P[i].lng) / 2), fmtDist(d), 'seg');
+        }
+        const az = P.length === 2 ? ' &middot; az ' + bearing(P[0], P[1]).toFixed(0) + '&deg;' : '';
+        mLabel(it, P[P.length - 1], (P.length > 2 ? '&Sigma; ' : '') + fmtDist(tot) + az, 'tot');
+      } else if (P.length < 3) {
+        it.line = L.polyline(P, { color: '#ff9800', weight: 2.5, dashArray: '6 4', interactive: false }).addTo(measureLayer);
+      } else {
+        it.line = L.polygon(P, { color: '#ff9800', weight: 2.5, fillColor: '#ff9800', fillOpacity: .2, interactive: false }).addTo(measureLayer);
+        let per = 0; P.forEach((p, i) => { per += p.distanceTo(P[(i + 1) % P.length]); });
+        const c = L.latLng(P.reduce((a, p) => a + p.lat, 0) / P.length, P.reduce((a, p) => a + p.lng, 0) / P.length);
+        mLabel(it, c, fmtArea(ringArea(P)) + '<br><small>perim. ' + fmtDist(per) + '</small>', 'tot2');
+      }
+    }
+    function removeItem(it) {
+      it.marks.forEach(m => measureLayer.removeLayer(m));
+      if (it.line) measureLayer.removeLayer(it.line);
+      it.labels.forEach(l => measureLayer.removeLayer(l));
+      const i = mItems.indexOf(it); if (i >= 0) mItems.splice(i, 1);
+    }
+    function addMPoint(ll) {
+      const it = mCur; if (!it) return;
+      it.pts.push(L.latLng(ll.lat, ll.lng));
+      const m = L.marker(ll, { draggable: true, icon: MV_ICON, zIndexOffset: 1500, keyboard: false }).addTo(measureLayer);
+      m.on('drag', () => { const i = it.marks.indexOf(m); if (i >= 0) { it.pts[i] = m.getLatLng(); redrawItem(it); } });
+      m.on('click', ev => {
+        L.DomEvent.stopPropagation(ev);
+        if (it !== mCur) return;
+        const i = it.marks.indexOf(m);
+        if ((it.kind === 'area' && i === 0 && it.pts.length >= 3) || (it.kind === 'ruler' && i === it.pts.length - 1 && it.pts.length >= 2)) stopMeasure();
+      });
+      it.marks.push(m);
+      redrawItem(it);
+    }
+    function undoMeasure() {
+      const it = mCur; if (!it || !it.pts.length) return;
+      it.pts.pop(); measureLayer.removeLayer(it.marks.pop()); redrawItem(it);
+    }
+    function stopMeasure() {                      
+      if (mCur) { if (mCur.pts.length < (mCur.kind === 'area' ? 3 : 2)) removeItem(mCur); }
+      mCur = null; measureMode = null;
+      ['mRuler', 'mArea'].forEach(i => { const e = $(i); if (e) e.classList.remove('active'); });
+      if (!polyDrawing) map.doubleClickZoom.enable();
+      map.getContainer().style.cursor = (drawing || polyDrawing) ? 'crosshair' : '';
+    }
+    function setMeasure(kind) {
+      if (measureMode === kind) { stopMeasure(); return; }
+      stopMeasure();
+      if (drawing) toggleDraw(false);
+      if (polyDrawing) cancelPolyDraw();
+      measureMode = kind;
+      mCur = { kind, pts: [], marks: [], line: null, labels: [] }; mItems.push(mCur);
+      $(kind === 'ruler' ? 'mRuler' : 'mArea').classList.add('active');
+      map.doubleClickZoom.disable();
+      map.getContainer().style.cursor = 'crosshair';
+      toast(kind === 'ruler' ? 'Ruler: tap two or more points' : 'Area: tap the vertices, tap the first one to close', 3000);
+    }
+    function clearMeasure() {
+      stopMeasure();
+      measureLayer.clearLayers(); mItems.length = 0;
+      toast('Measurements deleted', 1800);
+    }
+    map.on('click', ev => { if (measureMode && mCur) addMPoint(ev.latlng); });
+    const SVG_I = d => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+    const measCtl = L.control({ position: 'topleft' });
+    measCtl.onAdd = () => {
+      const div = L.DomUtil.create('div', 'leaflet-bar meas');
+      L.DomEvent.disableClickPropagation(div);
+      const mk = (id, title, svg, fn) => {
+        const a = L.DomUtil.create('a', 'mbtn', div); a.href = '#'; a.id = id; a.title = title; a.setAttribute('role', 'button'); a.innerHTML = svg;
+        L.DomEvent.on(a, 'click', ev => { L.DomEvent.preventDefault(ev); fn(); });
+      };
+      mk('mRuler', 'Distance between two points', SVG_I('<path d="M3 17 17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/>'), () => setMeasure('ruler'));
+      mk('mArea', 'Area inside a closed polygon', SVG_I('<path d="M4 9 12 3l8 5-3 11H7z"/>'), () => setMeasure('area'));
+      mk('mBin', 'Delete measurements', SVG_I('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>'), () => clearMeasure());
+      return div;
+    };
+    measCtl.addTo(map);
+
+    function syncMbar() {
+      const bar = $('mbar'); if (!bar) return;
+      const act_ = !!(measureMode || polyDrawing || drawing);
+      bar.style.display = act_ ? 'flex' : 'none';
+      if (!act_) return;
+      $('mbHint').textContent = measureMode === 'ruler' ? 'Ruler: tap points'
+        : (measureMode === 'area' || polyDrawing) ? 'Tap vertices \u00b7 tap the first to close'
+        : (drawStart ? 'Drag / tap the end point' : 'Drag, or tap 2 points');
+      const poly_ = !!(measureMode || polyDrawing);
+      $('mbDone').style.display = poly_ ? '' : 'none';
+      $('mbUndo').style.display = poly_ || drawStart ? '' : 'none';
+    }
+    setInterval(syncMbar, 250);
+    $('mbUndo').onclick = () => {
+      if (measureMode) undoMeasure();
+      else if (polyDrawing) { polyPts.pop(); updatePolyPreview(); }
+      else if (drawing) dropDrawPreview();
+      syncMbar();
+    };
+    $('mbDone').onclick = () => { if (measureMode) stopMeasure(); else if (polyDrawing) finishPoly(); syncMbar(); };
+    $('mbCancel').onclick = () => {
+      if (measureMode) { if (mCur) { removeItem(mCur); mCur = null; } stopMeasure(); }
+      else if (polyDrawing) { cancelPolyDraw(); $('info').textContent = 'Polygon cancelled.'; }
+      else if (drawing) toggleDraw(false);
+      syncMbar();
+    };
+
+    function bbLabel() {
+      const b = $('btnBB'); if (!b) return;
+      b.textContent = BB_LAB[bbMode]; b.classList.toggle('active', bbMode > 0);
+    }
+    let mecaWinKey = '', mecaLoading = false;
+    async function ensureMecaWindow(force) {
+      if (!bbOnly || mecaLoading) return;
+      const key = rangeStart + '|' + rangeEnd + '|' + allEvents.length;
+      if (!force && key === mecaWinKey) return;
+      mecaLoading = true; mecaWinKey = key;
+      const info = $('info');
+      try { await bulkMeca(rangeStart, rangeEnd, (i, n) => { info.textContent = `Focal mechanisms: chunk ${i}/${n}...`; }); }
+      finally { mecaLoading = false; }
+      if (bbOnly) { info.textContent = 'Focal mechanisms loaded'; render(); }
+    }
 	const combinedLegend = L.control({ position: 'topleft' });
 	combinedLegend.onAdd = () => {
 	  const div = L.DomUtil.create('div', 'ctl mag-legend');
 	  L.DomEvent.disableClickPropagation(div);
 	  const magDiv = L.DomUtil.create('div', '', div);
 	  magDiv.id = 'magLegend';
-	  magDiv.innerHTML =
-		'<b data-i18n="lMag">Magnitude</b>' +
-		'<svg width="120" height="120" viewBox="-40 -40 80 80" xmlns="http://www.w3.org/2000/svg">' +
-		  '<circle cx="0" cy="0"        r="10.6"   fill="#800026" fill-opacity="0.10" stroke="#800026" stroke-width="0.9"/>' +
-		  '<circle cx="0" cy="2.8"      r="7.8"    fill="#800026" fill-opacity="0.10" stroke="#800026" stroke-width="0.9"/>' +
-		  '<circle cx="0" cy="6.7"      r="3.9"    fill="#BD0026" fill-opacity="0.12" stroke="#BD0026" stroke-width="0.9"/>' +
-		  '<circle cx="0" cy="8.65"     r="1.95"   fill="#E31A1C" fill-opacity="0.15" stroke="#E31A1C" stroke-width="0.9"/>' +
-		  '<circle cx="0" cy="9.625"    r="0.975"  fill="#FD8D3C" fill-opacity="0.30" stroke="#FD8D3C" stroke-width="0.9"/>' +
-		  '<circle cx="0" cy="10.1125"  r="0.4875" fill="#FFEDA0" fill-opacity="0.60" stroke="#FFEDA0" stroke-width="0.9"/>' +
-		  '<text x="19"   y="14">1</text>' +
-		  '<text x="19"   y="7">2</text>' +
-		  '<text x="19"   y="0">3</text>' +
-		  '<text x="19"  y="-7">4</text>' +
-		  '<text x="19"  y="-13">5</text>' +
-		  '<text x="19"  y="-20">6</text>' +
-		'</svg>' +
-		'<div style="font-size:10px;color:#666;margin-top:2px">Mw / ML</div>';
+	  magDiv.innerHTML = '<b data-i18n="lMag">Magnitude</b><div id="magSvgHolder"></div>' +
+		'<div style="font-size:9px;color:#666">Mw / ML</div>';
 	  const kdeDiv = L.DomUtil.create('div', '', div);
 	  kdeDiv.id = 'kdeLegend';
 	  kdeDiv.style.marginTop = '8px';
@@ -1068,6 +1334,7 @@ setBase(savedBase);
 	  return div;
 	};
 	combinedLegend.addTo(map);
+	drawMagLegend();
     function drawHist(title, labels, counts, xlab) {
       const cv = document.getElementById('cv'), c = cv.getContext('2d'), W = cv.width, H = cv.height;
       c.clearRect(0, 0, W, H);
@@ -1191,7 +1458,7 @@ setBase(savedBase);
     let evClickTs = -1;
 	layerGroup.on('click', ev => { if (ev.layer && ev.layer.ev && ev.originalEvent) evClickTs = ev.originalEvent.timeStamp; });
 	map.on('click', ev => {
-	  if (!on.poly || drawing || drawStart || polyDrawing || (ev.originalEvent && ev.originalEvent.timeStamp === evClickTs)) return;
+	  if (!on.poly || drawing || drawStart || polyDrawing || measureMode || (ev.originalEvent && ev.originalEvent.timeStamp === evClickTs)) return;
 	  const a = BYSIZE.find(a => inside(a.h, ev.latlng.lng, ev.latlng.lat));
 	  if (a) L.popup().setLatLng(ev.latlng).setContent(`<b>${a[0]}</b><br>${a.n} events`).openOn(map);
 	});
@@ -1379,7 +1646,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     }
     layerGroup.on('click', ev => {
       const e = ev.layer && ev.layer.ev;
-      if (!e || drawing || drawStart || polyDrawing) return;
+      if (!e || drawing || drawStart || polyDrawing || measureMode || Date.now() - (window._drawEndTs || 0) < 500) return;
       if (typeof qcWindowOpen === 'function' && qcWindowOpen()) highlightQCEvent(e);
       openEventPopup(e);
     });
@@ -1393,9 +1660,13 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
         }
         if (!mk) {
           const hi = activeSec && activeSec.slabSet.has(e);
-          mk = L.circleMarker([e.lat, e.lon], {
-            radius: Math.max(2, e.mag * 2), fillColor: colorOf(e),
+          const col = colorOf(e);
+          mk = L.circleMarker([e.lat, e.lon], dotFill ? {
+            radius: dotRadius(e.mag), fillColor: col,
             color: hi ? '#fff' : '#000', weight: hi ? 1.4 : 0.5, opacity: 1, fillOpacity: 0.8
+          } : {
+            radius: dotRadius(e.mag), fillColor: col,
+            color: col, weight: hi ? 3.2 : 1.8, opacity: 1, fillOpacity: 0
           });
         }
         mk.ev = e; mk.addTo(layerGroup);
@@ -1404,13 +1675,11 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     }
     function queueTopMeca() { events.slice().sort((a, b) => b.mag - a.mag).slice(0, 400).forEach(e => queueMeca(e.eventId)); }
     function toggleBeach() {
-      on.beach = !on.beach;
-      const b = $('btnBB');
-      if (b) { b.textContent = tr('aBB', tr(on.beach ? 'on' : 'off')); b.classList.toggle('active', on.beach); }
-      if (on.beach) {
-        events.slice().sort((a, b2) => b2.mag - a.mag).slice(0, 400).forEach(e => queueMeca(e.eventId));
-      }
-      renderMarkers();
+      bbMode = (bbMode + 1) % 3;
+      on.beach = bbMode > 0; bbOnly = bbMode === 2;
+      bbLabel();
+      if (bbOnly) ensureMecaWindow(true); else if (on.beach) queueTopMeca();
+      render();
     }
     async function bulkMeca(t0, t1, onProgress) {
       const CHUNK = 120 * 864e5;
@@ -1497,7 +1766,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       $('clabel').textContent = tr('cLabel') + ' \u00b7 ' + lab + (events.length !== allEvents.length ? ' (' + tr('cSel') + ')' : '');
       $('info').textContent = events.length + (events.length !== allEvents.length ? ' / ' + allEvents.length : '') + ' ' + tr('evts') + (limitHit ? ' (' + tr('limit') + ')' : '');
       $('depthbar').style.display = colorMode === 'depth' ? 'block' : 'none';
-      updateBar(); updateDepthBar(); if (on.beach) queueTopMeca(); drawSection(); draw3D();
+      updateBar(); updateDepthBar(); if (on.beach && !bbOnly) queueTopMeca(); if (bbOnly) ensureMecaWindow(); drawSection(); draw3D();
       if (qcWindowOpen()) qcEnsureData();
       if (qctablewin && qctablewin.style.display === 'flex') buildQCTable();
       if (qcsolwin   && qcsolwin.style.display   === 'flex') { qcNavIndex = -1; drawQCSolution(); }
@@ -1532,7 +1801,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       const ln = [[s.A.lat, s.A.lng], [s.B.lat, s.B.lng]];
       const poly = L.polygon(c, { color: '#00e5ff', weight: 1.5, dashArray: '6 4', fillColor: '#00e5ff', fillOpacity: .08, interactive: false }).addTo(secLayer);
       const line = L.polyline(ln, { color: '#00e5ff', weight: 2.5, interactive: true }).addTo(secLayer);
-      line.on('click', ev => { L.DomEvent.stopPropagation(ev); setActiveSec(s); });
+      line.on('click', ev => { L.DomEvent.stopPropagation(ev); if (s === drawPreviewSec) return; setActiveSec(s); });
       const mA = mkHandle('A', ln[0], s);
       const mB = mkHandle('B', ln[1], s);
       s.layers = { poly, line, mA, mB };
@@ -1594,7 +1863,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     }
     function mkHandle(which, ll, s) {
       const lbl = which === 'A' ? (s.la || 'A') : (s.lb || 'B');
-      const m = L.marker(ll, { draggable: true, zIndexOffset: 2000, icon: L.divIcon({ className: '', iconSize: [22, 22], iconAnchor: [11, 11], html: `<div class="hd">${lbl}</div>` }) }).addTo(secLayer);
+      const m = L.marker(ll, { draggable: true, zIndexOffset: 2000, icon: L.divIcon({ className: '', iconSize: [HS, HS], iconAnchor: [HS / 2, HS / 2], html: `<div class="hd">${lbl}</div>` }) }).addTo(secLayer);
       m.on('drag', () => {
         const p = m.getLatLng();
         if (which === 'A') s.A = { lat: p.lat, lng: p.lng };
@@ -1604,51 +1873,76 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
         if (s === activeSec) scheduleSec();
       });
       m.on('dragend', () => { if (s === activeSec) scheduleRender(); });
-      m.on('click', ev => { L.DomEvent.stopPropagation(ev); setActiveSec(s); });
+      m.on('click', ev => { L.DomEvent.stopPropagation(ev); if (s === drawPreviewSec) return; setActiveSec(s); });
       return m;
     }
+    function dropDrawPreview() {
+      const sp = drawPreviewSec;
+      if (sp && sp.layers) [sp.layers.poly, sp.layers.line, sp.layers.mA, sp.layers.mB].forEach(x => secLayer.removeLayer(x));
+      drawPreviewSec = null; drawStart = null; drawDown = null;
+      window._drawEndTs = Date.now();
+    }
+    let drawDown = null;
     function toggleDraw(force) {
       drawing = force !== undefined ? force : !drawing;
-      if (drawing) cancelPolyDraw();
+      if (drawing) { cancelPolyDraw(); stopMeasure(); } else dropDrawPreview();
       $('btnDraw').classList.toggle('active', drawing);
       map.getContainer().style.cursor = drawing ? 'crosshair' : '';
+      map.getContainer().classList.toggle('drawmode', drawing);
       drawing ? map.dragging.disable() : map.dragging.enable();
     }
-    map.on('mousedown', e => {
-      if (drawing && !polyDrawing) {
-        drawStart = e.latlng;
-        const w = +$('secw').value || 25;
-        drawPreviewSec = createSection(e.latlng, e.latlng, w);
-        addSectionToMap(drawPreviewSec);
-      }
-    });
-    map.on('mousemove', e => {
-      if (drawing && drawStart && drawPreviewSec) {
-        drawPreviewSec.B = { lat: e.latlng.lat, lng: e.latlng.lng };
-        drawPreviewSec.g = secProj(drawPreviewSec.A, drawPreviewSec.B, drawPreviewSec.width);
-        updateSectionShapes(drawPreviewSec);
-      }
-    });
-    document.addEventListener('mouseup', () => {
-      if (!(drawing && drawStart) || !drawPreviewSec) return;
-      const s = drawPreviewSec;
-      drawPreviewSec = null;
-      drawStart = null;
+    function finishDraw(ll) {
+      const sp = drawPreviewSec; if (!sp) return;
+      if (ll) { sp.B = { lat: ll.lat, lng: ll.lng }; sp.g = secProj(sp.A, sp.B, sp.width); updateSectionShapes(sp); }
+      drawPreviewSec = null; drawStart = null; drawDown = null;
+      window._drawEndTs = Date.now();
+      if (sp.layers) [sp.layers.mA, sp.layers.mB].forEach(m => { const el = m.getElement(); if (el) el.style.pointerEvents = ''; });
       toggleDraw(false);
-      if (s.g.L < 1) {
-        if (s.layers) {
-          secLayer.removeLayer(s.layers.poly);
-          secLayer.removeLayer(s.layers.line);
-          secLayer.removeLayer(s.layers.mA);
-          secLayer.removeLayer(s.layers.mB);
-        }
+      if (sp.g.L < 1) {
+        if (sp.layers) [sp.layers.poly, sp.layers.line, sp.layers.mA, sp.layers.mB].forEach(x => secLayer.removeLayer(x));
         return;
       }
-      secs.push(s);
+      secs.push(sp);
       relabelSections();
-      setActiveSec(s);
+      setActiveSec(sp);
       scheduleRender();
-    });
+    }
+    (function () {
+      const cont = map.getContainer(), ptrs = new Set();
+      const skip = ev => ev.target.closest && ev.target.closest('.leaflet-control,.hd,.smark,.mvw');
+      cont.addEventListener('pointerdown', ev => {
+        ptrs.add(ev.pointerId);
+        if (!drawing || polyDrawing || measureMode || skip(ev)) return;
+        if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+        if (ptrs.size > 1) { dropDrawPreview(); return; }          //doppio tocco, cancella linea
+        if (drawStart) return;                                     //secondo tocco 
+        const ll = map.mouseEventToLatLng(ev);
+        drawStart = ll;
+        drawPreviewSec = createSection(ll, ll, +$('secw').value || 25);
+        addSectionToMap(drawPreviewSec);
+        [drawPreviewSec.layers.mA, drawPreviewSec.layers.mB].forEach(m => { const el = m.getElement(); if (el) el.style.pointerEvents = 'none'; });
+        drawDown = { x: ev.clientX, y: ev.clientY, moved: false };
+      });
+      cont.addEventListener('pointermove', ev => {
+        if (!(drawing && drawStart && drawPreviewSec)) return;
+        if (drawDown && Math.hypot(ev.clientX - drawDown.x, ev.clientY - drawDown.y) > 10) drawDown.moved = true;
+        if (ev.pointerType !== 'mouse' && !drawDown) return;
+        const ll = map.mouseEventToLatLng(ev);
+        drawPreviewSec.B = { lat: ll.lat, lng: ll.lng };
+        drawPreviewSec.g = secProj(drawPreviewSec.A, drawPreviewSec.B, drawPreviewSec.width);
+        updateSectionShapes(drawPreviewSec);
+      });
+      const up = ev => {
+        ptrs.delete(ev.pointerId);
+        if (!(drawing && drawStart) || !drawPreviewSec) return;
+        if (ev.type === 'pointercancel') { if (drawDown) dropDrawPreview(); return; }
+        if (skip(ev)) return;
+        if (drawDown && !drawDown.moved) { drawDown = null; return; }   //un tocco
+        finishDraw(map.mouseEventToLatLng(ev));
+      };
+      cont.addEventListener('pointerup', up);
+      cont.addEventListener('pointercancel', up);
+    })();
     function clearSection() {
       secs.slice().forEach(s => removeSection(s));
       secs = []; activeSec = null;
@@ -1773,7 +2067,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       }
       c.strokeStyle = '#000'; c.lineWidth = 1; c.strokeRect(ml, mt, pw, ph);
       c.textAlign = 'center'; c.font = '11px sans-serif'; c.fillStyle = '#000';
-      c.fillText('Distance ' + (s.la||'A') + ' \u2192 ' + (s.lb||'B') + ' (km)', ml + pw / 2, H - 6);
+      c.fillText('Distance ' + (s.la||'A') + (s.lb||'B') + ' (km)', ml + pw / 2, H - 6);
       c.save(); c.translate(11, mt + ph / 2); c.rotate(-Math.PI / 2); c.fillText('Depth (km)', 0, 0); c.restore();
       c.font = 'bold 12px sans-serif'; c.fillStyle = '#006978'; c.textAlign = 'left'; c.fillText(s.la || 'A', ml + 4, mt + 13); c.textAlign = 'right'; c.fillText(s.lb || 'B', ml + pw - 4, mt + 13);
       secPts = [];
@@ -1783,7 +2077,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
         secPts.push({ x, y, r, s: sp });
       });
       const f = p => p.lat.toFixed(3) + ', ' + p.lng.toFixed(3);
-      $('sectitle').textContent = tr('wSec') + ' ' + (secs.indexOf(s) + 1) + ' (' + (s.la||'A') + (s.lb||'B') + ') ' + f(s.A) + ' \u2192 ' + f(s.B);
+      $('sectitle').textContent = tr('wSec') + ' ' + (secs.indexOf(s) + 1) + ' (' + (s.la||'A') + (s.lb||'B') + ') ' + f(s.A) + f(s.B);
       $('secinfo').textContent = s.slab.length + ' ' + tr('evts') + ' \u00b7 L = ' + g.L.toFixed(1) + ' km \u00b7 d \u2264 ' + g.hw + ' km';
     }  
     seccv.addEventListener('mousemove', ev => {
@@ -1857,6 +2151,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     let polyDrawing = false, polyPts = [], hoverPt = null, catPoly = null;
     const polyPrev = L.layerGroup().addTo(map);
     function startPolyDraw() {
+      stopMeasure();
       if (drawing) toggleDraw(false);
       polyDrawing = true;
       polyPts = []; hoverPt = null;
@@ -1890,7 +2185,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
         L.polyline([pts[pts.length - 1], [polyPts[0].lat, polyPts[0].lng]],
           { color: '#ffd54f', weight: 1, dashArray: '3 5', opacity: .6, interactive: false }).addTo(polyPrev);
       polyPts.forEach(p => L.circleMarker([p.lat, p.lng],
-        { radius: 3, color: '#ffd54f', fillColor: '#ffd54f', fillOpacity: 1, interactive: false }).addTo(polyPrev));
+        { radius: TOUCH ? 5 : 3, color: '#ffd54f', fillColor: '#ffd54f', fillOpacity: 1, interactive: false }).addTo(polyPrev));
     }
     async function finishPoly() {
       if (!polyDrawing) return;
@@ -1959,7 +2254,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       if (polyPts.length >= 3) {
         const a = map.latLngToContainerPoint(polyPts[0]);
         const b = map.latLngToContainerPoint(e.latlng);
-        if (a.distanceTo(b) < 12) { finishPoly(); return; }
+        if (a.distanceTo(b) < (TOUCH ? 24 : 12)) { finishPoly(); return; }
       }
       polyPts.push(e.latlng);
       hoverPt = null;
@@ -2125,16 +2420,14 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     }
     window.downloadWaveforms = downloadWaveforms;
     $('helpwin').querySelector('.wb').innerHTML = `
-      <p class="hs"><b>Important</b> The <b>i</b> you clicked opens this panel. This tool was made to see seismicity
-      and earthquake's hypocenters in Southern Italy in an interactive and easier way for daily users which deal with such data (orange rectangular box defines view at which you are centered as well as earthquakes being viewed, you cannot move away from this area and look at other regions). Thanks for using this page. I wanna stress that <br>it's made from an user for the users <br> and if you have any kind of helpful suggestions you can contact me at derose.fr@gmail.com.        
+      <p class="hs"><b>Welcome.</b> The <b>i</b> you clicked opens this panel. This tool was made to see seismicity
+      and earthquake's hypocenters in Southern Italy in an interactive and easier way for daily users which deal with such data (orange rectangular box defines view at which you are centered as well as earthquakes being viewed, you cannot move away from this area and look at other regions). Thanks for using this page. I wanna stress that it's made from an user for the users and if you have any kind of helpful suggestions you can contact me at derose.fr@gmail.com.  <br>      
        All interactive windows can be resized by hovering in the bottom right corner and modifying their sizes as it suits you. All times associated with each 
-      earthquake here are reported in UTC, so a check on your timezone and light savings conventions is necessary.
-      Data and results reported here coming from INGV are distributed under Creative Commons Attribution 4.0 International License. If you want to see it for yourself
-      go to <a href="https://terremoti.ingv.it/" target="_blank" rel="noopener">https://terremoti.ingv.it/</a>.  
+      earthquake here are reported in UTC, so a check on your <a href="https://www.timeanddate.com/time/map/" target="_blank" rel="noopener">timezone</a> and light savings conventions is necessary.
+      Data and results reported here coming from INGV are distributed under Creative Commons Attribution 4.0 International License. 
       <p class="hs"><b>Counter</b> number of earthquakes inside the current selection. Click on it to see more options. The dropdown
       (<i>1 h ... 25 y</i>) sets the time span downloaded from INGV. The one you are currently in is the red box in the right panel. The blank field searches a single
-      INGV event id: it is fetched on its own and centred on the map (click the star for the links). If you do not know the eventid it's indicated in the event box 
-      when you click an earthquake's epicenter.
+      INGV event id: it is fetched on its own and centred on the map (click the star for the links). If you do not know the eventid it's indicated in the event box (shaded gray number) when you click an earthquake's epicenter.
       </p>
       <p class="hs"><b>Time bar</b> (bottom centre) drag the two white handles to select a sub-window of
       the downloaded period (double-click resets to the full range). The bigger the time window the more
@@ -2147,66 +2440,70 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       &middot; <i>Rate vs depth(km)</i>: events/year per 5 km depth bin; the selector above the chart
         restricts the count to an individual INGV epicentral area.<br>
       &middot; <i>KDE density map</i>: Gaussian kernel density of the epicentres, blue–white–red scale
-        (the bandwidth box sets the kernel width in km).<br>
+        (the bandwidth box at the bottom of this panel sets the kernel width in km).<br>
       &middot; <i>Area polygons/Area count bars</i>: Southern Italy epicentral macro areas as well as histograms per area. By clicking on each white area its name and associated events falling within get shown.<br>
-      &middot; <i>Hide earthquakes</i>: toggle epicentre layer ON and OFF.<br>
+      &middot; <i>Hide earthquakes</i>: toggle epicenter's layer ON and OFF.<br>
       &middot; <i>Draw section line</i>: click-drag on the map to create a cross-section
-        (the width box is ±km). Drag the START/END handles to move it. You can draw multiple section lines and associated 3D boxes. The more earthquakes being viewed in your time or depth window the slower the page will become. Be advised. Mobile version is also tricky here so I suggest you to access from a more friendly PC browser to mess around.<br>
+        (the width box is ±km and earthquakes falling within this range will be shown). Drag the START/END handles to move it. You can draw multiple section lines and associated 3D boxes. The more earthquakes being viewed in your time or depth window the slower the page will become. Be advised. Mobile version is also tricky here so I suggest you to access from a more friendly PC browser to mess around.<br>
       &middot; <i>Polygon catalog</i>: click the map to add vertices, close on the first vertex or with a
         double-click. Every earthquake inside the polygon AND inside the selected time window is
         downloaded as a .txt catalog
        (header:<code>YYYYMMDD HHMMSS.MS LAT LON DEP M</code>).<br>
-      &middot; <i>Clear sections</i>: remove all sections.<br>
+      &middot; <i>Clear sections</i>: remove all transept sections.<br>
       &middot; <i>3D popup</i>: 3-D view of the active section (drag = rotate, wheel = zoom, 1:1:1 = equal axes).<br>
       &middot; <i>Colour</i>: cycles between time|magnitude|KDE|depth colouring (depth mode adds a depth-window bar above the time bar, both interactive).<br>
+      &middot; <i>Dots</i>: cycles between filled and empty earthquake epicenter dots.<br>
+      &middot; <i>DISS sources</i>: overlay of the DISS 3.3.1 seismogenic sources. TODO better<br>
+      &middot; <i>Export JPG</i>: save the map with all overlays and the legend as a JPEG.</p>
+      <p class="hs"><b>Station in that year</b> You can toggle with the drop down menu at the end of the right panel. The opacity and size is fixed so it gets easier to see them if you select a bigger time window. They are also linked to the time bar at the bottom center as you slide and select different time periods. In the top center counter you can also select each channel the station is/was currently equipped with. N.B. Many times stations were not operational in a given period of time so be advised this information displayed comes from EIDA feed. No garantee is assured if those stations were operational or not. </p>         
       &middot; <i>Beachballs</i>: draw epicentres as focal-mechanism beachballs (moment tensors
       downloaded from INGV). Refer to other sources for more: 
       <a href="https://bsi.ingv.it/it/">INGV BSI</a>, <a href="https://data.ingv.it/dataset/384#additional-metadata">INGV ICMTD</a>, <a href="https://rcmt2.bo.ingv.it/">RCMT</a>.<br>
       <div style="margin: 8px 0; padding: 8px; background: #fff; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; line-height:1.4;">
-        <div style="font-weight: bold; margin-bottom: 8px; font-size: 12px; text-align: center;">Moment Tensor General Orientation (Thrust: T axis at the center.
-		Normal: P axis at the center.
-		Strike-slip: two vertical nodal planes.
-		Oblique: asymmetric pattern given by one vertical and one dipping nodal plane).</div>
-		<div style="display: flex; justify-content: space-between; text-align: center; margin-bottom: 10px; padding: 0 10px;">
-		  <!-- Thrust -->
-		  <div>
-		    <svg width="34" height="34" viewBox="0 0 40 40">
-		      <circle cx="20" cy="20" r="19" fill="#f44336"/>
-		      <path d="M20,1 A10.3,19 0 0,1 20,39 A10.3,19 0 0,1 20,1 Z" fill="#fff" stroke="#000" stroke-width="1"/>
-		      <circle cx="20" cy="20" r="19" fill="none" stroke="#000" stroke-width="1.5"/>
-		    </svg><br>Thrust
-		  </div>
-		  <!-- Normal -->
-		  <div>
-		    <svg width="34" height="34" viewBox="0 0 40 40">
-		      <circle cx="20" cy="20" r="19" fill="#fff"/>
-		      <path d="M20,1 A10.3,19 0 0,1 20,39 A10.3,19 0 0,1 20,1 Z" fill="#2196f3" stroke="#000" stroke-width="1"/>
-		      <circle cx="20" cy="20" r="19" fill="none" stroke="#000" stroke-width="1.5"/>
-		    </svg><br>Normal
-		  </div>
-		  <!-- Strike-slip -->
-		  <div>
-		    <svg width="34" height="34" viewBox="0 0 40 40">
-		      <circle cx="20" cy="20" r="19" fill="#fff"/>
-		      <path d="M20,20 L1,20 A19,19 0 0,1 20,1 Z" fill="#4caf50"/>
-		      <path d="M20,20 L39,20 A19,19 0 0,1 20,39 Z" fill="#4caf50"/>
-		      <line x1="1" y1="20" x2="39" y2="20" stroke="#000" stroke-width="1"/>
-		      <line x1="20" y1="1" x2="20" y2="39" stroke="#000" stroke-width="1"/>
-		      <circle cx="20" cy="20" r="19" fill="none" stroke="#000" stroke-width="1.5"/>
-		    </svg><br>Strike-slip
-		  </div>
-		  <!-- Oblique -->
-		  <div>
-		    <svg width="34" height="34" viewBox="0 0 40 40">
-		      <circle cx="20" cy="20" r="19" fill="#fff"/>
-		      <path d="M20,1 L20,30.3 A19,10.3 0 0,1 1,20 A19,19 0 0,1 20,1 Z" fill="#757575"/>
-		      <path d="M20,30.3 A19,10.3 0 0,0 39,20 A19,19 0 0,1 20,39 Z" fill="#757575"/>
-		      <line x1="20" y1="1" x2="20" y2="39" stroke="#000" stroke-width="1"/>
-		      <path d="M1,20 A19,10.3 0 0,0 39,20" fill="none" stroke="#000" stroke-width="1"/>
-		      <circle cx="20" cy="20" r="19" fill="none" stroke="#000" stroke-width="1.5"/>
-		    </svg><br>Oblique
-		  </div>
-		</div>
+        <div style="font-weight: bold; margin-bottom: 8px; font-size: 12px; text-align: center;">Moment Tensor orientation (Thrust: T axis at the center.
+Normal: P axis at the center.
+Strike-slip: two vertical nodal planes.
+Oblique: asymmetric pattern given by one vertical and one dipping nodal plane).</div>
+<div style="display: flex; justify-content: space-between; text-align: center; margin-bottom: 10px; padding: 0 10px;">
+  <!-- Thrust -->
+  <div>
+    <svg width="34" height="34" viewBox="0 0 40 40">
+      <circle cx="20" cy="20" r="19" fill="#f44336"/>
+      <path d="M20,1 A10.3,19 0 0,1 20,39 A10.3,19 0 0,1 20,1 Z" fill="#fff" stroke="#000" stroke-width="1"/>
+      <circle cx="20" cy="20" r="19" fill="none" stroke="#000" stroke-width="1.5"/>
+    </svg><br>Thrust
+  </div>
+  <!-- Normal -->
+  <div>
+    <svg width="34" height="34" viewBox="0 0 40 40">
+      <circle cx="20" cy="20" r="19" fill="#fff"/>
+      <path d="M20,1 A10.3,19 0 0,1 20,39 A10.3,19 0 0,1 20,1 Z" fill="#2196f3" stroke="#000" stroke-width="1"/>
+      <circle cx="20" cy="20" r="19" fill="none" stroke="#000" stroke-width="1.5"/>
+    </svg><br>Normal
+  </div>
+  <!-- Strike-slip -->
+  <div>
+    <svg width="34" height="34" viewBox="0 0 40 40">
+      <circle cx="20" cy="20" r="19" fill="#fff"/>
+      <path d="M20,20 L1,20 A19,19 0 0,1 20,1 Z" fill="#4caf50"/>
+      <path d="M20,20 L39,20 A19,19 0 0,1 20,39 Z" fill="#4caf50"/>
+      <line x1="1" y1="20" x2="39" y2="20" stroke="#000" stroke-width="1"/>
+      <line x1="20" y1="1" x2="20" y2="39" stroke="#000" stroke-width="1"/>
+      <circle cx="20" cy="20" r="19" fill="none" stroke="#000" stroke-width="1.5"/>
+    </svg><br>Strike-slip
+  </div>
+  <!-- Oblique -->
+  <div>
+    <svg width="34" height="34" viewBox="0 0 40 40">
+      <circle cx="20" cy="20" r="19" fill="#fff"/>
+      <path d="M20,1 L20,30.3 A19,10.3 0 0,1 1,20 A19,19 0 0,1 20,1 Z" fill="#757575"/>
+      <path d="M20,30.3 A19,10.3 0 0,0 39,20 A19,19 0 0,1 20,39 Z" fill="#757575"/>
+      <line x1="20" y1="1" x2="20" y2="39" stroke="#000" stroke-width="1"/>
+      <path d="M1,20 A19,10.3 0 0,0 39,20" fill="none" stroke="#000" stroke-width="1"/>
+      <circle cx="20" cy="20" r="19" fill="none" stroke="#000" stroke-width="1.5"/>
+    </svg><br>Oblique
+  </div>
+</div>
         <b>Moment</b>: Energy radiated by the earthquake in dyne-cm (an absolute measure of energy release, not a magnitude).<br><br>
         <b>Plane 1 / Plane 2</b>: The two equivalent fault planes (Strike, dip, slip). Motion on either produces an identical energy radiation pattern. Use other data to decide the true fault plane.<br><br>
         &middot; <b>Strike2Dip</b>: Orientation of the fault plane.<br>
@@ -2220,17 +2517,11 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       </div>
       &middot; <i>Export catalog (+S/D/R)</i>: .txt with
       <code>YYYYMMDD HHMMSS.MS LAT LON DEP M STRIKE DIP RAKE</code> for current time window and depth window (active in <i>Colour: depth</i> mode).<br>
-      &middot; <i>DISS sources</i>: overlay of the DISS 3.3.1 seismogenic sources. TODO better<br>
-      &middot; <i>Export JPG</i>: save the map with all overlays and the legend as a JPEG.</p>
-      <p class="hs"><b>Station in that year</b> Many times stations were not operational in that period of time
-      when you are viewing an earthquake and seeing stations and earthquakes in the catalog can be toggled with the drop down 
-      menu at the end of the right panel. The opacity and size is fixed so it gets easier to see them if you select a bigger
-      time window. They are also linked to the time bar at the bottom center as you slide
-      and select different time periods. In the top center counter you can also select each channel the station is/was currently equipped with. </p> 
+
       <p class="hs"><b>Quality check</b><br>
-      &middot;<i>Table</i> containing minimum, 5th percentile, 25th percentile, median, 75th percentile, 95th percentile, maximum as well as time(UTC), error on horizontal plane in km, error on depth in km, gap in degrees, root mean square error in seconds, azimuth of the major axis of the confidence ellipse in degrees, number of phases used, number of stations in which event has been observed, uncertainty on magnitude and number of stations used to compute magnitude. <code> errH errZ GAP RMS azellconf NPHU NPHO DM NPHM</code>. You can sort from highest to lowest or from earliest to latest event by clicking on their header. If you click on one of first column's entries you get sent to INGV evid page (blue hyperlink) while if you click on any other column entry its associated earthquake's epicenter gets highlighted.<br>
-     &middot; <i>Solution</i> Distribution of number of earthquakes binned in terms of all mentioned solution metrics. You can sort by selecting the metric on bottom left button or going forward or backward between each metric by clicking "b" and "n" from your keyboard if you are accessing from a PC. Clicking on each histogram bar will highlight any earthquake that has been binned inside it.</p>      
-      <p class="hs"><b>Event popup</b> click an epicentre to download the waveform, get the
+      &middot;<i>Table</i>. Display minimum, 5th percentile, 25th percentile, median, 75th percentile, 95th percentile, maximum as well as time(UTC), error on horizontal plane in km, error on depth in km, gap in degrees, root mean square error in seconds, azimuth of the major axis of the confidence ellipse in degrees, number of phases used, number of stations in which event has been observed, uncertainty on magnitude and number of stations used to compute magnitude. <code> errH errZ GAP RMS azellconf NPHU NPHO DM NPHM</code>. You can sort from highest to lowest or from earliest to latest event by clicking on their header. If you click on one of first column's entries you get sent to INGV evid page (blue hyperlink) while if you click on any other column entry its associated earthquake's epicenter gets highlighted.<br>
+     &middot; <i>Solution</i>. Number of earthquakes binned in terms of all mentioned solution metrics. You can sort by selecting the metric on bottom left button or going forward or backward between each metric by clicking "b" and "n" from your keyboard if you are accessing from a PC. Clicking on each histogram bar will highlight any earthquake on the map, that is binned inside it.</p>      
+      <p class="hs"><b>Event popup</b> click an epicenter to download the waveform, get the
       phase picks as .txt (header <code>#TIMEUTC LAT UNC_LAT LONG UNC_LON PROF UNC_PROF M UNC_M</code> followed by entries
       <code>STA NET TIME POL PHA AZIM DIST TKOFANGLE RES</code>) or open directly INGV eventid page.</p>
       <p class="hs"><b>Section window</b> cross-section along drawn line; the event closest to the
@@ -2399,7 +2690,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
 		const d0 = depthMin + dsel.a * (depthMax - depthMin);
 		const d1 = depthMin + dsel.b * (depthMax - depthMin);
 		const title = events.length + ' ' + tr('cLabel');
-		let sub = fmtUTC(t0) + ' \u2192 ' + fmtUTC(t1) + ' UTC';
+		let sub = fmtUTC(t0) + fmtUTC(t1) + ' UTC';
 		if (colorMode === 'depth') sub += '  \u00b7  depth ' + d0.toFixed(0) + '\u2013' + d1.toFixed(0) + ' km';
 		c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(W / 2 - 400, 24, 800, 92);
 		c.fillStyle = '#fff'; c.textAlign = 'center';
@@ -2442,7 +2733,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
 		    c.fillText(lab, x, rowY0 + bh + 28);
 		  }
 		  c.fillStyle = '#333'; c.font = '16px sans-serif';
-		  c.fillText('selected  ' + fmtUTC(t0) + ' \u2192 ' + fmtUTC(t1) + ' UTC', bx + bw / 2, rowY0 + bh + 54);
+		  c.fillText('selected  ' + fmtUTC(t0) + fmtUTC(t1) + ' UTC', bx + bw / 2, rowY0 + bh + 54);
 		} else if (colorMode === 'kde') {
 		  legendBar(rowY0, KDE_STOPS.map((st, i) => [i / (KDE_STOPS.length - 1), `rgb(${st.join(',')})`]));
 		  c.fillStyle = '#000'; c.font = '18px sans-serif';
@@ -2466,7 +2757,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
 		  c.fillStyle = '#000'; c.font = '16px sans-serif';
 		  c.textAlign = 'left';   c.fillText(fmtUTC(rangeStart), bx, rowY1 + bh + 24);
 		  c.textAlign = 'right';  c.fillText(fmtUTC(rangeEnd) + ' UTC', bx + bw, rowY1 + bh + 24);
-		  c.textAlign = 'center'; c.fillText('time window \u2014 selected ' + fmtUTC(t0) + ' \u2192 ' + fmtUTC(t1), bx + bw / 2, rowY1 + bh + 24);
+		  c.textAlign = 'center'; c.fillText('time window \u2014 selected ' + fmtUTC(t0) + fmtUTC(t1), bx + bw / 2, rowY1 + bh + 24);
 		}
 
 		c.strokeStyle = '#ff7800'; c.lineWidth = 8; c.strokeRect(4, 4, W - 8, H - 8);
