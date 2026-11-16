@@ -3407,8 +3407,8 @@ Oblique: asymmetric pattern given by one vertical and one dipping nodal plane).<
     qcCtl.addTo(map);
     function beginBarDrag() { stopPlay(true); barDrag = 1; }
     function endBarDrag() { if (!barDrag) return; barDrag = 0; scheduleRender(); }
-    const PLAY_SECS = 15, SPEEDS = [0.5, 1, 2, 4];
-    const SVG_PLAY = '<svg viewBox="0 0 14 14" width="13" height="13"><path d="M3 1.5v11l9-5.5z" fill="#fff"/></svg>';
+    const PLAY_SECS = 15, SPEEDS = [0.01,0.06,0.15,0.25,0.5,1,1.5,2,4,10];
+	const SVG_PLAY = '<svg viewBox="0 0 14 14" width="13" height="13"><path d="M3 1.5v11l9-5.5z" fill="#fff"/></svg>';
     const SVG_PAUSE = '<svg viewBox="0 0 14 14" width="13" height="13"><rect x="2.2" y="1.5" width="3.4" height="11" fill="#fff"/><rect x="8.4" y="1.5" width="3.4" height="11" fill="#fff"/></svg>';
     function playLabel() {
       const d = new Date(playT).toISOString();
