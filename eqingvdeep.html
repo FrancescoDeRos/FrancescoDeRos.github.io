@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- FDR v6 earthquake visualizer 20261113 -->
+<!-- FDR v7 earthquake visualizer 20261116 -->
 <html>
 <head>
   <meta charset="utf-8" />
@@ -64,12 +64,29 @@ html,body{overflow:hidden;overscroll-behavior:none;-webkit-tap-highlight-color:t
   #mbar{top:auto;bottom:150px}
   #toast{top:auto;bottom:200px}
 }
+#dropov{display:none;position:fixed;inset:0;z-index:3000;background:rgba(8,81,156,.35);border:4px dashed #fff;box-sizing:border-box;align-items:center;justify-content:center;pointer-events:none}
+#dropov.on{display:flex}
+#dropov div{background:rgba(22,24,29,.92);color:#fff;font:600 15px/1.5 sans-serif;padding:14px 22px;border-radius:10px;text-align:center;max-width:86vw}
+#dropov small{display:block;font:normal 11px/1.5 "DejaVu Sans Mono",Menlo,Consolas,monospace;color:#9fd3ff;margin-top:4px}
+.pbtn{position:absolute;top:32px;transform:translateY(-50%);width:28px;height:28px;padding:0;border-radius:50%;border:1px solid #3a3d45;background:#16181d;color:#fff;box-shadow:0 1px 5px rgba(0,0,0,.5);cursor:pointer;display:flex;align-items:center;justify-content:center;font:bold 10px sans-serif;touch-action:manipulation}
+.pbtn:hover{background:#343a44;border-color:#4fc3f7}
+.pbtn.on{background:#e65100;border-color:#bf360c}
+#playbtn{right:calc(100% + 4px)}
+#spdbtn{left:calc(100% + 4px)}
+#tbp{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:#e65100;box-shadow:0 0 3px #fff;pointer-events:none;display:none;z-index:3}
+#tip3{position:absolute;display:none;pointer-events:none;background:rgba(20,20,20,.92);color:#fff;padding:4px 6px;border-radius:3px;font:11px/1.35 sans-serif;white-space:nowrap;z-index:5;border:1px solid rgba(255,255,255,.18)}
+@media (max-width:760px){
+  .pbtn{width:24px;height:24px}
+  #playbtn{right:calc(100% + 1px)}
+  #spdbtn{left:calc(100% + 1px)}
+}
 </style>
 </head>
 <body>
   <div id="map"></div>
   <div id="mbar"><span id="mbHint"></span><button id="mbUndo" title="Undo last point">&#8630;</button><button id="mbDone" title="Finish">&#10003;</button><button id="mbCancel" title="Cancel">&#10005;</button></div>
   <div id="toast"></div>
+  <div id="dropov"><div>Drop catalog to visualize it on the map<small>YYYYMMDD HHMMSS.MS LAT LON DEP M [STRIKE DIP RAKE]</small></div></div>
   <div id="chart">
     <div id="rateAreaBar"><span data-i18n="area">Area</span> <select id="rsel"><option value="" data-i18n="allAreas">All areas</option></select></div>
     <canvas id="cv" width="440" height="270"></canvas>
@@ -121,8 +138,11 @@ html,body{overflow:hidden;overscroll-behavior:none;-webkit-tap-highlight-color:t
       <div class="tbm" id="tbm1" style="right:0;width:0"></div>
       <div class="tbk" id="k0" style="left:0"></div>
       <div class="tbk" id="k1" style="left:100%"></div>
+      <div id="tbp"></div>
     </div>
     <div class="tbx" id="tbx"></div>
+    <button class="pbtn" id="playbtn" title="Play"></button>
+    <button class="pbtn" id="spdbtn" title="Playback speed (click to change)">1&times;</button>
   </div>
   <div class="win" id="secwin" style="width:520px;height:340px">
     <div class="wh"><span id="sectitle">Section</span><span><button id="b3d">3D</button><button id="secx">&#10005;</button></span></div>
@@ -136,7 +156,7 @@ html,body{overflow:hidden;overscroll-behavior:none;-webkit-tap-highlight-color:t
   </div>
   <div class="win" id="win3d" style="width:340px;height:310px">
     <div class="wh"><span>3D hypocenters</span><span><button id="b3eq">1:1:1</button><button id="x3d">&#10005;</button></span></div>
-    <div class="wb"><canvas id="cv3"></canvas></div>
+    <div class="wb"><canvas id="cv3"></canvas><div id="tip3"></div></div>
     <div class="wf"><span id="info3"></span></div>
   </div>
   <div class="win" id="helpwin" style="width:430px;height:440px">
@@ -636,6 +656,11 @@ setBase(savedBase);
     let depthMin = 0, depthMax = 1000;
     const dsel = { a: 0, b: 1 };            //finestra prof (frazioni depthMin/depthMax)
     let showEvents = true;
+    let catalogMode = false, catalogName = '';                 // catalogo utente da pc
+    let barDrag = 0;                                           // vero mentre time/dep interazione evita bug contatore
+    let playing = false, playT = 0;                            // eventi con ms <= playT 
+    const play = { run: false, raf: 0, last: 0, t0: 0, t1: 0, list: null, n: -1, speed: 1, rendered: 0, cost: 0 };
+    let secSel = null, secHov = null, v3Sel = null, v3Hov = null, pts3 = [];   // clicca evento
     let secs = [], activeSec = null, drawing = false, drawStart = null, drawPreviewSec = null;
     const secLayer = L.layerGroup().addTo(map);
     const v3 = { az: -35 * Math.PI / 180, el: 25 * Math.PI / 180, zoom: 1, eq: false };
@@ -845,14 +870,20 @@ setBase(savedBase);
       setTimeout(() => fillPopupMeca(e), 0);
     }
 
+    function filterWin() {
+      const sp = rangeEnd - rangeStart;
+      return { t0: rangeStart + sel.a * sp, t1: rangeStart + sel.b * sp,
+               d0: depthMin + dsel.a * (depthMax - depthMin), d1: depthMin + dsel.b * (depthMax - depthMin),
+               useD: colorMode === 'depth' };
+    }
+    function inWin(e, w) {                       // time + dep
+      return (sel.a <= 0 || e.ms >= w.t0) && (sel.b >= 1 || e.ms <= w.t1)
+          && (!w.useD || ((dsel.a <= 0 || e.depth >= w.d0) && (dsel.b >= 1 || e.depth <= w.d1)))
+          && (!bbOnly || !!mecaCache.get(String(e.eventId)));
+    }
     function applyFilter() {
-      const sp = rangeEnd - rangeStart, t0 = rangeStart + sel.a * sp, t1 = rangeStart + sel.b * sp;
-      const d0 = depthMin + dsel.a * (depthMax - depthMin);
-      const d1 = depthMin + dsel.b * (depthMax - depthMin);
-      const useD = colorMode === 'depth';
-      events = allEvents.filter(e => (sel.a <= 0 || e.ms >= t0) && (sel.b >= 1 || e.ms <= t1)
-                                   && (!useD || (e.depth >= d0 && e.depth <= d1))
-                                   && (!bbOnly || !!mecaCache.get(String(e.eventId))));
+      const w = filterWin();
+      events = allEvents.filter(e => inWin(e, w) && (!playing || e.ms <= playT));
     }
     function colorOf(e) {
       if (colorMode === 'time') return cmap((e.ms - rangeStart) / Math.max(1, rangeEnd - rangeStart));
@@ -1295,7 +1326,7 @@ setBase(savedBase);
     }
     let mecaWinKey = '', mecaLoading = false;
     async function ensureMecaWindow(force) {
-      if (!bbOnly || mecaLoading) return;
+      if (!bbOnly || mecaLoading || catalogMode) return;
       const key = rangeStart + '|' + rangeEnd + '|' + allEvents.length;
       if (!force && key === mecaWinKey) return;
       mecaLoading = true; mecaWinKey = key;
@@ -1474,7 +1505,7 @@ setBase(savedBase);
         s.style.transitionDuration = dur;
         s.style.transform = `translateY(${-20 * CH}px)`;
         w.appendChild(s); odo.appendChild(w);
-        const o = { w, s, pos: 20, dig: 0 };
+        const o = { w, s, pos: 20, dig: 0, dur };
         s.addEventListener('transitionend', () => {
           if (o.pos >= 60) {
             s.style.transition = 'none'; o.pos -= 40; s.style.transform = `translateY(${-o.pos * CH}px)`;
@@ -1498,7 +1529,12 @@ setBase(savedBase);
       const str = String(n).padStart(NDIG, '0');
       let lead = true;
       for (let i = 0; i < NDIG; i++) {
-        const d = +str[i], o = wheels[i], step = (d - o.dig + 10) % 10;
+        const d = +str[i], o = wheels[i];
+        if (o.pos >= 60) {                       
+          o.s.style.transition = 'none'; o.pos -= 40; o.s.style.transform = `translateY(${-o.pos * CH}px)`;
+          void o.s.offsetHeight; o.s.style.transition = ''; o.s.style.transitionDuration = o.dur;
+        }
+        const step = (d - o.dig + 10) % 10;
         if (step) { o.pos += step; o.dig = d; o.s.style.transform = `translateY(${-o.pos * CH}px)`; }
         if (d !== 0 || i === NDIG - 1) lead = false;
         o.w.classList.toggle('z', lead);
@@ -1577,7 +1613,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       $('tbm0').style.width = sel.a * 100 + '%'; $('tbm1').style.width = (1 - sel.b) * 100 + '%';
       $('tbA').textContent = fmtUTC(rangeStart + sel.a * span);
       $('tbB').textContent = fmtUTC(rangeStart + sel.b * span) + ' UTC';
-      $('tbN').textContent = tr('refT');
+      $('tbN').textContent = playing ? playLabel() : tr('refT'); movePlayhead();
         syncDateInputs();                          
     }
     (function () {
@@ -1587,12 +1623,13 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       tbt.addEventListener('pointerdown', ev => {
         const f = frac(ev);
         drag = ev.target.id === 'k0' ? 'a' : ev.target.id === 'k1' ? 'b' : (Math.abs(f - sel.a) < Math.abs(f - sel.b) ? 'a' : 'b');
-        tbt.setPointerCapture(ev.pointerId); move(f);
+        tbt.setPointerCapture(ev.pointerId); beginBarDrag(); move(f);
       });
       tbt.addEventListener('pointermove', ev => { if (drag) move(frac(ev)); });
-      tbt.addEventListener('pointerup', () => { drag = null; });
-      tbt.addEventListener('pointercancel', () => { drag = null; });
-      tbt.addEventListener('dblclick', () => { sel.a = 0; sel.b = 1; updateBar(); scheduleRender(); });
+      tbt.addEventListener('pointerup', () => { drag = null; endBarDrag(); });
+      tbt.addEventListener('pointercancel', () => { drag = null; endBarDrag(); });
+      tbt.addEventListener('lostpointercapture', () => { drag = null; endBarDrag(); });
+      tbt.addEventListener('dblclick', () => { stopPlay(true); sel.a = 0; sel.b = 1; updateBar(); scheduleRender(); });
     })();
     function buildDepthBar() {
       const stops = DEPTH_STOPS.map((s, i) => `rgb(${s.join(',')}) ${(i / (DEPTH_STOPS.length - 1) * 100).toFixed(1)}%`).join(',');
@@ -1616,18 +1653,20 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       tbt.addEventListener('pointerdown', ev => {
         const f = frac(ev);
         drag = ev.target.id === 'dk0' ? 'a' : ev.target.id === 'dk1' ? 'b' : (Math.abs(f - dsel.a) < Math.abs(f - dsel.b) ? 'a' : 'b');
-        tbt.setPointerCapture(ev.pointerId); move(f);
+        tbt.setPointerCapture(ev.pointerId); beginBarDrag(); move(f);
       });
       tbt.addEventListener('pointermove', ev => { if (drag) move(frac(ev)); });
-      tbt.addEventListener('pointerup', () => { drag = null; });
-      tbt.addEventListener('pointercancel', () => { drag = null; });
-      tbt.addEventListener('dblclick', () => { dsel.a = 0; dsel.b = 1; updateDepthBar(); scheduleRender(); });
+      tbt.addEventListener('pointerup', () => { drag = null; endBarDrag(); });
+      tbt.addEventListener('pointercancel', () => { drag = null; endBarDrag(); });
+      tbt.addEventListener('lostpointercapture', () => { drag = null; endBarDrag(); });
+      tbt.addEventListener('dblclick', () => { stopPlay(true); dsel.a = 0; dsel.b = 1; updateDepthBar(); scheduleRender(); });
       buildDepthBar();
     })();
     let rq = 0, rs = 0;
     function scheduleRender() { if (rq) return; rq = requestAnimationFrame(() => { rq = 0; render(); }); }
     function scheduleSec() { if (rs) return; rs = requestAnimationFrame(() => { rs = 0; updateSlab(); drawSection(); draw3D(); }); }
     function eventPopupHTML(e) {
+      if (e.cat) return catPopupHTML(e);
       const detailsUrl = `https://terremoti.ingv.it/event/${encodeURIComponent(e.eventId)}`;
       return `<div style="display:flex;gap:8px;align-items:flex-start">` +
         `<div id="bbpop-${e.eventId}" class="bbpop"></div>` +
@@ -1731,6 +1770,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       info.textContent = `${name} — ${list.length} events`;
     }    
     function toggleColor() {
+      stopPlay(true);
       if (colorMode === 'time') colorMode = 'mag';
       else if (colorMode === 'mag') colorMode = 'kde';
       else if (colorMode === 'kde') colorMode = 'depth';
@@ -1751,6 +1791,14 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       if (kl) kl.style.display = (colorMode === 'kde' || on.kde) ? 'block' : 'none';
       if (dl) { dl.style.display = colorMode === 'depth' ? 'block' : 'none'; const dm = $('depLegMax'); if (dm) dm.textContent = depthMax + ' km'; }
     }        
+    function updateCounter(force) {
+      if (barDrag && !force) return;             // label/info dopo fine interazione
+      setCount(events.length);
+      const cn = catalogName.length > 24 ? catalogName.slice(0, 23) + '\u2026' : catalogName;
+      const lab = catalogMode ? (cn || 'catalog') : customRange ? tr('cCustom') : RANGES[daysIdx][2].toLowerCase();
+      $('clabel').textContent = tr('cLabel') + ' \u00b7 ' + lab + (events.length !== allEvents.length ? ' (' + tr('cSel') + ')' : '');
+      $('info').textContent = events.length + (events.length !== allEvents.length ? ' / ' + allEvents.length : '') + ' ' + tr('evts') + (limitHit ? ' (' + tr('limit') + ')' : '');
+    }
     function render() {
       let mxD = 0;
       allEvents.forEach(e => { if (e.depth > mxD) mxD = e.depth; });
@@ -1761,10 +1809,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       renderMarkers();
       drawStations();
       secs.forEach(s => { if (s.layers) { s.layers.poly.bringToFront(); s.layers.line.bringToFront(); s.layers.mA.setZIndexOffset(2000); s.layers.mB.setZIndexOffset(2000); } });
-      refresh(); setCount(events.length);
-      const lab = customRange ? tr('cCustom') : RANGES[daysIdx][2].toLowerCase();
-      $('clabel').textContent = tr('cLabel') + ' \u00b7 ' + lab + (events.length !== allEvents.length ? ' (' + tr('cSel') + ')' : '');
-      $('info').textContent = events.length + (events.length !== allEvents.length ? ' / ' + allEvents.length : '') + ' ' + tr('evts') + (limitHit ? ' (' + tr('limit') + ')' : '');
+      refresh(); updateCounter();
       $('depthbar').style.display = colorMode === 'depth' ? 'block' : 'none';
       updateBar(); updateDepthBar(); if (on.beach && !bbOnly) queueTopMeca(); if (bbOnly) ensureMecaWindow(); drawSection(); draw3D();
       if (qcWindowOpen()) qcEnsureData();
@@ -2026,7 +2071,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
     function niceStep(range, n) { const raw = Math.max(range, 1e-9) / n, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p; }
     function slabDepth() {
       if (!activeSec) return 10;
-      const dm = activeSec.slab.reduce((m, x) => Math.max(m, x.e.depth), 0);
+      const dm = slabDepthMax();
       return Math.max(10, Math.ceil(dm / 10) * 10);
     }
     let secPts = [];
@@ -2073,28 +2118,100 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       secPts = [];
       s.slab.slice().sort((a, b) => a.e.mag - b.e.mag).forEach(sp => {
         const r = Math.max(2, sp.e.mag * 1.8), x = X(sp.t), y = Y(sp.e.depth);
-        c.beginPath(); c.arc(x, y, r, 0, 6.2832); c.globalAlpha = .85; c.fillStyle = colorOf(sp.e); c.fill(); c.globalAlpha = 1; c.lineWidth = .6; c.strokeStyle = '#000'; c.stroke();
+        paintDot(c, x, y, r, colorOf(sp.e), .85, .6, 1.8, true);
+        if (sp.e === secSel) ringSel(c, x, y, r, '#e65100');
         secPts.push({ x, y, r, s: sp });
       });
       const f = p => p.lat.toFixed(3) + ', ' + p.lng.toFixed(3);
       $('sectitle').textContent = tr('wSec') + ' ' + (secs.indexOf(s) + 1) + ' (' + (s.la||'A') + (s.lb||'B') + ') ' + f(s.A) + f(s.B);
+      secTipClean();
       $('secinfo').textContent = s.slab.length + ' ' + tr('evts') + ' \u00b7 L = ' + g.L.toFixed(1) + ' km \u00b7 d \u2264 ' + g.hw + ' km';
     }  
-    seccv.addEventListener('mousemove', ev => {
-      const r = seccv.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top, tip = $('sectip');
+    function paintDot(c, x, y, r, col, a, lwFill, lwRing, casing) {
+      c.beginPath(); c.arc(x, y, r, 0, 6.2832);
+      if (dotFill) {
+        c.globalAlpha = a; c.fillStyle = col; c.fill(); c.globalAlpha = 1;
+        c.lineWidth = lwFill; c.strokeStyle = '#000'; c.stroke();
+      } else {
+        if (casing) { c.lineWidth = lwRing + 1.6; c.strokeStyle = 'rgba(0,0,0,.45)'; c.stroke(); }   
+        c.lineWidth = lwRing; c.strokeStyle = col; c.stroke();
+      }
+    }
+    function ringSel(c, x, y, r, col) {
+      c.beginPath(); c.arc(x, y, r + 3, 0, 6.2832); c.lineWidth = 2; c.strokeStyle = col; c.stroke();
+    }
+    function placeTip(tip, x, y, W, H) {
+      tip.style.display = 'block';
+      const w = tip.offsetWidth, h = tip.offsetHeight;
+      let l = x + 12; if (l + w > W - 2) l = x - w - 12; if (l < 0) l = 0;
+      let t = y - h - 8; if (t < 0) t = Math.max(0, Math.min(y + 14, H - h));
+      tip.style.left = l + 'px'; tip.style.top = t + 'px';
+    }
+    function evTipHTML(e, extra) {
+      const m = e.meca || mecaCache.get(String(e.eventId)) || null;
+      return `<b>M${e.mag}</b> &middot; depth ${e.depth} km<br>lat ${e.lat} &middot; lon ${e.lon}<br>` +
+        e.t.toISOString().slice(0, e.cat ? 23 : 19) + 'Z' +
+        (m ? `<br>S/D/R ${(+m.strike).toFixed(0)}/${(+m.dip).toFixed(0)}/${(+m.rake).toFixed(0)}` : '') +
+        (e.cat ? '' : `<br>id ${e.eventId}`) + (extra ? `<br>${extra}` : '');
+    }
+    function slabDepthMax() {
+      const s = activeSec; let dm = 0;
+      if (playing && play.list) {
+        const g = s.g;
+        for (const e of play.list) {
+          if (e.depth <= dm) continue;
+          const t = g.t(e.lon, e.lat); if (t < 0 || t > g.L) continue;
+          if (Math.abs(g.d(e.lon, e.lat)) > g.hw) continue;
+          dm = e.depth;
+        }
+      } else dm = s.slab.reduce((m, x) => Math.max(m, x.e.depth), 0);
+      return dm;
+    }
+    function secTipRefresh() {
+      const tip = $('sectip'), e = secHov || secSel, p = e && secPts.find(q => q.s.e === e);
+      if (!p) { tip.style.display = 'none'; return; }
+      tip.innerHTML = evTipHTML(p.s.e, 't ' + p.s.t.toFixed(1) + ' km &middot; d ' + p.s.d.toFixed(1) + ' km');
+      const r = seccv.getBoundingClientRect(); placeTip(tip, p.x, p.y, r.width, r.height);
+    }
+    function secTipClean() {                     // togli eventi dopo hovering
+      if (secHov && !secPts.some(q => q.s.e === secHov)) secHov = null;
+      if (secSel && !secPts.some(q => q.s.e === secSel)) secSel = null;
+      secTipRefresh();
+    }
+    function tip3Refresh() {
+      const tip = $('tip3'), e = v3Hov || v3Sel, q = e && pts3.find(z => z.s.e === e);
+      if (!q) { tip.style.display = 'none'; return; }
+      tip.innerHTML = evTipHTML(q.s.e, 't ' + q.s.t.toFixed(1) + ' km &middot; d ' + q.s.d.toFixed(1) + ' km');
+      const r = cv3.getBoundingClientRect(); placeTip(tip, q.x, q.y, r.width, r.height);
+    }
+    function tip3Clean() {
+      if (v3Hov && !pts3.some(q => q.s.e === v3Hov)) v3Hov = null;
+      if (v3Sel && !pts3.some(q => q.s.e === v3Sel)) v3Sel = null;
+      tip3Refresh();
+    }
+    const secXY = ev => { const r = seccv.getBoundingClientRect(); return [ev.clientX - r.left, ev.clientY - r.top]; };
+    function secPick(x, y) {
       let best = null, bd = 1e9;
       secPts.forEach(p => { const d = Math.hypot(p.x - x, p.y - y); if (d < p.r + 4 && d < bd) { bd = d; best = p; } });
-      if (!best) { tip.style.display = 'none'; return; }
-      const e = best.s.e;
-      tip.innerHTML = `<b>M${e.mag}</b> &middot; depth ${e.depth} km<br>lat ${e.lat} &middot; lon ${e.lon}<br>${e.t.toISOString().slice(0, 19)}Z<br>t ${best.s.t.toFixed(1)} km &middot; d ${best.s.d.toFixed(1)} km`;
-      tip.style.display = 'block'; tip.style.left = Math.min(x + 12, r.width - 190) + 'px'; tip.style.top = Math.max(0, y - 62) + 'px';
+      return best;
+    }
+    seccv.addEventListener('pointermove', ev => {          // hover
+      if (ev.pointerType !== 'mouse') return;
+      const p = secPick(...secXY(ev)), ne = p ? p.s.e : null;
+      seccv.style.cursor = p ? 'pointer' : '';
+      if (ne !== secHov) { secHov = ne; secTipRefresh(); }
     });
-    seccv.addEventListener('mouseleave', () => { $('sectip').style.display = 'none'; });
+    seccv.addEventListener('pointerleave', () => { if (secHov) { secHov = null; secTipRefresh(); } });
+    seccv.addEventListener('click', ev => {                
+      const p = secPick(...secXY(ev));
+      secSel = p ? p.s.e : null;
+      drawSection();
+    });
     function draw3D() {
       if (win3d.style.display !== 'flex') return;
       const [c, W, H] = fitCanvas(cv3);
       c.fillStyle = '#0f1722'; c.fillRect(0, 0, W, H);
-      if (!activeSec) return;
+      if (!activeSec) { $('tip3').style.display = 'none'; return; }
       const s = activeSec;
       const g = s.g, D = slabDepth(), hx = g.L / 2, hy = g.hw, hz = D / 2, m = Math.max(hx, hy, hz);
       const sx = v3.eq ? 1 / m : 1 / hx, sy = v3.eq ? 1 / m : 1 / hy, sz = v3.eq ? 1 / m : 1 / hz;
@@ -2130,21 +2247,52 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       c.globalAlpha = 1;
       
       const pts = s.slab.map(sp => ({ p: P((sp.t - hx) * sx, sp.d * sy, (sp.e.depth - hz) * sz), s: sp })).sort((a, b) => b.p[2] - a.p[2]);
+      pts3 = [];
       pts.forEach(({ p, s: sp }) => {
         const r = Math.max(1.5, sp.e.mag * 1.5) * p[3] * Math.sqrt(v3.zoom);
-        c.beginPath(); c.arc(p[0], p[1], r, 0, 6.2832); c.globalAlpha = .9; c.fillStyle = colorOf(sp.e); c.fill(); c.globalAlpha = 1; c.lineWidth = .5; c.strokeStyle = '#000'; c.stroke();
+        paintDot(c, p[0], p[1], r, colorOf(sp.e), .9, .5, Math.max(1.1, 1.6 * p[3]), false);
+        if (sp.e === v3Sel) ringSel(c, p[0], p[1], r, '#00e5ff');
+        pts3.push({ x: p[0], y: p[1], r, s: sp });
       });
       c.font = 'bold 12px sans-serif'; c.fillStyle = '#00e5ff'; c.textAlign = 'center';
       const pa = P(-ex, 0, -ez), pb = P(ex, 0, -ez); c.fillText(s.la || 'A', pa[0], pa[1] - 6); c.fillText(s.lb || 'B', pb[0], pb[1] - 6);
       c.font = '10px sans-serif'; c.fillStyle = '#aab6c8'; c.textAlign = 'left';
       const p0 = P(-ex, -ey, -ez), p1 = P(-ex, -ey, ez); c.fillText('0 km', p0[0] + 4, p0[1] - 3); c.fillText(D + ' km', p1[0] + 4, p1[1] + 11);
+      tip3Clean();
       $('info3').textContent = s.slab.length + ' ' + tr('evts') + ' \u00b7 ' + g.L.toFixed(0) + '\u00d7' + s.width + '\u00d7' + D + ' km \u00b7 drag = rotate, wheel = zoom';
     }
     (function () {
       let st = null;
-      cv3.addEventListener('pointerdown', e => { st = { x: e.clientX, y: e.clientY }; cv3.setPointerCapture(e.pointerId); });
-      cv3.addEventListener('pointermove', e => { if (!st) return; v3.az += (e.clientX - st.x) * 0.01; v3.el = Math.max(-1.5, Math.min(1.5, v3.el + (e.clientY - st.y) * 0.01)); st = { x: e.clientX, y: e.clientY }; draw3D(); });
-      cv3.addEventListener('pointerup', () => { st = null; });
+      const xy = e => { const r = cv3.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+      function pick3(x, y) {                     
+        for (let i = pts3.length - 1; i >= 0; i--) { const q = pts3[i]; if (Math.hypot(q.x - x, q.y - y) <= q.r + 4) return q; }
+        return null;
+      }
+      cv3.addEventListener('pointerdown', e => { st = { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, moved: false }; cv3.setPointerCapture(e.pointerId); });
+      cv3.addEventListener('pointermove', e => {
+        if (!st) {                              
+          if (e.pointerType !== 'mouse') return;
+          const q = pick3(...xy(e)), ne = q ? q.s.e : null;
+          cv3.style.cursor = q ? 'pointer' : '';
+          if (ne !== v3Hov) { v3Hov = ne; tip3Refresh(); }
+          return;
+        }
+        if (!st.moved) {
+          if (Math.hypot(e.clientX - st.x0, e.clientY - st.y0) <= 4) return;     
+          st.moved = true; v3Hov = null;
+        }
+        v3.az += (e.clientX - st.x) * 0.01; v3.el = Math.max(-1.5, Math.min(1.5, v3.el + (e.clientY - st.y) * 0.01));
+        st.x = e.clientX; st.y = e.clientY; draw3D();
+      });
+      cv3.addEventListener('pointerup', e => {  
+        const s0 = st; st = null;
+        if (!s0 || s0.moved) return;
+        const q = pick3(...xy(e));
+        v3Sel = q ? q.s.e : null;
+        draw3D();
+      });
+      cv3.addEventListener('pointercancel', () => { st = null; });
+      cv3.addEventListener('pointerleave', () => { if (!st && v3Hov) { v3Hov = null; tip3Refresh(); } });
       cv3.addEventListener('wheel', e => { e.preventDefault(); v3.zoom = Math.max(.3, Math.min(6, v3.zoom * Math.exp(-e.deltaY * 0.001))); draw3D(); }, { passive: false });
       cv3.addEventListener('dblclick', () => { v3.az = -35 * Math.PI / 180; v3.el = 25 * Math.PI / 180; v3.zoom = 1; draw3D(); });
     })();
@@ -2223,7 +2371,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       const base = 'https://webservices.ingv.it/fdsnws/event/1/query?format=geojson&orderby=time&limit=10000' +`&minlatitude=${minlat.toFixed(3)}&maxlatitude=${maxlat.toFixed(3)}` +
         `&minlongitude=${minlon.toFixed(3)}&maxlongitude=${maxlon.toFixed(3)}`;
       const CHUNK = 180 * 864e5;
-      const n = Math.max(1, Math.ceil((t1 - t0) / CHUNK));
+      const n = catalogMode ? 0 : Math.max(1, Math.ceil((t1 - t0) / CHUNK));
       const found = [], seen = new Set();
       for (let i = 0; i < n; i++) {
         const a = t0 + i * CHUNK, b = Math.min(t0 + (i + 1) * CHUNK, t1);
@@ -2242,6 +2390,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
           });
         } catch (err) { console.warn('catalog chunk', err); }
       }
+      if (catalogMode) allEvents.forEach(e => { if (e.ms >= t0 && e.ms <= t1 && inside(polyH, e.lon, e.lat)) found.push(e); });
       found.sort((a, b) => a.ms - b.ms);
       const txt = found.map(eventLine).join('\n') + (found.length ? '\n' : '');
       const d = new Date();
@@ -2433,6 +2582,8 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       the downloaded period (double-click resets to the full range). The bigger the time window the more
       cluttered the view will become. Both stations and earthquake's data are sensitive to this time range
       so be careful.</p>
+      <p class="hs"><b>Play</b> (round button left of the time bar): the earthquakes inside the selected time window, and inside the depth window too when <i>Colour: depth</i> is active, appear one after the other from the earliest to the latest while the orange line follows the current time. Click again to pause / resume; the round button on the right of the bar sets the speed; double-click on Play (or Esc) stops and shows everything again. Touching a handle of the time or depth bar stops it as well. The counter is updated when you release a time / depth handle, not while you are dragging it.</p>
+      <p class="hs"><b>Drag &amp; drop catalog</b>: drop a text file on the page to see your own catalog instead of the INGV download: <code>YYYYMMDD HHMMSS.MS LAT LON DEP M [STRIKE DIP RAKE]</code> (lines starting with # are ignored; <code>-</code> means missing). Beachballs are drawn only for events that have STRIKE DIP RAKE, the others stay plain dots. Events outside the orange box are skipped. Choose any time range in the right panel to go back to INGV data.</p>
       <p class="hs"><b>Right panel buttons</b><br>
       &middot; <i>Last 1 hour up to last 25 years</i>: download period. N.B. Be patient when you request a larger time period and
       do not be surprised if your browser slows down. Be also patient when downloading tarballs with requested waveforms.<br>
@@ -2452,7 +2603,7 @@ if ($('dtGo')) $('dtGo').onclick = applyDateRange;
       &middot; <i>Clear sections</i>: remove all transept sections.<br>
       &middot; <i>3D popup</i>: 3-D view of the active section (drag = rotate, wheel = zoom, 1:1:1 = equal axes).<br>
       &middot; <i>Colour</i>: cycles between time|magnitude|KDE|depth colouring (depth mode adds a depth-window bar above the time bar, both interactive).<br>
-      &middot; <i>Dots</i>: cycles between filled and empty earthquake epicenter dots.<br>
+      &middot; <i>Dots</i>: cycles between filled and empty earthquake epicenter dots (also in the section and 3D windows).<br>
       &middot; <i>DISS sources</i>: overlay of the DISS 3.3.1 seismogenic sources. TODO better<br>
       &middot; <i>Export JPG</i>: save the map with all overlays and the legend as a JPEG.</p>
       <p class="hs"><b>Station in that year</b> You can toggle with the drop down menu at the end of the right panel. The opacity and size is fixed so it gets easier to see them if you select a bigger time window. They are also linked to the time bar at the bottom center as you slide and select different time periods. In the top center counter you can also select each channel the station is/was currently equipped with. N.B. Many times stations were not operational in a given period of time so be advised this information displayed comes from EIDA feed. No garantee is assured if those stations were operational or not. </p>         
@@ -2525,7 +2676,7 @@ Oblique: asymmetric pattern given by one vertical and one dipping nodal plane).<
       phase picks as .txt (header <code>#TIMEUTC LAT UNC_LAT LONG UNC_LON PROF UNC_PROF M UNC_M</code> followed by entries
       <code>STA NET TIME POL PHA AZIM DIST TKOFANGLE RES</code>) or open directly INGV eventid page.</p>
       <p class="hs"><b>Section window</b> cross-section along drawn line; the event closest to the
-      cursor is shown in the tooltip; the <i>1:1</i> box keeps equal vertical and horizontal scale. </p>     
+      cursor is shown in the tooltip (click or tap an event to keep its box on screen); dots are drawn as filled or empty circles like the map (<i>Dots</i> button), and the 3D box shows the same info box on hover / click; the <i>1:1</i> box keeps equal vertical and horizontal scale. </p>     
       <p class="hs"><b>Basemap and language window</b> Switch between satellite imagery and elevation levels with streetmap 
       names. More languages will be added in future versions for reproducibility. This goes straight to the never ending to do list as usual.</p>
       <p class="hs"><b>Acknowledgment</b> This tool has been aided and been supported by many many tips and suggestions by users which deal daily with 
@@ -2803,6 +2954,7 @@ Oblique: asymmetric pattern given by one vertical and one dipping nodal plane).<
     }
     async function fetchEarthquakes() {
       const id = ++reqId;
+      catalogMode = false; catalogName = ''; stopPlay(true);     
       const info = $('info');
       info.textContent = tr('load');
       const fmt = d => d.toISOString().slice(0, 19);
@@ -2938,6 +3090,7 @@ Oblique: asymmetric pattern given by one vertical and one dipping nodal plane).<
     }
     async function qcEnsureData() {
       qcMerge();
+      if (catalogMode) return;
       if (qcBusy) { qcRerun = true; return; }
       const need = events.filter(e => !qcCovered.some(c => e.ms >= c[0] && e.ms < c[1]));
       if (!need.length) return;
@@ -3252,10 +3405,152 @@ Oblique: asymmetric pattern given by one vertical and one dipping nodal plane).<
       return div;
     };
     qcCtl.addTo(map);
+    function beginBarDrag() { stopPlay(true); barDrag = 1; }
+    function endBarDrag() { if (!barDrag) return; barDrag = 0; scheduleRender(); }
+    const PLAY_SECS = 15, SPEEDS = [0.5, 1, 2, 4];
+    const SVG_PLAY = '<svg viewBox="0 0 14 14" width="13" height="13"><path d="M3 1.5v11l9-5.5z" fill="#fff"/></svg>';
+    const SVG_PAUSE = '<svg viewBox="0 0 14 14" width="13" height="13"><rect x="2.2" y="1.5" width="3.4" height="11" fill="#fff"/><rect x="8.4" y="1.5" width="3.4" height="11" fill="#fff"/></svg>';
+    function playLabel() {
+      const d = new Date(playT).toISOString();
+      return rangeEnd - rangeStart >= 100 * 864e5 ? d.slice(0, 10) : d.slice(5, 19).replace('T', ' ');
+    }
+    function movePlayhead() {
+      const h = $('tbp'); if (!h) return;
+      h.style.display = playing ? 'block' : 'none';
+      if (!playing) return;
+      h.style.left = Math.max(0, Math.min(100, (playT - rangeStart) / Math.max(1, rangeEnd - rangeStart) * 100)) + '%';
+      $('tbN').textContent = playLabel();
+    }
+    function playUI() {
+      const b = $('playbtn');
+      b.innerHTML = play.run ? SVG_PAUSE : SVG_PLAY;
+      b.classList.toggle('on', playing);
+      b.title = !playing ? 'Play: earthquakes appear from earliest to latest inside the selected time (and depth) window'
+              : play.run ? 'Pause (double-click or Esc: stop and show all)' : 'Resume (double-click or Esc: stop and show all)';
+      movePlayhead();
+    }
+    function countLE(a, t) {
+      let lo = 0, hi = a.length;
+      while (lo < hi) { const m = (lo + hi) >> 1; if (a[m].ms <= t) lo = m + 1; else hi = m; }
+      return lo;
+    }
+    function playStart() {
+      const w = filterWin();
+      const list = allEvents.filter(e => inWin(e, w)).sort((a, b) => a.ms - b.ms);
+      if (!list.length) { toast('Play: no earthquakes inside the selected window', 2500); return; }
+      play.list = list; play.t0 = list[0].ms; play.t1 = list[list.length - 1].ms;
+      play.n = -1; play.cost = 0; play.rendered = 0;
+      playT = play.t0 - 1; playing = true; play.run = true; play.last = performance.now();
+      playUI(); render();
+      play.raf = requestAnimationFrame(playFrame);
+    }
+    function playFrame() {
+      if (!play.run) return;
+      const tn = performance.now(), dt = Math.min(100, tn - play.last); play.last = tn;
+      const span = Math.max(play.t1 - play.t0, 1000);
+      playT = Math.min(play.t1, playT + dt * span / (PLAY_SECS * 1000) * play.speed);
+      if (playT >= play.t1) {                    
+        play.run = false; playing = false; playUI(); render(); return;
+      }
+      movePlayhead();
+      const n = countLE(play.list, playT);
+      if (n !== play.n && tn - play.rendered >= Math.max(60, play.cost * 1.5)) {   
+        play.n = n; render();
+        play.rendered = performance.now(); play.cost = play.rendered - tn;
+      }
+      play.raf = requestAnimationFrame(playFrame);
+    }
+    function playPause() { play.run = false; cancelAnimationFrame(play.raf); playUI(); }
+    function playResume() { play.run = true; play.last = performance.now(); playUI(); play.raf = requestAnimationFrame(playFrame); }
+    function stopPlay(noRender) {
+      if (!playing && !play.run) return;
+      play.run = false; cancelAnimationFrame(play.raf); playing = false;
+      playUI(); if (!noRender) scheduleRender();
+    }
+    $('playbtn').onclick = ev => {
+      if (ev.detail > 1) { stopPlay(); return; }     //doppio click stop 
+      if (!playing) playStart(); else if (play.run) playPause(); else playResume();
+    };
+    $('spdbtn').onclick = () => {
+      play.speed = SPEEDS[(SPEEDS.indexOf(play.speed) + 1) % SPEEDS.length];
+      $('spdbtn').textContent = play.speed + '\u00d7';
+    };
+    document.addEventListener('keydown', ev => {
+      if (ev.key === 'Escape' && playing && !(ev.target.matches && ev.target.matches('input, select, textarea'))) stopPlay();
+    });
+    playUI();
+    //YYYYMMDD HHMMSS.MS LAT LON DEP M [STRIKE DIP RAKE] se ci sono
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    function parseCatalog(text) {
+      const ev = [], bad = [];
+      text.replace(/^\uFEFF/, '').split(/\r?\n/).forEach((raw, i) => {
+        const s = raw.trim();
+        if (!s || s[0] === '#') return;
+        const p = s.split(/[\s,;]+/);
+        const day = parseYMD(p[0].replace(/[-\/]/g, ''));
+        const tm = /^(\d{2}):?(\d{2}):?(\d{2})(?:\.(\d+))?$/.exec(p[1] || '');
+        const num = k => (p[k] !== undefined && p[k] !== '' ? +p[k] : NaN);      
+        const lat = num(2), lon = num(3), dep = num(4), mag = num(5);
+        if (!isFinite(day) || !tm || ![lat, lon, dep, mag].every(isFinite) || Math.abs(lat) > 90 || Math.abs(lon) > 180
+            || +tm[1] > 23 || +tm[2] > 59 || +tm[3] > 60) { bad.push(i + 1); return; }
+        const ms = day + ((+tm[1] * 60 + +tm[2]) * 60 + +tm[3]) * 1000 + (tm[4] ? Math.round(+('0.' + tm[4]) * 1000) : 0);
+        const sdr = [6, 7, 8].map(k => num(k));
+        ev.push({ lon, lat, depth: dep, mag, t: new Date(ms), ms, place: '', eventId: 'cat' + (ev.length + 1), cat: true,
+                  meca: sdr.every(isFinite) ? { strike: sdr[0], dip: sdr[1], rake: sdr[2] } : null });
+      });
+      return { ev, bad };
+    }
+    function catPopupHTML(e) {
+      return `<div style="display:flex;gap:8px;align-items:flex-start">` +
+        (e.meca ? `<div id="bbpop-${e.eventId}" class="bbpop"></div>` : '') +
+        `<div style="min-width:150px"><b>M${(+e.mag).toFixed(1)}</b> &middot; <span style="color:#666">${esc(catalogName || 'catalog')}</span><br>` +
+        `${tr('lDepth')}: ${(+e.depth).toFixed(2)} km<br>` +
+        `${(+e.lat).toFixed(4)}, ${(+e.lon).toFixed(4)}<br>` +
+        `${fmtYMD(e.ms)} ${e.t.toISOString().slice(11, 23)} UTC</div></div>`;
+    }
+    function loadCatalog(text, name) {
+      const r = parseCatalog(text);
+      if (!r.ev.length) { toast('Catalog "' + name + '": no valid line (YYYYMMDD HHMMSS.MS LAT LON DEP M [STRIKE DIP RAKE])', 6000); return; }
+      const ev = r.ev.filter(e => bounds.contains([e.lat, e.lon]));
+      const out = r.ev.length - ev.length;
+      if (!ev.length) { toast('Catalog "' + name + '": all ' + out + ' events are outside the map area', 6000); return; }
+      stopPlay(true);
+      ++reqId;                                   
+      catalogMode = true; catalogName = name;
+      ev.sort((a, b) => a.ms - b.ms);
+      ev.forEach(e => mecaCache.set(e.eventId, e.meca));
+      const nm = ev.filter(e => e.meca).length;
+      bbMode = nm ? 1 : 0; on.beach = nm > 0; bbOnly = false; bbLabel();       
+      allEvents = ev; limitHit = false;
+      rangeStart = ev[0].ms; rangeEnd = Math.max(ev[ev.length - 1].ms + 1000, rangeStart + 60000);
+      customRange = null; sel.a = 0; sel.b = 1; dsel.a = 0; dsel.b = 1;
+      dtDirty.start = dtDirty.end = false;
+      document.querySelectorAll('[data-idx]').forEach(x => x.classList.remove('active'));
+      searchLayer.clearLayers(); qcHighlightLayer.clearLayers(); map.closePopup();
+      buildBar(); render();
+      map.fitBounds(L.latLngBounds(ev.map(e => [e.lat, e.lon])).pad(0.15), { maxZoom: 10 });
+      toast('Catalog ' + name + ': ' + ev.length + ' events' + (nm ? ', ' + nm + ' with focal mechanism' : ', no S/D/R: no beachballs')
+        + (out ? ', ' + out + ' outside the map area skipped' : '') + (r.bad.length ? ', ' + r.bad.length + ' unreadable lines skipped' : ''), 6000);
+    }
+    (function () {                               //drag drop dovunque 
+      const ov = $('dropov'); let depth = 0;
+      const hasFiles = ev => !!(ev.dataTransfer && [...(ev.dataTransfer.types || [])].includes('Files'));
+      window.addEventListener('dragenter', ev => { if (!hasFiles(ev)) return; ev.preventDefault(); depth++; ov.classList.add('on'); });
+      window.addEventListener('dragover', ev => { if (!hasFiles(ev)) return; ev.preventDefault(); ev.dataTransfer.dropEffect = 'copy'; });
+      window.addEventListener('dragleave', ev => { if (!hasFiles(ev)) return; depth = Math.max(0, depth - 1); if (!depth) ov.classList.remove('on'); });
+      window.addEventListener('drop', async ev => {
+        if (!hasFiles(ev)) return;
+        ev.preventDefault(); depth = 0; ov.classList.remove('on');
+        const f = ev.dataTransfer.files[0]; if (!f) return;
+        if (f.size > 60e6) { toast('File too large for a catalog (' + (f.size / 1e6).toFixed(0) + ' MB)', 4000); return; }
+        try { loadCatalog(await f.text(), f.name); }
+        catch (err) { console.error(err); toast('Cannot read ' + f.name, 4000); }
+      });
+    })();
     initStaChan();
     applyLang();
     fetchEarthquakes();
-    setInterval(() => { if (!customRange && days <= 30) fetchEarthquakes(); }, 60000);
+    setInterval(() => { if (!customRange && !catalogMode && !playing && days <= 30) fetchEarthquakes(); }, 60000);
   </script>
 </body>
 </html>
